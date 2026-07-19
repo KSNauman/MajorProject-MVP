@@ -1,0 +1,6 @@
+{
+  "name": "EduVision",
+  "description": "Transform children's physical drawings into animated interactive storybooks with educational cognitive checkpoints and reading quizzes.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

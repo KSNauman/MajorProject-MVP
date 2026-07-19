@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Annotation Submission Status</title>
+    <style>
+        body {
+            font-family: 'Outfit', 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1e1e2f 0%, #111119 100%);
+            color: #f1f1f1;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            max-width: 600px;
+            width: 90%;
+        }
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #4fc3f7;
+            text-shadow: 0 0 10px rgba(79, 195, 247, 0.3);
+        }
+        p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            color: #cccccc;
+            text-align: left;
+        }
+        .success-box {
+            background: rgba(76, 175, 80, 0.12);
+            border: 1px solid rgba(76, 175, 80, 0.25);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+        .success-box h3 {
+            margin-top: 0;
+            color: #81c784;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+        }
+        .config-detail {
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 3px 6px;
+            border-radius: 4px;
+            color: #ffb74d;
+            word-break: break-all;
+            display: inline-block;
+            margin-top: 4px;
+        }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(90deg, #0288d1 0%, #26a69a 100%);
+            color: white;
+            padding: 12px 28px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(2, 136, 209, 0.4);
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(2, 136, 209, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>{{ status_title }}</h2>
+        <div class="success-box">
+            <h3>Status:</h3>
+            <p>{{ message }}</p>
+            {% if motion_cfg %}
+            <p><strong>Motion:</strong><br><span class="config-detail">{{ motion_cfg }}</span></p>
+            <p><strong>Retarget:</strong><br><span class="config-detail">{{ retarget_cfg }}</span></p>
+            {% endif %}
+            {% if output_video %}
+            <p><strong>Animated GIF:</strong><br><span class="config-detail" style="color: #81c784;">{{ output_video }}</span></p>
+            {% endif %}
+        </div>
+        
+        <a href="/" class="btn">Adjust Joints Again</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "is_humanoid": false,
+  "is_wheeled": true,
+  "wheels": [
+    {
+      "x": 0.3,
+      "y": 0.8,
+      "radius": 0.1
+    },
+    {
+      "x": 0.75,
+      "y": 0.8,
+      "radius": 0.1
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+CRITICAL:root:Error validating bvh_projection_bodypart_groups: bvh_joint_name not valid: LeftInHandIndex
+Traceback (most recent call last):
+  File "/home/champion/Actual repo (EDUVISION)/AnimatedDrawings/animated_drawings/config.py", line 548, in validate_char_and_bvh_joint_names
+    assert bvh_joint_name in bvh_joint_names, f'bvh_joint_name not valid: {bvh_joint_name}'
+AssertionError: bvh_joint_name not valid: LeftInHandIndex
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "run.py", line 80, in <module>
+    main()
+  File "run.py", line 75, in main
+    animate(annotation_dir, output_gif, motion)
+  File "/home/champion/Actual repo (EDUVISION)/AnimatedDrawings/animate.py", line 186, in animate
+    render.start(mvc_path)
+  File "/home/champion/Actual repo (EDUVISION)/AnimatedDrawings/animated_drawings/render.py", line 21, in start
+    scene = Scene(cfg.scene)
+  File "/home/champion/Actual repo (EDUVISION)/AnimatedDrawings/animated_drawings/model/scene.py", line 30, in __init__
+    ad = AnimatedDrawing(*each)
+  File "/home/champion/Actual repo (EDUVISION)/AnimatedDrawings/animated_drawings/model/animated_drawing.py", line 255, in __init__
+    self._initialize_retargeter_bvh(motion_cfg, retarget_cfg)
+  File "/home/champion/Actual repo (EDUVISION)/AnimatedDrawings/animated_drawings/model/animated_drawing.py", line 323, in _initialize_retargeter_bvh
+    retarget_cfg.validate_char_and_bvh_joint_names(char_joint_names, bvh_joint_names)
+  File "/home/champion/Actual repo (EDUVISION)/AnimatedDrawings/animated_drawings/config.py", line 552, in validate_char_and_bvh_joint_names
+    assert False, msg
+AssertionError: Error validating bvh_projection_bodypart_groups: bvh_joint_name not valid: LeftInHandIndex
+
+ERROR conda.cli.main_run:execute(125): `conda run python run.py nobi.png walk --manual` failed. (See above for error)
+
+🎨  Drawing → Animation Pipeline
+    Image  : nobi.png
+    Motion : walk
+    Mode   : manual
+    Output : outputs/animated_nobi_walk.gif
+
+
+=======================================================
+  Manual Annotations (offline — no API needed)
+  Image : nobi.png
+  Output: annotations_nobi
+=======================================================
+
+  Image: 389x641
+
+[1/3] Auto-detecting bounding box...
+  ✓ Bbox: x=11 y=0 w=377 h=640
+
+[2/3] Generating proportional skeleton...
+     root                 → (199, 345)
+     hip                  → (199, 345)
+     torso                → (199, 243)
+     neck                 → (199, 128)
+     head_top             → (199, 25)
+     left_shoulder        → (116, 153)
+     right_shoulder       → (282, 153)
+     left_elbow           → (71, 268)
+     right_elbow          → (327, 268)
+     left_hand            → (48, 371)
+     right_hand           → (350, 371)
+     left_hip             → (154, 345)
+     right_hip            → (244, 345)
+     left_knee            → (146, 473)
+     right_knee           → (252, 473)
+     left_foot            → (142, 601)
+     right_foot           → (256, 601)
+
+[3/3] Writing annotation files...
+  ✓ char_cfg.yaml
+  ✓ texture.png
+  ✓ mask.png
+
+=======================================================
+  ✅ Done (offline)! Annotations in: annotations_nobi
+=======================================================
+
+
+=======================================================
+  Annotations → Animation
+  Annotations: annotations_nobi
+  Output GIF : outputs/animated_nobi_walk.gif
+  Motion     : walk
+=======================================================
+
+[1/2] Building render config...
+  ✓ Config: /tmp/mvc_cfg_p9zb26io.yaml
+
+[2/2] Rendering animation (this takes ~10–30 seconds)...
+

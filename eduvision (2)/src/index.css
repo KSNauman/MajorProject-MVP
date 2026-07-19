@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
+}
+
+/* Story Player 60fps Animation Keyframes */
+
+/* Ocean Swim: Swaying lateral drifts plus gentle sine height wave oscillation */
+@keyframes ocean-swim {
+  0% {
+    transform: translate(0px, 0px) rotate(0deg);
+  }
+  25% {
+    transform: translate(50px, -15px) rotate(3deg);
+  }
+  50% {
+    transform: translate(100px, 10px) rotate(-3deg);
+  }
+  75% {
+    transform: translate(50px, -10px) rotate(2deg);
+  }
+  100% {
+    transform: translate(0px, 0px) rotate(0deg);
+  }
+}
+
+/* Sky Wings: Continuous up/down hover with cyclic rotational tilt simulating drag */
+@keyframes sky-wings {
+  0%, 100% {
+    transform: translateY(0) rotate(-2deg) scale(1);
+  }
+  50% {
+    transform: translateY(-35px) rotate(4deg) scale(1.02);
+  }
+}
+
+/* Space Launch: Vibrates slightly as rocket engines prep, then shoots upwards, then slips down */
+@keyframes space-launch {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  10% {
+    transform: translate(-3px, 2px) scale(0.99);
+  }
+  20% {
+    transform: translate(3px, -1px) scale(1.01);
+  }
+  30% {
+    transform: translate(-2px, 1px) scale(0.995);
+  }
+  40% {
+    transform: translate(2px, -2px) scale(1.005);
+  }
+  55% {
+    transform: translate(0px, -300px) scale(0.9);
+    opacity: 0;
+  }
+  56% {
+    transform: translate(0px, 300px) scale(0.9);
+    opacity: 0;
+  }
+  80% {
+    transform: translate(0px, 50px) scale(0.95);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Land Bounce: Parabolic gravity elastic jumping bounce cycle with squash and stretch */
+@keyframes land-bounce {
+  0%, 100% {
+    transform: translateY(100px) scaleY(0.85) scaleX(1.15);
+  }
+  10% {
+    transform: translateY(100px) scaleY(0.93) scaleX(1.07);
+  }
+  45% {
+    transform: translateY(-40px) scaleY(1.06) scaleX(0.94);
+  }
+  55% {
+    transform: translateY(-50px) scaleY(1.02) scaleX(0.98);
+  }
+  65% {
+    transform: translateY(-40px) scaleY(0.98) scaleX(1.02);
+  }
+  90% {
+    transform: translateY(100px) scaleY(0.9) scaleX(1.1);
+  }
+}
+
+/* Water Bubbles floating upwards */
+@keyframes bubble {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  80% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-500px) translateX(40px);
+    opacity: 0;
+  }
+}
+
+/* Sky Clouds drifting from left relative side */
+@keyframes cloud-drift {
+  0% {
+    transform: translateX(450px);
+  }
+  100% {
+    transform: translateX(-150px);
+  }
+}
+
+/* TTS Voice active line oscillation */
+@keyframes voice-bar {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(2.2);
+  }
+}
+
+/* Wiggle animation for stars rewards */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+.animate-spin-slow {
+  animation: spin 8s linear infinite;
+}

@@ -1,0 +1,437 @@
+{
+  "drawings": [
+    {
+      "filename": "1781893538732_dhtd5tbgy.png",
+      "originalUrl": "/uploads/originals/1781893538732_dhtd5tbgy.png",
+      "processedUrl": "/uploads/processed/1781893538732_dhtd5tbgy.png",
+      "classification": "Friendly Girl",
+      "motionProfile": "bounce",
+      "_id": "drw_278os5ic0",
+      "createdAt": "2026-06-19T18:25:39.759Z"
+    },
+    {
+      "filename": "1781895820082_polm8jjr7.png",
+      "originalUrl": "/uploads/originals/1781895820082_polm8jjr7.png",
+      "processedUrl": "/uploads/processed/1781895820082_polm8jjr7.png",
+      "classification": "Spaceship Rocket",
+      "motionProfile": "launch",
+      "_id": "drw_1cbpvqbqt",
+      "createdAt": "2026-06-19T19:03:41.083Z"
+    },
+    {
+      "filename": "1781895928425_syc4nsx1y.png",
+      "originalUrl": "/uploads/originals/1781895928425_syc4nsx1y.png",
+      "processedUrl": "/uploads/processed/1781895928425_syc4nsx1y.png",
+      "classification": "Playful Park Girl",
+      "motionProfile": "bounce",
+      "_id": "drw_avvipfsa4",
+      "createdAt": "2026-06-19T19:05:28.438Z"
+    }
+  ],
+  "stories": [
+    {
+      "drawingId": "drw_278os5ic0",
+      "title": "Lily's Wonderful Park Day!",
+      "languageLevel": "Kindergarten (Ages 5-6)",
+      "backgroundTheme": "park",
+      "chapters": [
+        {
+          "chapterNumber": 1,
+          "narrativeText": "Meet Lily! With her bouncy pigtails and a big smile, she was ready for an exciting day at the park. She skipped towards the swings, feeling the sunshine warm on her face. 'Whee!' she giggled as she swung higher and higher, almost touching the clouds.",
+          "actors": [
+            {
+              "drawingId": "drw_278os5ic0",
+              "processedUrl": "/uploads/processed/1781893538732_dhtd5tbgy.png",
+              "characterName": "Lily the Girl",
+              "role": "hero",
+              "scale": 1,
+              "position": {
+                "x": 50,
+                "y": 60
+              }
+            }
+          ],
+          "checkpoint": {
+            "question": "What did Lily do first at the park?",
+            "options": [
+              "Swung on the swings",
+              "Built a sandcastle",
+              "Ate a yummy snack"
+            ],
+            "correctIndex": 0,
+            "correctOption": "Swung on the swings",
+            "distractorOptions": [
+              "Built a sandcastle",
+              "Ate a yummy snack"
+            ]
+          }
+        },
+        {
+          "chapterNumber": 2,
+          "narrativeText": "After swinging, Lily spotted a tall, twisty slide! She climbed up the ladder, careful step by careful step. At the top, a friendly squirrel named Squeaky peeked out from behind the railing. 'Are you ready for a super-fast ride?' chattered Squeaky, and down they went, zoom!",
+          "actors": [
+            {
+              "drawingId": "drw_278os5ic0",
+              "processedUrl": "/uploads/processed/1781893538732_dhtd5tbgy.png",
+              "characterName": "Lily the Girl",
+              "role": "hero",
+              "scale": 0.9,
+              "position": {
+                "x": 40,
+                "y": 55
+              }
+            },
+            {
+              "drawingId": "drw_278os5ic0",
+              "processedUrl": "/uploads/processed/1781893538732_dhtd5tbgy.png",
+              "characterName": "Squeaky the Squirrel",
+              "role": "helper",
+              "scale": 0.8,
+              "position": {
+                "x": 65,
+                "y": 45
+              }
+            }
+          ],
+          "checkpoint": {
+            "question": "Who did Lily meet at the top of the slide?",
+            "options": [
+              "A blue bird",
+              "Squeaky the squirrel",
+              "Another child"
+            ],
+            "correctIndex": 1,
+            "correctOption": "Squeaky the squirrel",
+            "distractorOptions": [
+              "A blue bird",
+              "Another child"
+            ]
+          }
+        },
+        {
+          "chapterNumber": 3,
+          "narrativeText": "Lily and Squeaky decided to explore the grassy field. Hidden amongst colorful flowers, they found a sparkling, shiny pebble! It shimmered like a tiny rainbow. Lily carefully picked it up, knowing it was a special treasure from her amazing park adventure.",
+          "actors": [
+            {
+              "drawingId": "drw_278os5ic0",
+              "processedUrl": "/uploads/processed/1781893538732_dhtd5tbgy.png",
+              "characterName": "Lily the Girl",
+              "role": "hero",
+              "scale": 1,
+              "position": {
+                "x": 55,
+                "y": 70
+              }
+            },
+            {
+              "drawingId": "drw_278os5ic0",
+              "processedUrl": "/uploads/processed/1781893538732_dhtd5tbgy.png",
+              "characterName": "Squeaky the Squirrel",
+              "role": "helper",
+              "scale": 0.8,
+              "position": {
+                "x": 30,
+                "y": 65
+              }
+            }
+          ],
+          "checkpoint": {
+            "question": "What magical treasure did Lily and Squeaky find?",
+            "options": [
+              "A lost toy",
+              "A sparkling pebble",
+              "A talking flower"
+            ],
+            "correctIndex": 1,
+            "correctOption": "A sparkling pebble",
+            "distractorOptions": [
+              "A lost toy",
+              "A talking flower"
+            ]
+          }
+        }
+      ],
+      "reviewStatus": "pending",
+      "teacherNotes": "",
+      "_id": "sty_fqelzbq61",
+      "createdAt": "2026-06-19T18:26:32.645Z"
+    },
+    {
+      "drawingId": "drw_1cbpvqbqt",
+      "title": "Blaze the Rocket's Starry Adventure!",
+      "languageLevel": "Kindergarten (Ages 5-6)",
+      "backgroundTheme": "space",
+      "chapters": [
+        {
+          "chapterNumber": 1,
+          "narrativeText": "Meet Blaze, a brave little rocket with big dreams! Today was the day for his most exciting journey yet. He was ready on the launchpad, counting down to a grand adventure among the twinkling stars. Blaze couldn't wait to explore the wonders of outer space!",
+          "actors": [
+            {
+              "drawingId": "drw_1cbpvqbqt",
+              "processedUrl": "/uploads/processed/1781895820082_polm8jjr7.png",
+              "characterName": "Blaze the Rocket",
+              "role": "hero",
+              "scale": 0.9,
+              "position": {
+                "x": 50,
+                "y": 65
+              }
+            }
+          ],
+          "checkpoint": {
+            "question": "What was Blaze the Rocket ready to do?",
+            "options": [
+              "Blast off to the stars",
+              "Swim in the ocean",
+              "Go to the park"
+            ],
+            "correctIndex": 0,
+            "correctOption": "Blast off to the stars",
+            "distractorOptions": [
+              "Swim in the ocean",
+              "Go to the park"
+            ]
+          }
+        },
+        {
+          "chapterNumber": 2,
+          "narrativeText": "Vroom! With a mighty roar, Blaze launched into the deep blue sky, leaving Earth sparkling far below. He zoomed past fluffy clouds and then soared among bright, sparkly stars. He even waved hello to a friendly, sleepy moon glowing softly in the distance!",
+          "actors": [
+            {
+              "drawingId": "drw_1cbpvqbqt",
+              "processedUrl": "/uploads/processed/1781895820082_polm8jjr7.png",
+              "characterName": "Blaze the Rocket",
+              "role": "hero",
+              "scale": 0.8,
+              "position": {
+                "x": 50,
+                "y": 40
+              }
+            }
+          ],
+          "checkpoint": {
+            "question": "What did Blaze fly past in the sky?",
+            "options": [
+              "Green trees and red flowers",
+              "Sparkly stars and a sleepy moon",
+              "Big, blue ocean waves"
+            ],
+            "correctIndex": 1,
+            "correctOption": "Sparkly stars and a sleepy moon",
+            "distractorOptions": [
+              "Green trees and red flowers",
+              "Big, blue ocean waves"
+            ]
+          }
+        },
+        {
+          "chapterNumber": 3,
+          "narrativeText": "Blaze landed gently on a soft, bouncy purple planet! There, he met a giggling little alien named Zorp, who loved to play hide-and-seek among the moon rocks. After a fun afternoon, Blaze shared stories of Earth before zooming back home, full of amazing new memories!",
+          "actors": [
+            {
+              "drawingId": "drw_1cbpvqbqt",
+              "processedUrl": "/uploads/processed/1781895820082_polm8jjr7.png",
+              "characterName": "Blaze the Rocket",
+              "role": "hero",
+              "scale": 0.9,
+              "position": {
+                "x": 30,
+                "y": 60
+              }
+            },
+            {
+              "drawingId": "drw_278os5ic0",
+              "processedUrl": "/uploads/processed/1781893538732_dhtd5tbgy.png",
+              "characterName": "Zorp the Alien",
+              "role": "companion",
+              "scale": 0.7,
+              "position": {
+                "x": 70,
+                "y": 65
+              }
+            }
+          ],
+          "checkpoint": {
+            "question": "Who did Blaze meet on the purple planet?",
+            "options": [
+              "A friendly whale",
+              "A grumpy bear",
+              "A giggling alien"
+            ],
+            "correctIndex": 2,
+            "correctOption": "A giggling alien",
+            "distractorOptions": [
+              "A friendly whale",
+              "A grumpy bear"
+            ]
+          }
+        }
+      ],
+      "reviewStatus": "pending",
+      "teacherNotes": "",
+      "_id": "sty_yg2fmxi5z",
+      "createdAt": "2026-06-19T19:03:57.507Z"
+    },
+    {
+      "drawingId": "drw_avvipfsa4",
+      "title": "Lily's Big Park Adventure!",
+      "languageLevel": "Kindergarten (Ages 5-6)",
+      "backgroundTheme": "park",
+      "chapters": [
+        {
+          "chapterNumber": 1,
+          "narrativeText": "Meet Lily, a happy girl with pigtails who loved sunny days! Today was perfect for a trip to Sparkle Park. Lily bounced with excitement, ready for a day of fun and laughter.",
+          "actors": [
+            {
+              "drawingId": "drw_avvipfsa4",
+              "processedUrl": "/uploads/processed/1781895928425_syc4nsx1y.png",
+              "characterName": "Lily the Happy Girl",
+              "role": "hero",
+              "scale": 1,
+              "position": {
+                "x": 50,
+                "y": 60
+              }
+            }
+          ],
+          "checkpoint": {
+            "question": "Where was Lily going on this sunny day?",
+            "options": [
+              "Sparkle Park",
+              "To the moon",
+              "Under the sea"
+            ],
+            "correctIndex": 0,
+            "correctOption": "Sparkle Park",
+            "distractorOptions": [
+              "To the moon",
+              "Under the sea"
+            ]
+          }
+        },
+        {
+          "chapterNumber": 2,
+          "narrativeText": "First, Lily spotted the tall, shiny swingset. 'Whee!' she giggled, soaring high like a bird. Up and down, up and down she went, feeling the wind in her hair. It was like flying without wings!",
+          "actors": [
+            {
+              "drawingId": "drw_avvipfsa4",
+              "processedUrl": "/uploads/processed/1781895928425_syc4nsx1y.png",
+              "characterName": "Lily the Happy Girl",
+              "role": "hero",
+              "scale": 1,
+              "position": {
+                "x": 45,
+                "y": 40
+              }
+            }
+          ],
+          "checkpoint": {
+            "question": "What did Lily do first at the park?",
+            "options": [
+              "She went on the swingset",
+              "She ate an ice cream",
+              "She built a sandcastle"
+            ],
+            "correctIndex": 0,
+            "correctOption": "She went on the swingset",
+            "distractorOptions": [
+              "She ate an ice cream",
+              "She built a sandcastle"
+            ]
+          }
+        },
+        {
+          "chapterNumber": 3,
+          "narrativeText": "After swinging, Lily saw a friendly squirrel gathering nuts near a big oak tree. 'Hello!' she whispered with a wave. The squirrel wiggled its nose, as if waving back! Lily knew Sparkle Park was the best place for adventures and making new friends.",
+          "actors": [
+            {
+              "drawingId": "drw_avvipfsa4",
+              "processedUrl": "/uploads/processed/1781895928425_syc4nsx1y.png",
+              "characterName": "Lily the Happy Girl",
+              "role": "hero",
+              "scale": 1,
+              "position": {
+                "x": 35,
+                "y": 65
+              }
+            },
+            {
+              "drawingId": "drw_1cbpvqbqt",
+              "processedUrl": "/uploads/processed/1781895820082_polm8jjr7.png",
+              "characterName": "Squeaky the Squirrel",
+              "role": "companion",
+              "scale": 0.6,
+              "position": {
+                "x": 65,
+                "y": 70
+              }
+            }
+          ],
+          "checkpoint": {
+            "question": "Who did Lily see near the big oak tree?",
+            "options": [
+              "A friendly squirrel",
+              "A giant dinosaur",
+              "A sleepy bear"
+            ],
+            "correctIndex": 0,
+            "correctOption": "A friendly squirrel",
+            "distractorOptions": [
+              "A giant dinosaur",
+              "A sleepy bear"
+            ]
+          }
+        }
+      ],
+      "reviewStatus": "pending",
+      "teacherNotes": "",
+      "_id": "sty_hrjwsjpq7",
+      "createdAt": "2026-06-19T19:06:09.250Z"
+    },
+    {
+      "drawingId": "drw_278os5ic0",
+      "title": "Debug Animation: Lily's Sunny Park Adventure",
+      "languageLevel": "Kindergarten (Ages 5-6)",
+      "backgroundTheme": "ocean",
+      "chapters": [
+        {
+          "chapterNumber": 1,
+          "narrativeText": "Behold! The customized Friendly Girl is ready to test! Let's watch the video animation.",
+          "actors": [
+            {
+              "drawingId": "drw_278os5ic0",
+              "processedUrl": "/uploads/processed/1781893538732_dhtd5tbgy.png",
+              "characterName": "Friendly Girl",
+              "role": "hero",
+              "scale": 1,
+              "position": {
+                "x": 50,
+                "y": 55
+              }
+            }
+          ],
+          "checkpoint": {
+            "question": "Is the video generation working?",
+            "options": [
+              "Yes, absolutely",
+              "Not yet",
+              "I'm testing it right now"
+            ],
+            "correctIndex": 0,
+            "correctOption": "Yes, absolutely",
+            "distractorOptions": [
+              "Not yet",
+              "I'm testing it right now"
+            ]
+          }
+        }
+      ],
+      "reviewStatus": "approved",
+      "teacherNotes": "Generated in Core deAPI & LLM Laboratory",
+      "motionPrompt": "A cute cartoon style 2D character of Friendly Girl moving happily in a loop, detailed visual background, transparent screen",
+      "videoUrl": "",
+      "_id": "sty_20fcyu2pf",
+      "createdAt": "2026-06-19T19:18:16.671Z"
+    }
+  ]
+}
