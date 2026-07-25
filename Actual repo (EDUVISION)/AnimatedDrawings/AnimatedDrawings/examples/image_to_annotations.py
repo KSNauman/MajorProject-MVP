@@ -3,6 +3,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import sys
+import os
 import requests
 import cv2
 import json
@@ -45,83 +46,91 @@ def image_to_annotations(img_fn: str, out_dir: str) -> None:
         scale = 1000 / np.max(img.shape)
         img = cv2.resize(img, (round(scale * img.shape[1]), round(scale * img.shape[0])))
 
-    # convert to bytes and send to torchserve
-    img_b = cv2.imencode('.png', img)[1].tobytes()
-    request_data = {'data': img_b}
-    resp = requests.post("http://localhost:8080/predictions/drawn_humanoid_detector", files=request_data, verify=False)
-    if resp is None or resp.status_code >= 300:
-        raise Exception(f"Failed to get bounding box, please check if the 'docker_torchserve' is running and healthy, resp: {resp}")
-
-    detection_results = json.loads(resp.content)
-
-    # error check detection_results
-    if isinstance(detection_results, dict) and 'code' in detection_results.keys() and detection_results['code'] == 404:
-        assert False, f'Error performing detection. Check that drawn_humanoid_detector.mar was properly downloaded. Response: {detection_results}'
-
-    # order results by score, descending
-    detection_results.sort(key=lambda x: x['score'], reverse=True)
-
-    # if no drawn humanoids detected, abort
-    if len(detection_results) == 0:
-        msg = 'Could not detect any drawn humanoids in the image. Aborting'
+    # === START YOLO DETECTION AND POSE ESTIMATION ===
+    from ultralytics import YOLO
+    
+    # Check for custom trained sketch model weights by traversing directories upward to locate 'yolo_test'
+    curr_dir = os.path.abspath(os.path.dirname(__file__))
+    custom_weights = None
+    for _ in range(6):
+        possible_path = os.path.join(curr_dir, "yolo_test", "sketch_yolov8_pose.pt")
+        if os.path.exists(possible_path):
+            custom_weights = possible_path
+            break
+        parent = os.path.dirname(curr_dir)
+        if parent == curr_dir:
+            break
+        curr_dir = parent
+        
+    if custom_weights:
+        print(f"[*] Loading custom fine-tuned sketch model: {custom_weights}")
+        pose_model = YOLO(custom_weights)
+    elif os.path.exists("sketch_yolov8_pose.pt"):
+        print("[*] Loading custom fine-tuned sketch model: sketch_yolov8_pose.pt")
+        pose_model = YOLO("sketch_yolov8_pose.pt")
+    else:
+        print("[*] Running standard YOLOv8-Pose for character detection and pose estimation...")
+        pose_model = YOLO('yolov8n-pose.pt')
+    results = pose_model(img)
+    
+    if len(results) == 0 or len(results[0].boxes) == 0:
+        msg = 'YOLOv8-Pose could not detect any humanoid character in the image. Aborting.'
         logging.critical(msg)
         assert False, msg
-
-    # otherwise, report # detected and score of highest.
-    msg = f'Detected {len(detection_results)} humanoids in image. Using detection with highest score {detection_results[0]["score"]}.'
-    logging.info(msg)
-
-    # calculate the coordinates of the character bounding box
-    bbox = np.array(detection_results[0]['bbox'])
+        
+    # Filter out weak detections (e.g. non-humanoid objects)
+    conf = results[0].boxes[0].conf[0].item()
+    if conf < 0.6:
+        msg = f'Detected character confidence ({conf:.2f}) is below threshold (0.60). Aborting.'
+        logging.critical(msg)
+        assert False, msg
+        
+    # Take the highest confidence detection
+    bbox = results[0].boxes[0].xyxy[0].cpu().numpy()
     l, t, r, b = [round(x) for x in bbox]
-
-    # dump the bounding box results to file
+    
+    # Safety clamp to image dimensions
+    l = max(0, l)
+    t = max(0, t)
+    r = min(img.shape[1], r)
+    b = min(img.shape[0], b)
+    
+    # Dump bounding box coordinates
     with open(str(outdir/'bounding_box.yaml'), 'w') as f:
         yaml.dump({
-            'left': l,
-            'top': t,
-            'right': r,
-            'bottom': b
+            'left': int(l),
+            'top': int(t),
+            'right': int(r),
+            'bottom': int(b)
         }, f)
-
-    # crop the image
+        
+    # Crop the image to the character bounding box
     cropped = img[t:b, l:r]
-
-    # get segmentation mask
+    
+    # Get segmentation mask
     mask = segment(cropped)
-
-    # send cropped image to pose estimator
-    data_file = {'data': cv2.imencode('.png', cropped)[1].tobytes()}
-    resp = requests.post("http://localhost:8080/predictions/drawn_humanoid_pose_estimator", files=data_file, verify=False)
-    if resp is None or resp.status_code >= 300:
-        raise Exception(f"Failed to get skeletons, please check if the 'docker_torchserve' is running and healthy, resp: {resp}")
-
-    pose_results = json.loads(resp.content)
-
-    # error check pose_results
-    if isinstance(pose_results, dict) and 'code' in pose_results.keys() and pose_results['code'] == 404:
-        assert False, f'Error performing pose estimation. Check that drawn_humanoid_pose_estimator.mar was properly downloaded. Response: {pose_results}'
-
-    # if no skeleton detected, abort
-    if len(pose_results) == 0:
-        msg = 'Could not detect any skeletons within the character bounding box. Expected exactly 1. Aborting.'
-        logging.critical(msg)
-        assert False, msg
-
-    # if more than one skeleton detected,
-    if 1 < len(pose_results):
-        msg = f'Detected {len(pose_results)} skeletons with the character bounding box. Expected exactly 1. Aborting.'
-        logging.critical(msg)
-        assert False, msg
-
-    # get x y coordinates of detection joint keypoints
-    kpts = np.array(pose_results[0]['keypoints'])[:, :2]
-
-    # use them to build character skeleton rig
+    
+    # Get the keypoints for the first detected person
+    kpts_orig = results[0].keypoints.xy[0].cpu().numpy()
+    
+    # Make keypoints relative to the cropped image
+    kpts = kpts_orig - np.array([l, t])
+    
+    # Build character skeleton rig using COCO keypoint mapping
     skeleton = []
-    skeleton.append({'loc' : [round(x) for x in (kpts[11]+kpts[12])/2], 'name': 'root'          , 'parent': None})
-    skeleton.append({'loc' : [round(x) for x in (kpts[11]+kpts[12])/2], 'name': 'hip'           , 'parent': 'root'})
-    skeleton.append({'loc' : [round(x) for x in (kpts[5]+kpts[6])/2  ], 'name': 'torso'         , 'parent': 'hip'})
+    
+    # Calculate auxiliary points
+    left_hip = kpts[11]
+    right_hip = kpts[12]
+    left_shoulder = kpts[5]
+    right_shoulder = kpts[6]
+    
+    root_pt = (left_hip + right_hip) / 2
+    torso_pt = (left_shoulder + right_shoulder) / 2
+    
+    skeleton.append({'loc' : [round(x) for x in root_pt], 'name': 'root'          , 'parent': None})
+    skeleton.append({'loc' : [round(x) for x in root_pt], 'name': 'hip'           , 'parent': 'root'})
+    skeleton.append({'loc' : [round(x) for x in torso_pt], 'name': 'torso'         , 'parent': 'hip'})
     skeleton.append({'loc' : [round(x) for x in  kpts[0]             ], 'name': 'neck'          , 'parent': 'torso'})
     skeleton.append({'loc' : [round(x) for x in  kpts[6]             ], 'name': 'right_shoulder', 'parent': 'torso'})
     skeleton.append({'loc' : [round(x) for x in  kpts[8]             ], 'name': 'right_elbow'   , 'parent': 'right_shoulder'})
@@ -135,6 +144,7 @@ def image_to_annotations(img_fn: str, out_dir: str) -> None:
     skeleton.append({'loc' : [round(x) for x in  kpts[11]            ], 'name': 'left_hip'      , 'parent': 'root'})
     skeleton.append({'loc' : [round(x) for x in  kpts[13]            ], 'name': 'left_knee'     , 'parent': 'left_hip'})
     skeleton.append({'loc' : [round(x) for x in  kpts[15]            ], 'name': 'left_foot'     , 'parent': 'left_knee'})
+    # === END YOLO DETECTION AND POSE ESTIMATION ===
 
     # create the character config dictionary
     char_cfg = {'skeleton': skeleton, 'height': cropped.shape[0], 'width': cropped.shape[1]}
@@ -161,61 +171,70 @@ def image_to_annotations(img_fn: str, out_dir: str) -> None:
 
 
 def segment(img: np.ndarray):
-    """ threshold """
-    img = np.min(img, axis=2)
-    img = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 115, 8)
-    img = cv2.bitwise_not(img)
+    # Try using rembg first, but fall back to OpenCV if not installed/available
+    try:
+        from rembg import remove
+        print("[*] Segmenting using rembg...")
+        rgba = remove(img)
+        mask = rgba[:, :, 3]
+        _, binary_mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
+        return binary_mask
+    except Exception as e:
+        print(f"[!] rembg segmentation failed or package is not installed: {e}")
+        print("[*] Falling back to standard OpenCV adaptive thresholding segmentation...")
+        
+        # Original OpenCV-based segmentation implementation:
+        # Threshold
+        gray = np.min(img, axis=2)
+        thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 115, 8)
+        thresh = cv2.bitwise_not(thresh)
 
-    """ morphops """
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-    img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel, iterations=2)
-    img = cv2.morphologyEx(img, cv2.MORPH_DILATE, kernel, iterations=2)
+        # Morphops
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        morph = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations=2)
+        morph = cv2.morphologyEx(morph, cv2.MORPH_DILATE, kernel, iterations=2)
 
-    """ floodfill """
-    mask = np.zeros([img.shape[0]+2, img.shape[1]+2], np.uint8)
-    mask[1:-1, 1:-1] = img.copy()
+        # Floodfill
+        flood_mask = np.zeros([morph.shape[0]+2, morph.shape[1]+2], np.uint8)
+        flood_mask[1:-1, 1:-1] = morph.copy()
+        im_floodfill = np.full(morph.shape, 255, np.uint8)
 
-    # im_floodfill is results of floodfill. Starts off all white
-    im_floodfill = np.full(img.shape, 255, np.uint8)
+        h, w = morph.shape[:2]
+        for x in range(0, w-1, 10):
+            cv2.floodFill(im_floodfill, flood_mask, (x, 0), 0)
+            cv2.floodFill(im_floodfill, flood_mask, (x, h-1), 0)
+        for y in range(0, h-1, 10):
+            cv2.floodFill(im_floodfill, flood_mask, (0, y), 0)
+            cv2.floodFill(im_floodfill, flood_mask, (w-1, y), 0)
 
-    # choose 10 points along each image side. use as seed for floodfill.
-    h, w = img.shape[:2]
-    for x in range(0, w-1, 10):
-        cv2.floodFill(im_floodfill, mask, (x, 0), 0)
-        cv2.floodFill(im_floodfill, mask, (x, h-1), 0)
-    for y in range(0, h-1, 10):
-        cv2.floodFill(im_floodfill, mask, (0, y), 0)
-        cv2.floodFill(im_floodfill, mask, (w-1, y), 0)
+        im_floodfill[0, :] = 0
+        im_floodfill[-1, :] = 0
+        im_floodfill[:, 0] = 0
+        im_floodfill[:, -1] = 0
 
-    # make sure edges aren't character. necessary for contour finding
-    im_floodfill[0, :] = 0
-    im_floodfill[-1, :] = 0
-    im_floodfill[:, 0] = 0
-    im_floodfill[:, -1] = 0
+        # Retain largest contour
+        mask2 = cv2.bitwise_not(im_floodfill)
+        mask = None
+        biggest = 0
 
-    """ retain largest contour """
-    mask2 = cv2.bitwise_not(im_floodfill)
-    mask = None
-    biggest = 0
+        contours = measure.find_contours(mask2, 0.0)
+        for c in contours:
+            x_arr = np.zeros(mask2.T.shape, np.uint8)
+            cv2.fillPoly(x_arr, [np.int32(c)], 1)
+            size = len(np.where(x_arr == 1)[0])
+            if size > biggest:
+                mask = x_arr
+                biggest = size
 
-    contours = measure.find_contours(mask2, 0.0)
-    for c in contours:
-        x = np.zeros(mask2.T.shape, np.uint8)
-        cv2.fillPoly(x, [np.int32(c)], 1)
-        size = len(np.where(x == 1)[0])
-        if size > biggest:
-            mask = x
-            biggest = size
+        if mask is None:
+            msg = 'Found no contours within image'
+            logging.critical(msg)
+            assert False, msg
 
-    if mask is None:
-        msg = 'Found no contours within image'
-        logging.critical(msg)
-        assert False, msg
+        mask = ndimage.binary_fill_holes(mask).astype(int)
+        mask = 255 * mask.astype(np.uint8)
 
-    mask = ndimage.binary_fill_holes(mask).astype(int)
-    mask = 255 * mask.astype(np.uint8)
-
-    return mask.T
+        return mask.T
 
 
 if __name__ == '__main__':

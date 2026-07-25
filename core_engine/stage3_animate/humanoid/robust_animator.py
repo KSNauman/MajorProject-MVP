@@ -9,7 +9,8 @@ import shutil
 import time
 
 # --- Configure Paths ---
-AD_DIR = "/home/champion/Major Project - MVP/Actual repo (EDUVISION)/AnimatedDrawings"
+# Dynamically locate the AnimatedDrawings folder in the workspace relative to this script
+AD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "Actual repo (EDUVISION)", "AnimatedDrawings"))
 sys.path.append(AD_DIR)
 sys.path.append(os.path.join(AD_DIR, "examples"))
 
@@ -67,8 +68,8 @@ def snap_joints_to_mask(char_anno_dir):
     mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
     if mask is None:
         return
-        
-    y_coords, x_coords = np.where(mask > 0)
+    print(f"DEBUG: mask type={type(mask)}, shape={mask.shape if hasattr(mask, 'shape') else 'no shape'}")
+    y_coords, x_coords = np.where(mask > 0)[:2]
     if len(y_coords) == 0:
         return
         
@@ -96,7 +97,7 @@ def snap_joints_to_mask(char_anno_dir):
         print("[+] Skeleton alignment is perfect.")
 
 
-def generate_robust_animation(input_image, output_gif, motion="dance"):
+def generate_robust_animation(input_image, output_gif, motion="dab"):
     """
     End-to-End robust pipeline.
     Takes an image, extracts annotations, applies deep-fixes, and renders the animation.
@@ -105,7 +106,8 @@ def generate_robust_animation(input_image, output_gif, motion="dance"):
     print(f"Input: {input_image}")
     
     # Create temporary working directory for annotations
-    work_dir = Path("/tmp/animated_drawings_work")
+    import tempfile
+    work_dir = Path(tempfile.gettempdir()) / "animated_drawings_work"
     if work_dir.exists():
         shutil.rmtree(work_dir)
     work_dir.mkdir(parents=True)
@@ -154,6 +156,6 @@ if __name__ == "__main__":
         
     img_path = sys.argv[1]
     out_path = sys.argv[2]
-    motion = sys.argv[3] if len(sys.argv) > 3 else "dance"
+    motion = sys.argv[3] if len(sys.argv) > 3 else "dab"
     
     generate_robust_animation(img_path, out_path, motion)

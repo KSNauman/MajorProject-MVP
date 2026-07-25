@@ -23,10 +23,17 @@ def resolve_ad_filepath(file_name: str, file_type: str) -> Path:
         return Path(file_name)
     elif Path.joinpath(Path.cwd(), file_name).exists():
         return Path.joinpath(Path.cwd(), file_name)
-    elif Path(resource_filename(__name__, file_name)).exists():
-        return Path(resource_filename(__name__, file_name))
-    elif Path(resource_filename(__name__, str(Path('..', file_name)))):
-        return Path(resource_filename(__name__, str(Path('..', file_name))))
+    try:
+        if Path(resource_filename(__name__, file_name)).exists():
+            return Path(resource_filename(__name__, file_name))
+    except ValueError:
+        pass
+
+    try:
+        if Path(resource_filename(__name__, str(Path('..', file_name)))).exists():
+            return Path(resource_filename(__name__, str(Path('..', file_name))))
+    except ValueError:
+        pass
 
     msg = f'Could not find the {file_type} specified: {file_name}'
     logging.critical(msg)

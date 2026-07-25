@@ -64,3 +64,15 @@ yarn-debug.log
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Project-specific datasets and large artifacts
+amateur_drawings_annotations.json
+amateur_drawings.tar
+sketch_yolo_corrected/
+sketch_phase2_padded/
+sketch_yolo_dataset/
+sketch_coco_dataset/
+output_test_anno/
+inference_results/
+massive_sketch_dataset/
+*.zip

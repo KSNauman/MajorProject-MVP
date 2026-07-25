@@ -185,7 +185,7 @@ class Retargeter():
                     f"  - For Mixamo/Rokoko motions (like jesse_dance): use 'config/retarget/mixamo_fff.yaml'\n"
                     f"  - For FAIR motions (like wave_hello, dab): use 'config/retarget/fair1_ppf.yaml'\n"
                 ) from None
-        joints_mask = np.full(self.joint_positions.shape[1], False, dtype=np.bool8)
+        joints_mask = np.full(self.joint_positions.shape[1], False, dtype=np.bool_)
         for idx in joints_idxs:
             joints_mask[3*idx:3*(idx+1)] = True
         joints_points = self.joint_positions[:, joints_mask]
