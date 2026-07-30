@@ -111,19 +111,23 @@ for member in tar:
         canvas = np.full((target_size, target_size, 3), 255, dtype=np.uint8)
         canvas[oy:oy+h_s, ox:ox+w_s] = cv2.resize(img, (w_s, h_s), interpolation=cv2.INTER_AREA)
         cv2.imwrite(str(target_img), canvas)
-        xc_norm, yc_norm, nw, nh = (ox + w_s/2)/target_size, (oy + h_s/2)/target_size, w_s/target_size, h_s/target_size
+        
+        # Corrected Math
+        new_l, new_t, new_w, new_h = l * scale + ox, t * scale + oy, w_bbox * scale, h_bbox * scale
+        xc_norm, yc_norm, nw, nh = (new_l + new_w/2.0)/target_size, (new_t + new_h/2.0)/target_size, new_w/target_size, new_h/target_size
         kpts = []
         for i in range(0, len(joints), 3):
             kx, ky, kv = joints[i], joints[i+1], joints[i+2]
-            if kv > 0 and w_bbox > 0 and h_bbox > 0:
-                u, v = max(0.0, min(1.0, (kx-l)/w_bbox)), max(0.0, min(1.0, (ky-t)/h_bbox))
-                kpts.append(f"{(ox + u*w_s)/target_size:.6f} {(oy + v*h_s)/target_size:.6f} {kv}")
+            if kv > 0:
+                kpts.append(f"{(kx*scale + ox)/target_size:.6f} {(ky*scale + oy)/target_size:.6f} {kv}")
             else: kpts.append("0.000000 0.000000 0")
         padded += 1
     else:
         cv2.imwrite(str(target_img), img)
-        xc_norm, yc_norm, nw, nh = 0.5, 0.5, 1.0, 1.0
-        kpts = [f"{max(0.0, min(1.0, (joints[i]-l)/w_bbox)):.6f} {max(0.0, min(1.0, (joints[i+1]-t)/h_bbox)):.6f} {joints[i+2]}" if joints[i+2]>0 else "0.000000 0.000000 0" for i in range(0, len(joints), 3)]
+        
+        # Corrected Math
+        xc_norm, yc_norm, nw, nh = (l + w_bbox/2.0)/w_old, (t + h_bbox/2.0)/h_old, w_bbox/w_old, h_bbox/h_old
+        kpts = [f"{joints[i]/w_old:.6f} {joints[i+1]/h_old:.6f} {joints[i+2]}" if joints[i+2]>0 else "0.000000 0.000000 0" for i in range(0, len(joints), 3)]
         
     with open(target_lbl, 'w', encoding='utf-8') as lf:
         lf.write(f"0 {xc_norm:.6f} {yc_norm:.6f} {nw:.6f} {nh:.6f} " + " ".join(kpts) + "\n")
