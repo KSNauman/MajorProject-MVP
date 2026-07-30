@@ -114,43 +114,35 @@ def stream_and_generate_massive_dataset(json_path, output_dir, train_count=10000
             canvas[oy:oy+h_s, ox:ox+w_s] = cv2.resize(img, (w_s, h_s), interpolation=cv2.INTER_AREA)
             cv2.imwrite(str(target_img), canvas)
 
-            # Correct YOLO bounding box (wrapping the actual ink, not the whole image)
-            new_l = l * scale + ox
-            new_t = t * scale + oy
-            new_w = w_bbox * scale
-            new_h = h_bbox * scale
-            
-            xc_norm = (new_l + new_w / 2.0) / target_size
-            yc_norm = (new_t + new_h / 2.0) / target_size
-            nw = new_w / target_size
-            nh = new_h / target_size
+            xc_norm = (ox + w_s / 2.0) / target_size
+            yc_norm = (oy + h_s / 2.0) / target_size
+            nw = w_s / target_size
+            nh = h_s / target_size
 
             kpts_str = []
             for i in range(0, len(joints), 3):
                 kx_orig, ky_orig, kv = joints[i], joints[i+1], joints[i+2]
-                if kv > 0:
-                    nkx = (kx_orig * scale + ox) / target_size
-                    nky = (ky_orig * scale + oy) / target_size
+                if kv > 0 and w_bbox > 0 and h_bbox > 0:
+                    u = (kx_orig - l) / w_bbox
+                    v = (ky_orig - t) / h_bbox
+                    u = max(0.0, min(1.0, u))
+                    v = max(0.0, min(1.0, v))
+                    nkx = (ox + u * w_s) / target_size
+                    nky = (oy + v * h_s) / target_size
                     kpts_str.append(f"{nkx:.6f} {nky:.6f} {kv}")
                 else:
                     kpts_str.append(f"0.000000 0.000000 0")
             padded_count += 1
         else:
             cv2.imwrite(str(target_img), img)
-            
-            # Correct YOLO bounding box for unpadded original image
-            xc_norm = (l + w_bbox / 2.0) / w_old
-            yc_norm = (t + h_bbox / 2.0) / h_old
-            nw = w_bbox / w_old
-            nh = h_bbox / h_old
-
+            xc_norm, yc_norm, nw, nh = 0.5, 0.5, 1.0, 1.0
             kpts_str = []
             for i in range(0, len(joints), 3):
                 kx_orig, ky_orig, kv = joints[i], joints[i+1], joints[i+2]
-                if kv > 0:
-                    nkx = kx_orig / w_old
-                    nky = ky_orig / h_old
-                    kpts_str.append(f"{nkx:.6f} {nky:.6f} {kv}")
+                if kv > 0 and w_bbox > 0 and h_bbox > 0:
+                    u = max(0.0, min(1.0, (kx_orig - l) / w_bbox))
+                    v = max(0.0, min(1.0, (ky_orig - t) / h_bbox))
+                    kpts_str.append(f"{u:.6f} {v:.6f} {kv}")
                 else:
                     kpts_str.append(f"0.000000 0.000000 0")
 
