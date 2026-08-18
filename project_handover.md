@@ -107,50 +107,41 @@ MajorProject-MVP/
 
 ## 6. Next Steps (Start Here on Linux)
 
-### Step 1 — Environment Setup
+> **IMPORTANT:** The AnimatedDrawings environment is **already installed and working** on this Linux machine. Do NOT run setup commands. Just verify first, then proceed to product work.
+
+### Step 1 — Verify the pipeline is still working
+
+Pull the latest code first:
 ```bash
-git clone https://github.com/KSNauman/MajorProject-MVP.git
 cd MajorProject-MVP
-
-# Java 17 (required for TorchServe)
-sudo apt install openjdk-17-jdk
-java -version  # must show 17.x.x
-
-# Python env (use Python 3.9 or 3.10)
-python3 -m venv animated_drawings_env
-source animated_drawings_env/bin/activate
-
-cd "Actual repo (EDUVISION)/AnimatedDrawings"
-pip install -e .
-pip install torchserve torch-model-archiver torch-workflow-archiver
+git pull origin main
 ```
 
-### Step 2 — Download .mar models and start TorchServe
-The `.mar` files are NOT in the repo (gitignored — large binaries).
-Follow: `Actual repo (EDUVISION)/AnimatedDrawings/README.md` → "Getting Started" → "TorchServe"
-The README has the exact wget commands to download the models from Meta's servers.
-
+Then verify TorchServe is reachable:
 ```bash
-torchserve --start --model-store model-store/ \
-  --models drawn_humanoid_detector=drawn_humanoid_detector.mar \
-           drawn_humanoid_pose_estimator=drawn_humanoid_pose_estimator.mar
-
-curl http://localhost:8080/ping  # must return {"status": "Healthy"}
+curl http://localhost:8080/ping
+# Expected: {"status": "Healthy"}
 ```
 
-### Step 3 — Run end-to-end test
+If TorchServe is not running, start it (the user knows how — they set it up):
 ```bash
-cd examples/
+# Ask the user for the exact start command they used, or check the AnimatedDrawings README
+```
+
+Then run the end-to-end test:
+```bash
+cd "Actual repo (EDUVISION)/AnimatedDrawings/examples"
 python image_to_annotations.py drawings/garlic.png
-# produces garlic_out/annotations.yaml
+# Should produce garlic_out/annotations.yaml
 
 python annotations_to_animation.py garlic_out/annotations.yaml
-# produces garlic_out/video.gif
+# Should produce garlic_out/video.gif
 ```
-**If this produces a GIF → the core engine is working. Everything else is product work.**
 
-> NOTE: On headless Linux, pyglet (OpenGL) needs a virtual display:
+> NOTE: On headless Linux, pyglet needs a virtual display:
 > `xvfb-run python annotations_to_animation.py garlic_out/annotations.yaml`
+
+**If a GIF is produced → engine confirmed working. Move to Step 2 immediately.**
 
 ### Step 4 — Expand BVH motion library
 Need: run, jump, sit, clap, idle, dance
