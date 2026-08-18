@@ -1,4 +1,213 @@
-# Project Handover & Technical Master Document: Eduvision Native Animation Engine
+# AI Agent Handoff: EduVision Project
+**Written by:** Agent on Windows machine  
+**Written for:** Agent on Linux machine  
+**Date:** August 18, 2026  
+**GitHub Repo:** https://github.com/KSNauman/MajorProject-MVP
+
+---
+
+> **READ THIS FIRST.** This document is written agent-to-agent. Treat every word as verified ground truth. Do not re-investigate things marked as confirmed failures — they are done. Start from Section 6 (Next Steps).
+
+---
+
+## 1. Project Identity
+
+**Name:** EduVision  
+**Type:** AI-Powered Collaborative Story Animation for early childhood classrooms
+
+**Core loop:**
+1. Teacher writes a short story (e.g., *"The farmer walks to the barn. The dog jumps."*)
+2. Children each draw one character on paper (farmer, dog, cow, etc.)
+3. Teacher uploads all sketches via a web UI
+4. AI detects each character's skeleton, reads the story via LLM, assigns the right motion
+5. System renders each character animated and stitches the scene together
+6. Class watches their drawings come alive as a shared animated story
+
+**Tech stack (final, do not revisit):**
+| Layer | Technology |
+|:---|:---|
+| Pose / Detection engine | Meta AnimatedDrawings (TorchServe with `.mar` models) |
+| LLM (story → motion mapping) | Google Gemini API (`gemini-1.5-flash`) |
+| Motion clips | BVH files (currently 5: walk, wave, dab, jumping_jacks, zombie) |
+| Backend API | Python Flask |
+| Frontend | React |
+| Output | Animated GIF |
+
+---
+
+## 2. Full History of What Was Tried (Do Not Retry These)
+
+### FAILED: Native Python pipeline (YOLOv8 + MediaPipe)
+- Replaced TorchServe with YOLOv8n for detection and MediaPipe for pose
+- Both trained on COCO real-photo dataset
+- **Failed:** Completely blind to children's sketch domain. YOLOv8 returns 0 bounding boxes on drawings. MediaPipe throws AssertionError when no human skin detected.
+
+### FAILED: Custom YOLOv8-pose training on Meta ADD dataset
+- Downloaded Meta's Amateur Drawings Dataset (178,000 annotated drawings)
+- Converted JSON to YOLO-pose format, trained on Google Colab, scaled to 11,500-image dataset
+- **Failed:** YOLOv8n-pose (3M params) exhibited Mode Collapse — always outputs identical A-pose regardless of drawing.
+- **Status:** Handed off to the team. They will continue with larger models. Do not touch `training_pipeline/` yourself.
+
+### FAILED: MediaPipe Web (browser-side WebAssembly)
+- Built full web sandbox at `mediapipe_web_test/` with MediaPipe Tasks Vision JS SDK
+- Upgraded to `pose_landmarker_heavy.task` (29.24 MB), fixed canvas alignment, corrected joint topology
+- **Failed:** Same root cause — trained on real photos, blind to sketch domain.
+- Documented in `textbook/chapter8_mediapipe_web_failure.md`.
+
+### FAILED: Google Teachable Machine
+- Not viable. It is a classification wrapper on top of MediaPipe — inherits the same blindness.
+- Also outputs class labels, not coordinate regressions. Cannot feed the animation engine.
+
+---
+
+## 3. The Correct Architecture
+
+The Meta AnimatedDrawings repository already solves the entire sketch → animation pipeline. It uses:
+- `drawn_humanoid_detector.mar` → detects and crops the character from the sketch
+- `drawn_humanoid_pose_estimator.mar` → estimates 15-point skeleton on the cropped character
+
+These are ResNet models **trained specifically on children's drawings**. They work.
+
+The pipeline runs via **TorchServe** exposing a REST API on `localhost:8080`.
+
+**Why it never worked on Windows:** Java 8 was installed. TorchServe requires Java 11+.
+
+---
+
+## 4. Repo Structure (Key Locations)
+
+```
+MajorProject-MVP/
+├── Actual repo (EDUVISION)/AnimatedDrawings/   <- THE MAIN ENGINE
+│   ├── examples/
+│   │   ├── image_to_annotations.py             <- Entry: sketch -> skeleton JSON
+│   │   ├── annotations_to_animation.py         <- Entry: skeleton JSON -> GIF
+│   │   └── image_to_animation.py               <- Convenience wrapper (both steps)
+│   ├── assets/bvh/                             <- BVH motion files (5 currently)
+│   │   ├── walk.bvh, wave.bvh, dab.bvh
+│   │   ├── jumping_jacks.bvh, zombie.bvh
+│   └── animated_drawings/                      <- Rendering/physics engine (MVC)
+├── textbook/                                   <- Research + engineering notes
+│   ├── README.md                               <- Project idea + TOC + future advancements
+│   ├── chapter7_failure_and_pivot.md           <- YOLOv8 failure log
+│   └── chapter8_mediapipe_web_failure.md       <- MediaPipe failure log
+├── training_pipeline/                          <- TEAM ONLY. Do not touch.
+└── project_handover.md                         <- This file
+```
+
+---
+
+## 5. The Graphics Engine (Know This)
+
+1. `image_to_annotations.py` → calls TorchServe at `localhost:8080` → gets JSON with bounding box + 15 keypoints → saves `annotations.yaml`
+2. `annotations_to_animation.py` → reads `annotations.yaml` + BVH file + config YAML → renders to GIF
+3. Render pipeline: Mask → Marching Squares → Delaunay triangulation → Barycentric binding → PCA 3D→2D retargeting → ARAP physics → OpenGL → GIF
+
+---
+
+## 6. Next Steps (Start Here on Linux)
+
+### Step 1 — Environment Setup
+```bash
+git clone https://github.com/KSNauman/MajorProject-MVP.git
+cd MajorProject-MVP
+
+# Java 17 (required for TorchServe)
+sudo apt install openjdk-17-jdk
+java -version  # must show 17.x.x
+
+# Python env (use Python 3.9 or 3.10)
+python3 -m venv animated_drawings_env
+source animated_drawings_env/bin/activate
+
+cd "Actual repo (EDUVISION)/AnimatedDrawings"
+pip install -e .
+pip install torchserve torch-model-archiver torch-workflow-archiver
+```
+
+### Step 2 — Download .mar models and start TorchServe
+The `.mar` files are NOT in the repo (gitignored — large binaries).
+Follow: `Actual repo (EDUVISION)/AnimatedDrawings/README.md` → "Getting Started" → "TorchServe"
+The README has the exact wget commands to download the models from Meta's servers.
+
+```bash
+torchserve --start --model-store model-store/ \
+  --models drawn_humanoid_detector=drawn_humanoid_detector.mar \
+           drawn_humanoid_pose_estimator=drawn_humanoid_pose_estimator.mar
+
+curl http://localhost:8080/ping  # must return {"status": "Healthy"}
+```
+
+### Step 3 — Run end-to-end test
+```bash
+cd examples/
+python image_to_annotations.py drawings/garlic.png
+# produces garlic_out/annotations.yaml
+
+python annotations_to_animation.py garlic_out/annotations.yaml
+# produces garlic_out/video.gif
+```
+**If this produces a GIF → the core engine is working. Everything else is product work.**
+
+> NOTE: On headless Linux, pyglet (OpenGL) needs a virtual display:
+> `xvfb-run python annotations_to_animation.py garlic_out/annotations.yaml`
+
+### Step 4 — Expand BVH motion library
+Need: run, jump, sit, clap, idle, dance
+Source: https://www.mixamo.com (free with Adobe account) → Export as BVH
+Place in: `Actual repo (EDUVISION)/AnimatedDrawings/assets/bvh/`
+
+### Step 5 — Create motion_library.json
+```json
+{
+  "walk":   { "file": "assets/bvh/walk.bvh",          "keywords": ["walk", "move", "go"] },
+  "wave":   { "file": "assets/bvh/wave.bvh",          "keywords": ["wave", "hello", "greet"] },
+  "dance":  { "file": "assets/bvh/dab.bvh",           "keywords": ["dance", "celebrate"] },
+  "jump":   { "file": "assets/bvh/jumping_jacks.bvh", "keywords": ["jump", "leap", "hop"] },
+  "zombie": { "file": "assets/bvh/zombie.bvh",        "keywords": ["zombie", "creep"] }
+}
+```
+
+### Step 6 — Wire Gemini LLM (story → motion mapping)
+Get free key at: https://aistudio.google.com
+```python
+import google.generativeai as genai, json, os
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+model = genai.GenerativeModel("gemini-1.5-flash")
+
+def map_story_to_motions(story: str, character_names: list) -> dict:
+    prompt = f"""
+You are a motion director for children's animation.
+Story: "{story}"
+Characters: {character_names}
+Valid actions: ["walk", "wave", "dance", "jump", "zombie", "idle"]
+Output ONLY a JSON object. No explanation.
+Example: {{"farmer": "walk", "dog": "jump"}}
+"""
+    response = model.generate_content(prompt)
+    return json.loads(response.text.strip())
+```
+
+### Step 7 — Flask API
+```
+POST /api/upload       - accept sketch PNG, return character ID
+POST /api/animate      - accept story + character IDs, run pipeline, return GIF URL
+GET  /api/result/<id>  - return generated GIF
+```
+
+### Step 8 — React frontend
+Three screens: Session (upload + story) → Processing (loading) → Result (watch + download)
+
+---
+
+## 7. Known Gotchas
+
+- `image_to_annotations.py` was partially modified on Windows to bypass TorchServe. **Revert it to original** (or re-clone) before using on Linux — original correctly calls `localhost:8080`.
+- `animated_drawings_env/` is gitignored — recreate it fresh.
+- `*.task` and `*.mar` files are gitignored — download separately.
+- Python 3.9 or 3.10 recommended for torch/mediapipe compatibility.
+- The team is separately training YOLOv8 in `training_pipeline/`. If they succeed, their `best.pt` can eventually replace TorchServe. Do not wait for them.
+
 
 *Note to AI Assistant on the Windows machine: Treat this document as your primary context. It contains the exact architectural decisions, code changes, and mathematical concepts we established on the Linux machine before the migration.*
 
