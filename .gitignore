@@ -76,3 +76,20 @@ output_test_anno/
 inference_results/
 massive_sketch_dataset/
 *.zip
+
+# Virtual environment (named)
+animated_drawings_env/
+
+# MediaPipe model assets (large binary files)
+*.task
+
+# Inference and render output folders
+inference_results2/
+yolo_test/inference_results2/
+mediapipe_web_test/pose_overlay.png
+garlic_output/
+examples/garlic_out/
+examples/test2_out/
+examples/test3_out/
+examples/test4_out/
+run_output.log

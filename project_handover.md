@@ -59,3 +59,18 @@ To fix the blocker, we must adopt a **"Hybrid Approach"**. We will keep `rembg` 
 3.  **Upload to Roboflow:** Create a **Keypoint Detection (Pose)** project on Roboflow and upload the translated dataset via the Roboflow API.
 4.  **Train a YOLOv8-Pose Model:** Click Train on Roboflow (or run it locally on Google Colab). A YOLO-Pose model outputs *both* Bounding Boxes and Keypoints simultaneously!
 5.  **Integration:** Download the resulting `best.pt` file, drop it into `image_to_annotations.py`, completely replace MediaPipe, and integrate the final flawless engine into the Eduvision Node.js backend.
+
+---
+
+## 6. Phase 3: The Deep Learning Failure & Pivot to TorchServe
+*Log Entry: July 2026*
+
+We executed the Roboflow Strategy (Phase 2), eventually scaling to an 11,500-image dataset streamed directly from Meta's CDN into Google Colab. 
+However, after multi-day training runs, the custom YOLOv8n-pose models consistently exhibited **Mode Collapse** on highly abstract or thick-line drawings (regressing to an identical A-pose template bounding the entire image). 
+
+**Diagnosis:**
+1. Small models (`yolov8n-pose.pt`, ~3M parameters) lacked the capacity to learn visual joint features from the extreme variance of children's sketches.
+2. The extreme abstraction of the sketches resulted in a loss landscape where outputting the statistical mean (A-pose) yielded lower loss than attempting to track the chaotic ink.
+
+**The Pivot:**
+We are abandoning the custom YOLOv8 native pipeline. We will revert to the original `drawn_humanoid_detector.mar` and `drawn_humanoid_pose_estimator.mar` models provided by the Meta AnimatedDrawings repository. Because the Eduvision backend runs on Windows and we need to avoid Docker overhead, our new objective is to configure and run **TorchServe natively on Windows** to host these `.mar` models.

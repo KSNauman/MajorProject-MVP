@@ -51,6 +51,7 @@ Google Colab's free tier automatically disconnects inactive sessions or terminat
 
 1. **Re-Open Google Colab:** Launch a new Colab notebook and ensure the runtime is set to **T4 GPU**.
 2. **Mount Google Drive:** Run Block 1 from the [Training Guide](../yolo_test/colab_google_drive_resumable_training.md) to reconnect your Google Drive filesystem.
-3. **Execute the Resumption Command:** Run Block 3 from the Training Guide. The script will automatically detect the presence of `/content/drive/MyDrive/YOLO_Sketch_Project/runs/massive_sketch_pose/weights/last.pt` and initiate `model.train(resume=True)`.
+3. **Regenerate the Dataset:** Run Block 2 from the Training Guide. Because Colab completely deletes all local files (like `/content/massive_sketch_dataset`) when a session disconnects, you must re-run the 3-minute streaming script to put the dataset back onto the new server's SSD.
+4. **Execute the Resumption Command:** Run Block 3 from the Training Guide. The script will automatically detect the presence of `/content/drive/MyDrive/YOLO_Sketch_Project/runs/massive_sketch_pose/weights/last.pt` and initiate `model.train(resume=True)`.
 
 The Ultralytics optimizer will restore its saved learning rate momentum and continue precisely from the last completed epoch.

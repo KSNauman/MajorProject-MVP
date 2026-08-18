@@ -67,7 +67,7 @@ def main():
     print(f"[*] Loading YOLOv8 Pose model from: {model_path.resolve()}")
     model = YOLO(str(model_path))
 
-    output_dir = base_dir / "inference_results"
+    output_dir = base_dir / "inference_results2"
 
     # Allow custom image path from CLI, otherwise run on default test images
     if len(sys.argv) > 1:
