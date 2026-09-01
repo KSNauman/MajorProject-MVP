@@ -1,0 +1,8 @@
+controller:
+  MODE: video_render
+  OUTPUT_VIDEO_PATH: /home/champion/Major Project - MVP/story_engine/output/scene0_farmer_wave_hello.gif
+scene:
+  ANIMATED_CHARACTERS:
+  - character_cfg: /home/champion/Major Project - MVP/Actual repo (EDUVISION)/AnimatedDrawings/examples/test2_out/char_cfg.yaml
+    motion_cfg: /home/champion/Major Project - MVP/Actual repo (EDUVISION)/AnimatedDrawings/examples/config/motion/wave_hello.yaml
+    retarget_cfg: /home/champion/Major Project - MVP/Actual repo (EDUVISION)/AnimatedDrawings/examples/config/retarget/fair1_ppf.yaml
