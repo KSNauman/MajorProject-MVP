@@ -1,24 +1,17 @@
 """
 EduVision Story Engine
 ======================
-Renders a short story from pre-annotated character folders + BVH motions,
-then stitches all scenes into one final animated GIF.
-
-Story (3 scenes):
-  Scene 1  → The Farmer (test2)  waves hello to the class
-  Scene 2  → The Dancer (test3)  does a big dab to celebrate
-  Scene 3  → Both characters     dance together to end the show
+Renders "The Honest Woodcutter" multi-scene story using pre-annotated character
+folders + BVH motions, then stitches all scenes into a final MP4 with voiceover.
 
 How stitching works
 -------------------
-AnimatedDrawings writes each render to {char_anno_dir}/video.gif.
-We:
   1. Call annotations_to_animation.py with (char_dir, motion_cfg, retarget_cfg)
   2. Copy the resulting video.gif to our own output dir before the next render
      overwrites it.
-  3. For each scene, we composite all character GIFs side-by-side onto a shared
+  3. For each scene, composite all character GIFs side-by-side onto a shared
      canvas frame-by-frame using Pillow, adding a caption bar at the bottom.
-  4. All scene GIFs are concatenated end-to-end into one final story GIF.
+  4. All scene GIFs are concatenated end-to-end with TTS audio into a final MP4.
 """
 
 import os
@@ -54,16 +47,21 @@ CONDA_ENV  = "animated_drawings"
 # The motion name must match a .yaml in examples/config/motion/
 # ─────────────────────────────────────────────────────────────────────────────
 # Motion → retarget mapping (must match BVH skeleton)
-# fair1 motions  : dab, wave_hello, zombie, jumping  → fair1_ppf
-# cmu1  motions  : jumping_jacks                     → cmu1_pfp
+# fair1          motions : dab, wave_hello, zombie, jumping  → fair1_ppf
+# cmu1           motions : jumping_jacks                     → cmu1_pfp
+# mixamo (full)  motions : jesse_dance                       → mixamo_fff
+# mixamo (slim)  motions : walk, wave                        → mixamo_simple
+RETARGET_MIXAMO        = str(EXAMPLES / "config" / "retarget" / "mixamo_fff.yaml")
+RETARGET_MIXAMO_SIMPLE = str(EXAMPLES / "config" / "retarget" / "mixamo_simple.yaml")
 
 STORY = [
     {
         "title":    "Scene 1",
         "caption":  "Once upon a time, an honest woodcutter trudged sadly through the forest.",
         "characters": [
+            # pan=True → character walks left-to-right across the canvas
             {"name": "woodcutter", "char_dir": EXAMPLES / "test2_out",
-             "motion": "zombie", "retarget": RETARGET_FAIR1},
+             "motion": "walk", "retarget": RETARGET_MIXAMO_SIMPLE, "pan": True},
         ],
     },
     {
@@ -71,9 +69,9 @@ STORY = [
         "caption": "He had lost his axe in the river! Suddenly, a magical fairy appeared to help.",
         "characters": [
             {"name": "woodcutter", "char_dir": EXAMPLES / "test2_out",
-             "motion": "jumping", "retarget": RETARGET_FAIR1},
+             "motion": "zombie", "retarget": RETARGET_FAIR1},
             {"name": "fairy", "char_dir": EXAMPLES / "test3_out",
-             "motion": "wave_hello", "retarget": RETARGET_FAIR1},
+             "motion": "wave", "retarget": RETARGET_MIXAMO_SIMPLE},
         ],
     },
     {
@@ -99,11 +97,13 @@ STORY = [
 # ─────────────────────────────────────────────────────────────────────────────
 # CANVAS SETTINGS
 # ─────────────────────────────────────────────────────────────────────────────
-CHAR_H     = 380      # height each character is scaled to in the composite
-CAPTION_H  = 55       # height of the caption bar below the characters
-BG_COLOR   = (255, 248, 220)   # warm cream
-CAPTION_BG = (40, 40, 60)      # dark navy caption bar
-CAPTION_FG = (255, 240, 180)   # warm yellow text
+CHAR_H       = 380      # height each character is scaled to in the composite
+PAN_CHAR_H   = 200      # smaller height used when a character is panning across
+CANVAS_W     = 760      # fixed canvas width (avoids jumpy scene width changes)
+CAPTION_H    = 55       # height of the caption bar below the characters
+BG_COLOR     = (255, 248, 220)   # warm cream
+CAPTION_BG   = (40, 40, 60)      # dark navy caption bar
+CAPTION_FG   = (255, 240, 180)   # warm yellow text
 SCENE_FRAMES = 80     # how many frames to take from each scene GIF (≈4 s at 20fps)
 
 
@@ -200,9 +200,10 @@ def get_font(size: int = 20):
 
 def composite_scene(gif_paths: list, scene: dict, out_path: Path) -> Path:
     """
-    Side-by-side compositing:
-      - Each character's GIF is scaled to CHAR_H.
-      - Characters are placed left→right on a shared canvas.
+    Compositing with pan support:
+      - Each character's GIF is scaled to CHAR_H on a fixed CANVAS_W canvas.
+      - Characters with pan=True slide from left edge → right edge over SCENE_FRAMES.
+      - Characters with pan=False are placed at their default slot position.
       - A caption bar is drawn below.
       - Shorter GIFs loop so all animations run for SCENE_FRAMES frames.
       - Saved as a 20 fps GIF.
@@ -213,12 +214,23 @@ def composite_scene(gif_paths: list, scene: dict, out_path: Path) -> Path:
 
     log.info(f"  Compositing  «{scene['title']}» ...")
 
+    chars      = scene["characters"]
     all_frames = [load_gif_frames(p) for p in gif_paths]
-    scaled     = [[scale_to_height(f, CHAR_H) for f in fl] for fl in all_frames]
 
-    char_widths = [s[0].width for s in scaled]
-    canvas_w    = sum(char_widths)
-    canvas_h    = CHAR_H + CAPTION_H
+    # Scale each character: panning ones get a smaller height
+    scaled = []
+    for cfg, frames in zip(chars, all_frames):
+        h = PAN_CHAR_H if cfg.get("pan", False) else CHAR_H
+        scaled.append([scale_to_height(f, h) for f in frames])
+
+    canvas_w = CANVAS_W
+    canvas_h = CHAR_H + CAPTION_H   # canvas height stays fixed to full CHAR_H
+
+    # Calculate default slot X positions for non-panning chars
+    n = len(scaled)
+    slot_width = canvas_w // n
+    default_x  = [slot_width * idx + (slot_width - scaled[idx][0].width) // 2
+                  for idx in range(n)]
 
     font = get_font(20)
     out_frames = []
@@ -227,19 +239,30 @@ def composite_scene(gif_paths: list, scene: dict, out_path: Path) -> Path:
         canvas = Image.new("RGBA", (canvas_w, canvas_h), BG_COLOR + (255,))
         draw   = ImageDraw.Draw(canvas)
 
-        # Paste each character (looping if needed)
-        x = 0
-        for char_frames in scaled:
-            frame = char_frames[i % len(char_frames)]
+        for idx, (char_cfg, char_frames) in enumerate(zip(chars, scaled)):
+            frame    = char_frames[i % len(char_frames)]
+            char_w   = frame.width
+            char_h   = frame.height
+            pan_flag = char_cfg.get("pan", False)
+
+            if pan_flag:
+                # Slide fully on-screen: x=0 (left edge) → x=canvas_w-char_w (right edge)
+                # Character stays fully visible throughout; slow drift L→R
+                t     = i / max(SCENE_FRAMES - 1, 1)        # 0.0 → 1.0
+                x_pos = int(t * (canvas_w - char_w))
+                # Pin to ground line (bottom of char area)
+                y_pos = CHAR_H - char_h
+            else:
+                x_pos = default_x[idx]
+                y_pos = 0
+
             # Flatten RGBA onto cream background
-            bg = Image.new("RGBA", frame.size, BG_COLOR + (255,))
+            bg      = Image.new("RGBA", frame.size, BG_COLOR + (255,))
             blended = Image.alpha_composite(bg, frame)
-            canvas.paste(blended.convert("RGB"), (x, 0))
-            x += frame.width
+            canvas.paste(blended.convert("RGB"), (x_pos, y_pos))
 
         # Caption bar
         draw.rectangle([(0, CHAR_H), (canvas_w, canvas_h)], fill=CAPTION_BG + (255,))
-
         caption = scene["caption"]
         bbox    = draw.textbbox((0, 0), caption, font=font)
         tw, th  = bbox[2] - bbox[0], bbox[3] - bbox[1]
@@ -247,7 +270,6 @@ def composite_scene(gif_paths: list, scene: dict, out_path: Path) -> Path:
         ty = CHAR_H + (CAPTION_H - th) // 2
         draw.text((tx, ty), caption, font=font, fill=CAPTION_FG)
 
-        # Quantise to palette for GIF
         out_frames.append(canvas.convert("RGB").quantize(colors=256, method=Image.MEDIANCUT))
 
     out_frames[0].save(

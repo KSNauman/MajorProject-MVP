@@ -94,6 +94,15 @@ This textbook documents all the math, theory, experiments (including failures), 
 * Automated storytelling pipeline using MoviePy and Google TTS (gTTS).
 * Details on how to download, configure, and seamlessly retarget custom Mixamo BVH motion files into the rendering engine.
 
+### [Chapter 9 (Supplement): How Story Generation Works — A Deep Dive ✅](chapter9_story_generation_explained.md)
+* Complete step-by-step explanation of the entire story pipeline: BVH rendering → ARAP deformation → compositing → TTS → MP4 encoding.
+* Covers the pan effect, caching system, audio-driven scene duration, and all key engineering decisions.
+* Includes full pipeline diagram and explanation of every function in `tell_story_video.py`.
+
+### [Chapter 10: Polishing & Compositing in the Story Engine ✅](chapter10_polishing_and_compositing.md)
+* Documents the critical visual fixes required to make the multi-character generated video presentation-ready.
+* Covers: Transparent alpha-mask pasting (fixing the "cut in half" bug), audio/video duration syncing, ground baselines, and crossfade transitions.
+
 ---
 
 ## 🚀 Future Advancements
@@ -112,4 +121,4 @@ Potential directions beyond the current MVP — for future versions or research 
 
 ---
 
-*Last updated: August 27, 2026*
+*Last updated: September 3, 2026*

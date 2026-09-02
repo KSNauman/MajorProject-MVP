@@ -1,8 +1,8 @@
 controller:
   MODE: video_render
-  OUTPUT_VIDEO_PATH: /home/champion/Actual repo (EDUVISION)/AnimatedDrawings/examples/test4_out/video.gif
+  OUTPUT_VIDEO_PATH: /home/champion/Major Project - MVP/Actual repo (EDUVISION)/AnimatedDrawings/examples/test4_out/video.gif
 scene:
   ANIMATED_CHARACTERS:
-  - character_cfg: /home/champion/Actual repo (EDUVISION)/AnimatedDrawings/examples/test4_out/char_cfg.yaml
-    motion_cfg: /home/champion/Actual repo (EDUVISION)/AnimatedDrawings/examples/config/motion/jumping_jacks.yaml
-    retarget_cfg: /home/champion/Actual repo (EDUVISION)/AnimatedDrawings/examples/config/retarget/mixamo_fff.yaml
+  - character_cfg: /home/champion/Major Project - MVP/Actual repo (EDUVISION)/AnimatedDrawings/examples/test4_out/char_cfg.yaml
+    motion_cfg: /home/champion/Major Project - MVP/Actual repo (EDUVISION)/AnimatedDrawings/examples/config/motion/walk.yaml
+    retarget_cfg: /home/champion/Major Project - MVP/Actual repo (EDUVISION)/AnimatedDrawings/examples/config/retarget/mixamo_simple.yaml

@@ -4,5 +4,5 @@ controller:
 scene:
   ANIMATED_CHARACTERS:
   - character_cfg: /home/champion/Major Project - MVP/Actual repo (EDUVISION)/AnimatedDrawings/examples/test2_out/char_cfg.yaml
-    motion_cfg: /home/champion/Major Project - MVP/Actual repo (EDUVISION)/AnimatedDrawings/examples/config/motion/jumping_jacks.yaml
-    retarget_cfg: /home/champion/Major Project - MVP/Actual repo (EDUVISION)/AnimatedDrawings/examples/config/retarget/cmu1_pfp.yaml
+    motion_cfg: /home/champion/Major Project - MVP/Actual repo (EDUVISION)/AnimatedDrawings/examples/config/motion/walk.yaml
+    retarget_cfg: /home/champion/Major Project - MVP/Actual repo (EDUVISION)/AnimatedDrawings/examples/config/retarget/mixamo_simple.yaml
