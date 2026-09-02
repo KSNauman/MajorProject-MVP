@@ -90,6 +90,19 @@ This textbook documents all the math, theory, experiments (including failures), 
 ### [Chapter 8: MediaPipe Web Pose Estimation Failure Log ❌](chapter8_mediapipe_web_failure.md)
 * Log of Google MediaPipe WebAssembly landmarker failure on sketch-domain images.
 
+### [Chapter 9: Multi-Scene Story Engine & BVH Import ✅](chapter9_story_engine.md)
+* Automated storytelling pipeline using MoviePy and Google TTS (gTTS).
+* Details on how to download, configure, and seamlessly retarget custom Mixamo BVH motion files into the rendering engine.
+
+### [Chapter 9 (Supplement): How Story Generation Works — A Deep Dive ✅](chapter9_story_generation_explained.md)
+* Complete step-by-step explanation of the entire story pipeline: BVH rendering → ARAP deformation → compositing → TTS → MP4 encoding.
+* Covers the pan effect, caching system, audio-driven scene duration, and all key engineering decisions.
+* Includes full pipeline diagram and explanation of every function in `tell_story_video.py`.
+
+### [Chapter 10: Polishing & Compositing in the Story Engine ✅](chapter10_polishing_and_compositing.md)
+* Documents the critical visual fixes required to make the multi-character generated video presentation-ready.
+* Covers: Transparent alpha-mask pasting (fixing the "cut in half" bug), audio/video duration syncing, ground baselines, and crossfade transitions.
+
 ---
 
 ## 🚀 Future Advancements
@@ -102,10 +115,10 @@ Potential directions beyond the current MVP — for future versions or research 
 | **Auto Story Generation** | LLM generates the full story from just a theme word (e.g., "farm") — no teacher input needed |
 | **Non-Humanoid Animation** | Extend to animate animals, vehicles, and objects using quadruped or custom skeleton rigs |
 | **Real-Time Drawing Mode** | Draw directly in-browser on a tablet — character animates live as the sketch is completed |
-| **Voice Narration** | TTS narration plays over the animated scene, reading the story aloud while characters move |
-| **Multi-Scene Sequencing** | Teachers build a multi-scene storyboard — characters move across different backgrounds |
+| **Voice Narration (DONE ✅)** | TTS narration plays over the animated scene, reading the story aloud while characters move |
+| **Multi-Scene Sequencing (DONE ✅)** | Teachers build a multi-scene storyboard — characters move across different backgrounds |
 | **Student Portfolio** | Each child's animated character is saved to a personal gallery accessible by parents |
 
 ---
 
-*Last updated: August 18, 2026*
+*Last updated: September 3, 2026*
