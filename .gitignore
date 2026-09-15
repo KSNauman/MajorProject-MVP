@@ -93,3 +93,5 @@ examples/test2_out/
 examples/test3_out/
 examples/test4_out/
 run_output.log
+eduvision_ui/uploads/
+hs_err_pid*.log

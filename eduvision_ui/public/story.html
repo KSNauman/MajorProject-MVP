@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Story - EduVision</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        .character-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .char-info h3 {
+            margin-bottom: 4px;
+            font-size: 1.1rem;
+        }
+        .char-info p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .upload-btn {
+            background: var(--hover);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .upload-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .video-container {
+            margin-top: 40px;
+            text-align: center;
+            display: none;
+        }
+
+        video {
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .btn-large {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            font-size: 1.1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 30px;
+            font-weight: 500;
+        }
+        .btn-large:hover { background: var(--primary-hover); }
+        .btn-large:disabled { background: #93c5fd; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav-bar">
+            <a href="/" class="nav-logo">EduVision</a>
+            <div class="nav-links">
+                <a href="/story.html">Story</a>
+                <a href="/fixer.html">Fixer & Engine</a>
+            </div>
+        </div>
+
+        <h1 class="page-title">Story: A Day at the Park</h1>
+        <p style="color: var(--text-muted); margin-bottom: 30px;">
+            Create your characters for this story. Upload a drawing, or leave it blank to use the default character.
+        </p>
+
+        <form id="story-form">
+            <!-- Child -->
+            <div class="character-card">
+                <div class="char-info">
+                    <h3>Child</h3>
+                    <p id="child-status">Default character will be used</p>
+                </div>
+                <div>
+                    <input type="file" id="child-upload" name="child" style="display: none" accept="image/*" onchange="updateStatus('child')">
+                    <button type="button" class="upload-btn" onclick="document.getElementById('child-upload').click()">Upload / Draw</button>
+                </div>
+            </div>
+
+            <!-- Friend -->
+            <div class="character-card">
+                <div class="char-info">
+                    <h3>Friend</h3>
+                    <p id="friend-status">Default character will be used</p>
+                </div>
+                <div>
+                    <input type="file" id="friend-upload" name="friend" style="display: none" accept="image/*" onchange="updateStatus('friend')">
+                    <button type="button" class="upload-btn" onclick="document.getElementById('friend-upload').click()">Upload / Draw</button>
+                </div>
+            </div>
+
+            <!-- Teacher -->
+            <div class="character-card">
+                <div class="char-info">
+                    <h3>Teacher</h3>
+                    <p id="teacher-status">Default character will be used</p>
+                </div>
+                <div>
+                    <input type="file" id="teacher-upload" name="teacher" style="display: none" accept="image/*" onchange="updateStatus('teacher')">
+                    <button type="button" class="upload-btn" onclick="document.getElementById('teacher-upload').click()">Upload / Draw</button>
+                </div>
+            </div>
+
+            <button type="button" id="generate-btn" class="btn-large" onclick="generateStory()">Generate Story</button>
+        </form>
+
+        <div id="video-container" class="video-container">
+            <h3 style="margin-bottom: 16px;">Final Narrated Video</h3>
+            <video id="result-video" controls autoplay></video>
+        </div>
+    </div>
+
+    <script>
+        function updateStatus(charName) {
+            const fileInput = document.getElementById(charName + '-upload');
+            const statusText = document.getElementById(charName + '-status');
+            if (fileInput.files.length > 0) {
+                statusText.innerHTML = '<span style="color: #16a34a;">✓ Custom drawing</span>';
+            } else {
+                statusText.innerText = 'Default character will be used';
+            }
+        }
+
+        async function generateStory() {
+            const btn = document.getElementById('generate-btn');
+            btn.disabled = true;
+            btn.innerText = "Generating story... (This may take a minute)";
+
+            const formData = new FormData(document.getElementById('story-form'));
+            
+            try {
+                const res = await fetch('/api/story/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    // For Phase 4 integration
+                    alert("Integration endpoint triggered. MP4 logic will stream here.");
+                    // document.getElementById('video-container').style.display = 'block';
+                    // document.getElementById('result-video').src = data.url;
+                } else {
+                    alert("Error: " + data.error);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Failed to connect to server.");
+            }
+            
+            btn.disabled = false;
+            btn.innerText = "Generate Story";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixer & Engine - EduVision</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        .workflow { display: none; }
+        .active { display: block; }
+        
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            margin-top: 20px;
+            background: white;
+        }
+        .upload-area:hover { border-color: var(--primary); }
+
+        .editor-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-top: 20px;
+        }
+
+        .canvas-container {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            cursor: crosshair;
+        }
+
+        .controls-panel {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .btn {
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+        .btn:hover { background: var(--hover); }
+        .btn.primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+        }
+        .btn.primary:hover { background: var(--primary-hover); }
+
+        .animations-list {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .preview-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .preview-container img {
+            max-width: 100%;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav-bar">
+            <a href="/" class="nav-logo">EduVision</a>
+            <div class="nav-links">
+                <a href="/story.html">Story</a>
+                <a href="/fixer.html">Fixer & Engine</a>
+            </div>
+        </div>
+
+        <h1 class="page-title">Fixer & Engine</h1>
+
+        <!-- Step 1: Upload -->
+        <div id="step-upload" class="workflow active">
+            <p>Upload a character image to extract keypoints and annotations.</p>
+            <div class="upload-area" onclick="document.getElementById('char-upload').click()">
+                <div style="font-size: 2rem; margin-bottom: 10px;">📸</div>
+                <h3>Upload Image</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">PNG / JPG / JPEG</p>
+                <input type="file" id="char-upload" style="display: none" accept="image/*" onchange="handleUpload(event)">
+            </div>
+            <p id="upload-status" style="margin-top: 15px; text-align: center; color: var(--text-muted);"></p>
+        </div>
+
+        <!-- Step 2 & 3: Fixer Editor -->
+        <div id="step-editor" class="workflow">
+            <div class="editor-layout">
+                <div class="canvas-container">
+                    <canvas id="fixer-canvas"></canvas>
+                </div>
+                
+                <div class="controls-panel">
+                    <h3>Fix Keypoints</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">Click and drag a joint to correct its position.</p>
+                    
+                    <button class="btn" onclick="resetKeypoints()">Reset</button>
+                    <button class="btn primary" onclick="saveCharacter()">Save Character</button>
+
+                    <hr style="border:0; border-top: 1px solid var(--border); margin: 10px 0;">
+
+                    <h3>Available Animations</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">Save character to test animations.</p>
+                    <div id="animations-list" class="animations-list"></div>
+
+                    <div id="preview-container" class="preview-container" style="display: none;">
+                        <div id="progress-container" style="display:none; margin-bottom: 15px; width: 100%; background-color: #f3f4f6; border-radius: 9999px; overflow: hidden;">
+                            <div id="progress-bar" style="width: 0%; height: 16px; background-color: #3b82f6; text-align: center; color: white; font-size: 0.75rem; line-height: 16px; transition: width 0.3s ease;">0%</div>
+                        </div>
+                        <img id="preview-gif" src="" alt="Animation Preview">
+                    </div>
+
+                    <hr style="border:0; border-top: 1px solid var(--border); margin: 20px 0;">
+                    
+                    <h3>Recent Animations</h3>
+                    <div id="history-list" style="display: flex; gap: 10px; overflow-x: auto; padding-top: 10px;">
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">No animations generated yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="/js/fixer.js"></script>
+</body>
+</html>
