@@ -93,3 +93,42 @@ examples/test2_out/
 examples/test3_out/
 examples/test4_out/
 run_output.log
+
+# ── Datasets (all raw & converted dataset folders) ────────────────────────────
+yolo_test/sketch_coco_dataset/
+yolo_test/sketch_yolo_dataset/
+yolo_test/sketch_yolo_corrected/
+yolo_test/sketch_phase2_padded/
+yolo_test/amateur_drawings_annotations.json
+yolo_test/*.zip
+
+# ── Inference output folders ──────────────────────────────────────────────────
+yolo_test/inference_results/
+yolo_test/inference_results2/
+yolo_test/inference_best/
+yolo_test/inference_batch/
+yolo_test/output_test_anno/
+
+# ── Virtual environments ──────────────────────────────────────────────────────
+animated_drawings_env/
+animated_drawings_env/**
+
+# ── Story pipeline secrets & generated outputs ────────────────────────────────
+story_pipeline/.env
+story_pipeline/__pycache__/
+story_pipeline/output/
+story_pipeline/uploads/
+
+# ── YOLO training run artifacts ───────────────────────────────────────────────
+runs/
+runs/pose/
+
+# ── General large binary / generated output files ────────────────────────────
+*.mp4
+*.avi
+*.gif
+output/
+**/output/
+
+# ── Eduvision legacy folder ───────────────────────────────────────────────────
+eduvision (2)/
