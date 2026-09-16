@@ -130,5 +130,17 @@ runs/pose/
 output/
 **/output/
 
-# ── Eduvision legacy folder ───────────────────────────────────────────────────
-eduvision (2)/
+# ── Dead / Legacy / Superseded folders (stay local, never push) ───────────────
+Actual repo (EDUVISION)/
+animated_drawings_env/
+datasets/
+models/
+runs/
+logs/
+story_pipeline/
+core_engine/
+
+# ── OS / Editor junk ─────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.log
