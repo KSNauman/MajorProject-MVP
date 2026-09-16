@@ -138,7 +138,12 @@ models/
 runs/
 logs/
 story_pipeline/
-core_engine/
+
+# core_engine is ACTIVE — only exclude secrets and generated outputs
+core_engine/.env
+core_engine/output/
+core_engine/__pycache__/
+core_engine/**/__pycache__/
 
 # ── OS / Editor junk ─────────────────────────────────────────────────────────
 .idea/
