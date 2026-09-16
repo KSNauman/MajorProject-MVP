@@ -66,9 +66,10 @@ def analyze_image(image_path):
     }
 
     models_to_try = [
+        "gemini-flash-latest",
         "gemini-2.5-flash",
-        "gemini-2.0-flash",
-        "gemini-1.5-flash"
+        "gemini-3.6-flash",
+        "gemini-2.5-flash-lite",
     ]
 
     for model_name in models_to_try:
@@ -107,7 +108,7 @@ def analyze_image(image_path):
                 print(f"[-] Unexpected error with model '{model_name}': {e}")
                 break # Move to next model
                 
-    print("[❌] All available Gemini models failed or were unavailable.")
+    print("[FAILED] All available Gemini models failed or were unavailable.")
     return None
 
 if __name__ == "__main__":
