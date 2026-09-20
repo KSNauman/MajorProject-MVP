@@ -17,6 +17,11 @@ from OpenGL import GL
 from tqdm import tqdm
 
 from animated_drawings.controller.controller import Controller
+try:
+    import glfw
+    _HAS_GLFW = True
+except ImportError:
+    _HAS_GLFW = False
 from animated_drawings.model.scene import Scene
 from animated_drawings.model.animated_drawing import AnimatedDrawing
 from animated_drawings.view.view import View
@@ -93,7 +98,9 @@ class VideoRenderController(Controller):
         self.scene.progress_time(self.delta_t)
 
     def _handle_user_input(self) -> None:
-        """ ignore all user input when rendering video file """
+        """ Pump OS window events so Windows does not mark window as Not Responding """
+        if _HAS_GLFW:
+            glfw.poll_events()
 
     def _finish_run_loop_iteration(self) -> None:
         # get pixel values from the frame buffer, send them to the video writer

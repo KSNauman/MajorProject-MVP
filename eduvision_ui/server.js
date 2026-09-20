@@ -13,7 +13,7 @@ const REPO_ROOT = path.resolve(__dirname, '../Actual repo (EDUVISION)/AnimatedDr
 const EXAMPLES_DIR = path.join(REPO_ROOT, 'examples');
 const TORCHSERVE_DIR = path.join(REPO_ROOT, 'torchserve');
 
-const PYTHON_BIN = '/home/champion/anaconda3/envs/animated_drawings/bin/python';
+const PYTHON_BIN = 'python';
 const TORCHSERVE_BIN = '/home/champion/anaconda3/envs/animated_drawings/bin/torchserve';
 
 // Middleware
@@ -89,8 +89,6 @@ function startTorchServe() {
 // Story: Generate final video
 app.post('/api/story/generate', upload.any(), (req, res) => {
     console.log("Generating story...");
-    // For MVP phase, just invoke park_story.py
-    // In a real implementation, we would parse req.files to override defaults.
     const storyScriptDir = path.resolve(__dirname, '../story_engine');
     const pyProcess = spawn(PYTHON_BIN, ['run_all.py'], {
         cwd: storyScriptDir
@@ -111,61 +109,101 @@ app.post('/api/story/generate', upload.any(), (req, res) => {
 });
 
 // Fixer: Upload image and run keypoint estimation
-app.post('/api/fixer/upload', upload.single('character'), (req, res) => {
+app.post('/api/fixer/extract', upload.single('image'), (req, res) => {
+    console.log("Running Robust Engine Extraction...");
     if (!req.file) return res.status(400).json({ error: "No image uploaded" });
-
-    const imgPath = req.file.path;
-    const outDir = path.join(__dirname, 'uploads', 'char_out_' + Date.now());
-
-    console.log(`Running keypoint extraction on ${imgPath}...`);
     
-    const pyProcess = spawn(PYTHON_BIN, ['examples/image_to_annotations.py', imgPath, outDir], {
-        cwd: REPO_ROOT
+    const imgPath = path.resolve(__dirname, req.file.path);
+    const storyScriptDir = path.resolve(__dirname, '../story_engine');
+    
+    // We will use a quick python helper to run the engine, copy the texture, and return JSON.
+    const pyProcess = spawn(PYTHON_BIN, ['robust_extract_api.py', imgPath], {
+        cwd: storyScriptDir
     });
-
+    
     let output = '';
     pyProcess.stdout.on('data', data => output += data.toString());
-    pyProcess.stderr.on('data', data => output += data.toString());
-
     pyProcess.on('close', code => {
-        console.log(`[FIXER EXTRACT] Python script finished with exit code ${code}`);
-        if (code !== 0) {
-            console.error(`[FIXER EXTRACT ERROR OUTPUT]\n${output}\n-------------------------`);
-            return res.status(500).json({ error: "Failed to extract keypoints. Ensure TorchServe is fully started." });
-        }
-        
-        // Convert char_cfg.yaml to annotation.json for the frontend
         try {
-            const yamlContent = fs.readFileSync(path.join(outDir, 'char_cfg.yaml'), 'utf8');
-            const data = yaml.load(yamlContent);
-            fs.writeFileSync(path.join(outDir, 'annotation.json'), JSON.stringify(data, null, 2));
-        } catch (e) {
-            console.error("YAML Parse Error:", e);
+            const jsonStr = output.substring(output.indexOf('{'), output.lastIndexOf('}') + 1);
+            const result = JSON.parse(jsonStr);
+            if (code !== 0) return res.status(500).json(result);
+            res.json(result);
+        } catch(e) {
+            console.error(e);
+            res.status(500).json({ error: "Failed to parse Python output.", output });
         }
-        
-        // Output is successful, return the annotation paths
-        res.json({
-            message: "Success",
-            outDir: outDir,
-            annotationUrl: `/api/files?path=${encodeURIComponent(path.join(outDir, 'annotation.json'))}`,
-            maskUrl: `/api/files?path=${encodeURIComponent(path.join(outDir, 'mask.png'))}`,
-            textureUrl: `/api/files?path=${encodeURIComponent(path.join(outDir, 'texture.png'))}`
-        });
     });
 });
 
 // Fixer: Save corrected JSON
-app.post('/api/fixer/save', (req, res) => {
-    const { outDir, annotationData } = req.body;
-    if (!outDir || !annotationData) return res.status(400).json({ error: "Missing data" });
+app.post('/api/fixer/save', upload.single('image'), (req, res) => {
+    console.log("Saving and Animating final fixed character image...");
+    if (!req.file) return res.status(400).json({ error: "No image uploaded" });
+    
+    const imgPath = path.resolve(__dirname, req.file.path);
+    const storyScriptDir = path.resolve(__dirname, '../story_engine');
+    
+    // Check if custom keypoints were provided
+    let kpsArg = "none";
+    if (req.body.keypoints) {
+        // We write them to a temp file because passing JSON strings via command line can break in Windows
+        const tempKpsFile = path.resolve(__dirname, 'uploads', `kps_${Date.now()}.json`);
+        fs.writeFileSync(tempKpsFile, req.body.keypoints);
+        // Wait, fs is required at top! Let's just use fs.
+        kpsArg = tempKpsFile;
+    }
+    
+    console.log("Spawning prepare_character_api.py without shell...");
+    const pyProcess = spawn(PYTHON_BIN, ['prepare_character_api.py', imgPath, 'dummy', kpsArg], {
+        cwd: storyScriptDir
+    });
+    
+    let output = '';
+    pyProcess.stdout.on('data', data => output += data.toString());
+    pyProcess.stderr.on('data', data => console.error("PY STDERR:", data.toString()));
+    pyProcess.on('close', code => {
+        console.log("Python exit code:", code, "Output:", output);
+        try {
+            const jsonStr = output.substring(output.indexOf('{'), output.lastIndexOf('}') + 1);
+            const result = JSON.parse(jsonStr);
+            if (code !== 0) return res.status(500).json(result);
+            res.json(result);
+        } catch(e) {
+            console.error("Parse error:", e);
+            res.status(500).json({ error: "Failed to generate animation.", output });
+        }
+    });
+});
 
-    const annPath = path.join(outDir, 'annotation.json');
-    const yamlPath = path.join(outDir, 'char_cfg.yaml');
-    
-    fs.writeFileSync(annPath, JSON.stringify(annotationData, null, 4));
-    fs.writeFileSync(yamlPath, yaml.dump(annotationData));
-    
-    res.json({ message: "Annotation saved successfully" });
+// Engine: Get recent animations
+app.get('/api/engine/recent', (req, res) => {
+    const uploadDir = path.join(__dirname, 'uploads');
+    const recent = [];
+    if (fs.existsSync(uploadDir)) {
+        const dirs = fs.readdirSync(uploadDir);
+        for (const dir of dirs) {
+            if (dir.startsWith('char_data_')) {
+                const charPath = path.join(uploadDir, dir);
+                if (fs.existsSync(charPath)) {
+                    const files = fs.readdirSync(charPath);
+                    for (const file of files) {
+                        if (file.startsWith('video') && file.endsWith('.gif')) {
+                            const gifPath = path.join(charPath, file);
+                            recent.push({
+                                id: dir,
+                                url: `/uploads/${dir}/${file}`,
+                                time: fs.statSync(gifPath).mtimeMs
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // Sort newest first
+    recent.sort((a, b) => b.time - a.time);
+    res.json({ recent });
 });
 
 // Engine: List available BVH motions
@@ -175,7 +213,11 @@ app.get('/api/engine/motions', (req, res) => {
 
     const motions = fs.readdirSync(motionDir)
         .filter(f => f.endsWith('.yaml'))
-        .map(f => f.replace('.yaml', ''));
+        .map(f => {
+            const id = f.replace('.yaml', '');
+            const name = id.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+            return { id, name };
+        });
     
     res.json({ motions });
 });
@@ -195,7 +237,6 @@ app.post('/api/engine/preview', (req, res) => {
     const motionYaml = `examples/config/motion/${motion}.yaml`;
     const motionYamlPath = path.join(REPO_ROOT, motionYaml);
     
-    // Dynamically determine retarget config by inspecting the BVH path inside the motion YAML
     let retargetYaml = `examples/config/retarget/fair1_ppf.yaml`; 
     try {
         const motionConfig = yaml.load(fs.readFileSync(motionYamlPath, 'utf8'));
@@ -231,8 +272,14 @@ app.post('/api/engine/preview', (req, res) => {
             res.write(`data: {"error": "Rendering failed"}\n\n`);
             res.end();
         } else {
-            const gifUrl = `/api/files?path=${encodeURIComponent(gifOut)}`;
-            res.write(`data: {"done": true, "url": "${gifUrl}"}\n\n`);
+            const charId = path.basename(outDir);
+            const newGifName = `video_${motion}_${Date.now()}.gif`;
+            const newGifPath = path.join(outDir, newGifName);
+            if (fs.existsSync(gifOut)) {
+                fs.renameSync(gifOut, newGifPath);
+            }
+            const gifUrl = `/uploads/${charId}/${newGifName}`;
+            res.write(`data: {"status": "done", "gifUrl": "${gifUrl}"}\n\n`);
             res.end();
         }
     });
@@ -259,5 +306,5 @@ app.use((req, res, next) => {
 // Start Server and TorchServe
 app.listen(PORT, () => {
     console.log(`EduVision Minimal UI running on http://localhost:${PORT}`);
-    startTorchServe();
+    // startTorchServe();
 });

@@ -152,16 +152,16 @@ class ARAP():
 
         # ensure tA1xA1 matrix isn't singular and cache sparse repsentation
         tA1xA1_dense: npt.NDArray[np.float32] = self.tA1 @ self.A1
-        while np.linalg.det(tA1xA1_dense) == 0.0:
+        while np.linalg.slogdet(tA1xA1_dense)[0] == 0.0:
             logging.info('tA1xA1 is singular. perturbing...')
-            tA1xA1_dense += 0.00000001 * np.identity(tA1xA1_dense.shape[0])
+            tA1xA1_dense += 0.0001 * np.identity(tA1xA1_dense.shape[0])
         self.tA1xA1: csr_matrix = sp.csr_matrix(tA1xA1_dense)
 
         # ensure tA2xA2 matrix isn't singular and cache sparse repsentation
         tA2xA2_dense: npt.NDArray[np.float32] = self.tA2 @ self.A2
-        while np.linalg.det(tA2xA2_dense) == 0.0:
+        while np.linalg.slogdet(tA2xA2_dense)[0] == 0.0:
             logging.info('tA2xA2 is singular. perturbing...')
-            tA2xA2_dense += 0.00000001 * np.identity(tA2xA2_dense.shape[0])
+            tA2xA2_dense += 0.0001 * np.identity(tA2xA2_dense.shape[0])
         self.tA2xA2: csr_matrix = sp.csr_matrix(tA2xA2_dense)
 
         # revert np overflow warnings behavior

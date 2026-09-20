@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation Engine - EduVision</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #f3f4f6;
+            --panel-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --danger: #ef4444;
+            --active-bg: #eff6ff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        .header { background: var(--panel-bg); padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .header h1 { font-size: 1.25rem; font-weight: 600; color: var(--text-main); }
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+        
+        .preview-pane { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; position: relative; }
+        .video-container { width: 100%; max-width: 600px; height: 600px; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+        .video-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .placeholder { color: var(--text-muted); font-size: 1.1rem; }
+        
+        .sidebar { width: 350px; background: var(--panel-bg); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+        .tabs { display: flex; border-bottom: 1px solid var(--border); }
+        .tab { flex: 1; padding: 16px; text-align: center; cursor: pointer; font-weight: 500; color: var(--text-muted); background: #f9fafb; border-bottom: 2px solid transparent; }
+        .tab.active { background: white; color: var(--primary); border-bottom-color: var(--primary); }
+        
+        .tab-content { flex: 1; overflow-y: auto; padding: 16px; display: none; }
+        .tab-content.active { display: block; }
+        
+        .animation-btn { width: 100%; padding: 12px 16px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: 8px; background: white; text-align: left; cursor: pointer; font-size: 0.95rem; font-weight: 500; color: var(--text-main); transition: all 0.2s; display: flex; align-items: center; justify-content: space-between; }
+        .animation-btn:hover { border-color: var(--primary); background: var(--active-bg); }
+        .animation-btn i { color: var(--primary); }
+        
+        .recent-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .recent-item { aspect-ratio: 1; background: #f9fafb; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .recent-item:hover { border-color: var(--primary); }
+        .recent-item img { max-width: 100%; max-height: 100%; object-fit: cover; }
+        
+        .loading-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+        .spinner { width: 40px; height: 40px; border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        #progress-text { font-weight: 500; color: var(--text-main); margin-bottom: 8px; }
+        #progress-bar { width: 80%; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+        #progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1><i class="fa-solid fa-film" style="color: var(--primary); margin-right: 8px;"></i> Animation Engine</h1>
+    <a href="/" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;"><i class="fa-solid fa-arrow-left"></i> Back to Home</a>
+</div>
+
+<div class="main-container">
+    <div class="preview-pane">
+        <div class="video-container">
+            <div class="placeholder" id="placeholder-text">Select an animation from the right to begin</div>
+            <img id="result-video" style="display: none;" />
+            
+            <div class="loading-overlay" id="loading-overlay">
+                <div class="spinner"></div>
+                <div id="progress-text">Generating...</div>
+                <div id="progress-bar"><div id="progress-fill"></div></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="sidebar">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('animations', this)">Animations</div>
+            <div class="tab" onclick="switchTab('recent', this)">Recent</div>
+        </div>
+        
+        <div class="tab-content active" id="tab-animations">
+            <!-- Populated by JS -->
+        </div>
+        
+        <div class="tab-content" id="tab-recent">
+            <div class="recent-grid" id="recent-grid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const charDir = urlParams.get('charDir');
+
+    function switchTab(tabId, el) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('tab-' + tabId).classList.add('active');
+        if (tabId === 'recent') loadRecent();
+    }
+
+    async function loadMotions() {
+        try {
+            const res = await fetch('/api/engine/motions');
+            const data = await res.json();
+            const container = document.getElementById('tab-animations');
+            container.innerHTML = '';
+            
+            data.motions.forEach(motion => {
+                const btn = document.createElement('button');
+                btn.className = 'animation-btn';
+                btn.innerHTML = `<span>${motion.name}</span> <i class="fa-solid fa-play"></i>`;
+                btn.onclick = () => generateAnimation(motion.id);
+                container.appendChild(btn);
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function loadRecent() {
+        try {
+            const res = await fetch('/api/engine/recent');
+            const data = await res.json();
+            const grid = document.getElementById('recent-grid');
+            grid.innerHTML = '';
+            
+            data.recent.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'recent-item';
+                div.innerHTML = `<img src="${item.url}" title="Generated Animation">`;
+                div.onclick = () => {
+                    document.getElementById('placeholder-text').style.display = 'none';
+                    const vid = document.getElementById('result-video');
+                    vid.src = item.url;
+                    vid.style.display = 'block';
+                };
+                grid.appendChild(div);
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function generateAnimation(motion) {
+        if (!charDir) {
+            alert("No character directory provided! Please go back to the Fixer tool and save a character first.");
+            return;
+        }
+
+        const overlay = document.getElementById('loading-overlay');
+        const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+        
+        overlay.style.display = 'flex';
+        progressFill.style.width = '10%';
+        progressText.innerText = 'Initializing engine...';
+        
+        try {
+            const response = await fetch('/api/engine/preview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ outDir: charDir, motion: motion })
+            });
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+
+                for (let line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.substring(6));
+                            if (data.status === 'processing') {
+                                progressText.innerText = data.step || 'Processing...';
+                                // Fake progress increments
+                                let currentW = parseInt(progressFill.style.width) || 10;
+                                if (currentW < 90) progressFill.style.width = (currentW + 15) + '%';
+                            } else if (data.status === 'done') {
+                                progressFill.style.width = '100%';
+                                progressText.innerText = 'Complete!';
+                                
+                                setTimeout(() => {
+                                    overlay.style.display = 'none';
+                                    document.getElementById('placeholder-text').style.display = 'none';
+                                    const vid = document.getElementById('result-video');
+                                    vid.src = data.gifUrl + '?t=' + Date.now();
+                                    vid.style.display = 'block';
+                                }, 500);
+                            } else if (data.error) {
+                                alert("Error: " + data.error);
+                                overlay.style.display = 'none';
+                            }
+                        } catch (e) {}
+                    }
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Failed to connect to animation engine.");
+            overlay.style.display = 'none';
+        }
+    }
+
+    // Init
+    loadMotions();
+</script>
+</body>
+</html>

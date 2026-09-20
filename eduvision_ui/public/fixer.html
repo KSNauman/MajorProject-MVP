@@ -3,154 +3,558 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fixer & Engine - EduVision</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <title>Image Prep - EduVision</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
-        .workflow { display: none; }
-        .active { display: block; }
+        :root {
+            --bg-color: #f3f4f6;
+            --panel-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --active-bg: #eff6ff;
+            --active-border: #bfdbfe;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         
-        .upload-area {
-            border: 2px dashed var(--border);
-            border-radius: 12px;
-            padding: 40px;
-            text-align: center;
-            cursor: pointer;
-            margin-top: 20px;
-            background: white;
-        }
-        .upload-area:hover { border-color: var(--primary); }
-
-        .editor-layout {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 24px;
-            margin-top: 20px;
-        }
-
-        .canvas-container {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-        }
-
-        canvas {
-            max-width: 100%;
-            height: auto;
-            border: 1px solid #ddd;
-            cursor: crosshair;
-        }
-
-        .controls-panel {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            overflow: hidden;
         }
 
-        .btn {
-            background: var(--bg-color);
-            border: 1px solid var(--border);
-            padding: 10px 16px;
+        .navbar {
+            height: 60px;
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+
+        .navbar-brand { font-weight: 600; font-size: 1.25rem; }
+        .nav-actions button {
+            padding: 8px 16px;
             border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.95rem;
-            font-family: inherit;
-        }
-        .btn:hover { background: var(--hover); }
-        .btn.primary {
-            background: var(--primary);
-            color: white;
             border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
         }
-        .btn.primary:hover { background: var(--primary-hover); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-secondary { background: var(--panel-bg); border: 1px solid var(--border); color: var(--text-main); }
+        .btn-secondary:hover { background: var(--bg-color); }
 
-        .animations-list {
-            margin-top: 20px;
+        .editor-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            width: 70px;
+            background: var(--panel-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        .tool-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .tool-btn:hover {
+            background: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        .tool-btn.active {
+            background: var(--active-bg);
+            color: var(--primary);
+            border-color: var(--active-border);
+        }
+
+        .tool-btn::after {
+            content: attr(title);
+            position: absolute;
+            left: 60px;
+            background: #1f2937;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 100;
+        }
+
+        .tool-btn:hover::after { opacity: 1; }
+
+        .canvas-wrapper {
+            flex: 1;
+            background: #e5e5f7;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        #brush-properties {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--panel-bg);
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: none;
+            z-index: 20;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            display: none;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Toast Container */
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 10000;
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
-        
-        .preview-container {
-            margin-top: 20px;
-            text-align: center;
-        }
-        .preview-container img {
-            max-width: 100%;
+
+        .toast {
+            background: #333;
+            color: #fff;
+            padding: 12px 20px;
             border-radius: 8px;
-            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-size: 14px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s, transform 0.3s;
         }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast.error { background: #e74c3c; }
+
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="nav-bar">
-            <a href="/" class="nav-logo">EduVision</a>
-            <div class="nav-links">
-                <a href="/story.html">Story</a>
-                <a href="/fixer.html">Fixer & Engine</a>
-            </div>
+
+    <div class="navbar">
+        <div class="navbar-brand"><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--primary); margin-right: 8px;"></i> EduVision Character Prep</div>
+        <div class="nav-actions">
+            <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+            <button class="btn-secondary" onclick="document.getElementById('imageUpload').click()"><i class="fa-solid fa-upload"></i> Upload Image</button>
+            <button class="btn-primary" id="btn-save" style="display: none;"><i class="fa-solid fa-bolt"></i> Process & Go to Engine</button>
         </div>
-
-        <h1 class="page-title">Fixer & Engine</h1>
-
-        <!-- Step 1: Upload -->
-        <div id="step-upload" class="workflow active">
-            <p>Upload a character image to extract keypoints and annotations.</p>
-            <div class="upload-area" onclick="document.getElementById('char-upload').click()">
-                <div style="font-size: 2rem; margin-bottom: 10px;">📸</div>
-                <h3>Upload Image</h3>
-                <p style="color: var(--text-muted); font-size: 0.9rem;">PNG / JPG / JPEG</p>
-                <input type="file" id="char-upload" style="display: none" accept="image/*" onchange="handleUpload(event)">
-            </div>
-            <p id="upload-status" style="margin-top: 15px; text-align: center; color: var(--text-muted);"></p>
-        </div>
-
-        <!-- Step 2 & 3: Fixer Editor -->
-        <div id="step-editor" class="workflow">
-            <div class="editor-layout">
-                <div class="canvas-container">
-                    <canvas id="fixer-canvas"></canvas>
-                </div>
-                
-                <div class="controls-panel">
-                    <h3>Fix Keypoints</h3>
-                    <p style="font-size: 0.85rem; color: var(--text-muted);">Click and drag a joint to correct its position.</p>
-                    
-                    <button class="btn" onclick="resetKeypoints()">Reset</button>
-                    <button class="btn primary" onclick="saveCharacter()">Save Character</button>
-
-                    <hr style="border:0; border-top: 1px solid var(--border); margin: 10px 0;">
-
-                    <h3>Available Animations</h3>
-                    <p style="font-size: 0.85rem; color: var(--text-muted);">Save character to test animations.</p>
-                    <div id="animations-list" class="animations-list"></div>
-
-                    <div id="preview-container" class="preview-container" style="display: none;">
-                        <div id="progress-container" style="display:none; margin-bottom: 15px; width: 100%; background-color: #f3f4f6; border-radius: 9999px; overflow: hidden;">
-                            <div id="progress-bar" style="width: 0%; height: 16px; background-color: #3b82f6; text-align: center; color: white; font-size: 0.75rem; line-height: 16px; transition: width 0.3s ease;">0%</div>
-                        </div>
-                        <img id="preview-gif" src="" alt="Animation Preview">
-                    </div>
-
-                    <hr style="border:0; border-top: 1px solid var(--border); margin: 20px 0;">
-                    
-                    <h3>Recent Animations</h3>
-                    <div id="history-list" style="display: flex; gap: 10px; overflow-x: auto; padding-top: 10px;">
-                        <p style="font-size: 0.85rem; color: var(--text-muted);">No animations generated yet.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </div>
 
-    <script src="/js/fixer.js"></script>
+    <div class="editor-container">
+        <div class="toolbar" id="toolbar" style="display: none;">
+            <button class="tool-btn active" id="tool-drag" title="Drag Keypoints" onclick="setMode('drag')">
+                <i class="fa-solid fa-arrow-pointer"></i>
+            </button>
+            <button class="tool-btn" id="tool-erase" title="Eraser" onclick="setMode('erase')">
+                <i class="fa-solid fa-eraser"></i>
+            </button>
+            <button class="tool-btn" id="tool-draw" title="Draw Limbs" onclick="setMode('draw')">
+                <i class="fa-solid fa-pen"></i>
+            </button>
+        </div>
+
+        <div class="canvas-wrapper">
+            <canvas id="editorCanvas"></canvas>
+            
+            <div id="brush-properties">
+                <span style="font-size: 12px; font-weight: 500; color: var(--text-muted)">Brush Size</span>
+                <input type="range" id="brush-size" min="1" max="50" value="10" onchange="updateBrushSize()">
+            </div>
+            
+            <div id="upload-placeholder" style="position: absolute; text-align: center; color: var(--text-muted);">
+                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; margin-bottom: 10px; color: #cbd5e1;"></i>
+                <p>Upload an image to start</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+        <div style="margin-top: 16px; font-weight: 500; color: var(--text-main);" id="loading-text">Processing...</div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        // --- Utilities ---
+        function showToast(message, isError = false) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast' + (isError ? ' error' : '');
+            toast.innerText = message;
+            container.appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function showLoading(text) {
+            document.getElementById('loading-text').innerText = text;
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+
+        // --- Canvas & State ---
+        let canvas, mainImageObj;
+        let currentMode = 'drag';
+        let isImageModified = false;
+        
+        let kpPoints = {};
+        let kpLines = [];
+
+        function initCanvas() {
+            canvas = new fabric.Canvas('editorCanvas', {
+                width: 512,
+                height: 512,
+                isDrawingMode: false
+            });
+            
+            document.getElementById('imageUpload').addEventListener('change', uploadToBackendFirst);
+            document.getElementById('btn-save').addEventListener('click', processAndGoToEngine);
+
+            canvas.on('path:created', () => {
+                if (currentMode === 'erase') {
+                    const paths = canvas.getObjects();
+                    const lastPath = paths[paths.length - 1];
+                    lastPath.globalCompositeOperation = 'destination-out';
+                    canvas.renderAll();
+                }
+            });
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('tool-' + mode).classList.add('active');
+            
+            const brushProps = document.getElementById('brush-properties');
+            if (mode === 'draw' || mode === 'erase') {
+                brushProps.style.display = 'flex';
+                // If user uses drawing tools, hide skeleton permanently and mark modified
+                if (!isImageModified) {
+                    isImageModified = true;
+                    setSkeletonVisibility(false);
+                    showToast("Skeleton hidden. Draw limbs or erase background.", false);
+                }
+            } else {
+                brushProps.style.display = 'none';
+            }
+
+            if (mode === 'drag') {
+                canvas.isDrawingMode = false;
+            } else if (mode === 'draw') {
+                canvas.isDrawingMode = true;
+                canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+                canvas.freeDrawingBrush.color = '#000000';
+                updateBrushSize();
+            } else if (mode === 'erase') {
+                canvas.isDrawingMode = true;
+                canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+                canvas.freeDrawingBrush.color = '#ffffff'; // Color ignored via composite op
+                updateBrushSize();
+            }
+        }
+
+        function updateBrushSize() {
+            if(canvas.freeDrawingBrush) {
+                canvas.freeDrawingBrush.width = parseInt(document.getElementById('brush-size').value, 10);
+            }
+        }
+
+        // --- Core Workflow ---
+        async function uploadToBackendFirst(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            document.getElementById('upload-placeholder').style.display = 'none';
+            document.getElementById('toolbar').style.display = 'flex';
+            document.getElementById('btn-save').style.display = 'inline-block';
+            
+            // Reset state
+            isImageModified = false;
+            setMode('drag');
+
+            showLoading("Running Inference...");
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const response = await fetch('/api/fixer/extract', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                
+                if (result.error) {
+                    showToast("Error: " + result.error, true);
+                    hideLoading();
+                    return;
+                }
+
+                fabric.Image.fromURL(result.textureUrl + "?t=" + new Date().getTime(), (img) => {
+                    canvas.clear();
+                    
+                    const targetDim = 450;
+                    const scale = Math.min(targetDim / img.width, targetDim / img.height);
+                    
+                    img.scale(scale);
+                    
+                    const offsetX = (512 - img.width * scale) / 2;
+                    const offsetY = (512 - img.height * scale) / 2;
+
+                    img.set({
+                        left: offsetX,
+                        top: offsetY,
+                        selectable: false,
+                        evented: false
+                    });
+
+                    mainImageObj = img;
+                    canvas.add(img);
+
+                    if(result.keypoints) {
+                        drawKeypoints(result.keypoints, scale, offsetX, offsetY);
+                    }
+                    hideLoading();
+                });
+
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to run inference.", true);
+                hideLoading();
+            }
+        }
+
+        function drawKeypoints(keypoints, scale, offsetX, offsetY) {
+            kpPoints = {};
+            kpLines = [];
+
+            keypoints.forEach(kp => {
+                const cx = (kp.x * scale) + offsetX;
+                const cy = (kp.y * scale) + offsetY;
+
+                const circle = new fabric.Circle({
+                    radius: 6, fill: 'red', left: cx, top: cy,
+                    originX: 'center', originY: 'center',
+                    hasControls: false, hasBorders: false, selectable: true,
+                    name: kp.name, parentName: kp.parent
+                });
+                
+                const label = new fabric.Text(kp.name, {
+                    fontSize: 10, fill: 'blue', left: cx + 8, top: cy - 8,
+                    selectable: false, evented: false, originX: 'left', originY: 'bottom'
+                });
+                
+                kpPoints[kp.name] = { circle, label, parentName: kp.parent };
+                canvas.add(circle);
+                canvas.add(label);
+            });
+
+            keypoints.forEach(kp => {
+                if (kp.parent && kpPoints[kp.parent]) {
+                    const p1 = kpPoints[kp.parent].circle;
+                    const p2 = kpPoints[kp.name].circle;
+                    
+                    const line = new fabric.Line([p1.left, p1.top, p2.left, p2.top], {
+                        stroke: 'rgba(255, 0, 0, 0.5)',
+                        strokeWidth: 3, selectable: false, evented: false
+                    });
+                    
+                    kpLines.push({ line, p1, p2 });
+                    canvas.add(line);
+                    line.sendToBack();
+                }
+            });
+            
+            if (mainImageObj) mainImageObj.sendToBack();
+
+            canvas.on('object:moving', function(e) {
+                const obj = e.target;
+                if (obj.type === 'circle' && obj.name) {
+                    const kp = kpPoints[obj.name];
+                    if (kp && kp.label) kp.label.set({ left: obj.left + 8, top: obj.top - 8 });
+                    kpLines.forEach(l => {
+                        if (l.p1 === obj) l.line.set({ x1: obj.left, y1: obj.top });
+                        if (l.p2 === obj) l.line.set({ x2: obj.left, y2: obj.top });
+                    });
+                }
+            });
+        }
+        
+        function setSkeletonVisibility(visible) {
+            Object.values(kpPoints).forEach(kp => {
+                kp.circle.visible = visible;
+                kp.label.visible = visible;
+            });
+            kpLines.forEach(l => {
+                l.line.visible = visible;
+            });
+            canvas.renderAll();
+        }
+
+        function getCurrentKeypoints() {
+            if (!kpPoints || Object.keys(kpPoints).length === 0) return null;
+            let kps = [];
+            for (let name in kpPoints) {
+                kps.push({
+                    name: name,
+                    x: Math.round(kpPoints[name].circle.left),
+                    y: Math.round(kpPoints[name].circle.top),
+                    parent: kpPoints[name].parentName
+                });
+            }
+            return kps;
+        }
+
+        async function processAndGoToEngine() {
+            try {
+                // If the user modified the image, we DO NOT send current keypoints. 
+                // We re-infer them first!
+                if (isImageModified) {
+                    showLoading("Re-inferring skeleton from your drawn edits...");
+                    
+                    // We must be sure skeleton is invisible before taking dataURL
+                    setSkeletonVisibility(false); 
+                    const dataUrl = canvas.toDataURL({ format: 'png' });
+                    const drawnBlob = await (await fetch(dataUrl)).blob();
+                    
+                    const extForm = new FormData();
+                    extForm.append('image', drawnBlob, 'drawn_image.png');
+                    
+                    const extRes = await fetch('/api/fixer/extract', { method: 'POST', body: extForm });
+                    const extData = await extRes.json();
+                    
+                    if (extData.error) throw new Error("Extraction failed: " + extData.error);
+                    
+                    showLoading("Preparing Character for Engine...");
+                    // Download the re-inferred texture to pass to save
+                    const texBlob = await (await fetch(extData.textureUrl)).blob();
+                    
+                    const saveForm = new FormData();
+                    saveForm.append('image', texBlob, 'final_char.png');
+                    if (extData.keypoints) {
+                        saveForm.append('keypoints', JSON.stringify(extData.keypoints));
+                    }
+                    
+                    const saveRes = await fetch('/api/fixer/save', { method: 'POST', body: saveForm });
+                    const saveData = await saveRes.json();
+                    
+                    if (saveData.success && saveData.charDir) {
+                        window.location.href = '/engine.html?charDir=' + encodeURIComponent(saveData.charDir);
+                    } else {
+                        throw new Error("Failed to prepare character after re-inference.");
+                    }
+                    
+                } else {
+                    // Normal path: just dragged keypoints
+                    showLoading("Preparing Character for Engine...");
+                    
+                    setSkeletonVisibility(false); 
+                    const dataUrl = canvas.toDataURL({ format: 'png' });
+                    const blob = await (await fetch(dataUrl)).blob();
+                    
+                    const saveForm = new FormData();
+                    saveForm.append('image', blob, 'fixed_char.png');
+                    
+                    const currentKps = getCurrentKeypoints();
+                    if (currentKps) {
+                        saveForm.append('keypoints', JSON.stringify(currentKps));
+                    }
+                    
+                    const response = await fetch('/api/fixer/save', { method: 'POST', body: saveForm });
+                    const result = await response.json();
+                    
+                    if (result.success && result.charDir) {
+                        window.location.href = '/engine.html?charDir=' + encodeURIComponent(result.charDir);
+                    } else {
+                        throw new Error("Failed to prepare character.");
+                    }
+                }
+            } catch(e) {
+                console.error(e);
+                showToast(e.message || "Failed to process image.", true);
+                hideLoading();
+            }
+        }
+
+        initCanvas();
+    </script>
 </body>
 </html>

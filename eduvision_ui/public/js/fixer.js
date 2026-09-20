@@ -78,9 +78,12 @@ async function loadCharacterData(jsonUrl, imgUrl) {
 
         characterImage = new Image();
         characterImage.onload = () => {
-            // Setup canvas size to exactly match the image
             canvas.width = characterImage.width;
             canvas.height = characterImage.height;
+            characterCanvas.width = characterImage.width;
+            characterCanvas.height = characterImage.height;
+            charCtx.clearRect(0, 0, characterCanvas.width, characterCanvas.height);
+            charCtx.drawImage(characterImage, 0, 0);
             drawCanvas();
             URL.revokeObjectURL(objectURL);
         };
@@ -96,7 +99,13 @@ async function loadCharacterData(jsonUrl, imgUrl) {
 
 function drawCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(characterImage, 0, 0);
+    if (!isErasing) {
+        ctx.drawImage(characterCanvas, 0, 0);
+    } else {
+        // Draw slightly faded so user sees it's erasing mode, but actually we need full opacity to see what we erase.
+        // Let's just draw it normally.
+        ctx.drawImage(characterCanvas, 0, 0);
+    }
 
     if (!annotationData || !annotationData.skeleton) return;
 
@@ -302,4 +311,115 @@ function addToHistory(motion, url) {
     wrapper.appendChild(thumb);
     wrapper.appendChild(label);
     historyList.prepend(wrapper); // Add to beginning
+}
+
+function eraseAt(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    
+    charCtx.globalCompositeOperation = 'destination-out';
+    charCtx.beginPath();
+    charCtx.arc(x, y, ERASER_SIZE, 0, Math.PI * 2);
+    charCtx.fill();
+    charCtx.globalCompositeOperation = 'source-over';
+    drawCanvas();
+}
+
+function toggleEraser() {
+    isErasing = !isErasing;
+    const btn = document.getElementById('btn-manual-eraser');
+    const saveBtn = document.getElementById('btn-save-mask');
+    if (isErasing) {
+        btn.innerText = "Cancel Eraser";
+        btn.classList.add("primary");
+        saveBtn.style.display = "inline-block";
+        canvas.style.cursor = "crosshair";
+    } else {
+        btn.innerText = "Toggle Manual Eraser";
+        btn.classList.remove("primary");
+        saveBtn.style.display = "none";
+        canvas.style.cursor = "default";
+        // Reload texture to undo unsaved erasure
+        if (currentOutDir) {
+            loadCharacterData(`/api/files?path=${encodeURIComponent(currentOutDir+'/annotation.json')}`, `/api/files?path=${encodeURIComponent(currentOutDir+'/texture.png')}`);
+        }
+    }
+}
+
+async function remaskAI(method) {
+    if (!currentOutDir) return;
+    const statusEl = document.getElementById('remask-status');
+    statusEl.style.display = 'block';
+    statusEl.innerText = 'Remasking with ' + method + '...';
+    
+    try {
+        const res = await fetch('/api/fixer/remask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ outDir: currentOutDir, method: method })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            statusEl.innerText = 'Remask successful!';
+            await loadCharacterData(`/api/files?path=${encodeURIComponent(currentOutDir+'/annotation.json')}`, data.textureUrl);
+            setTimeout(() => statusEl.style.display = 'none', 2000);
+        } else {
+            statusEl.innerText = 'Error: ' + data.error;
+        }
+    } catch (e) {
+        console.error(e);
+        statusEl.innerText = 'Remask failed.';
+    }
+}
+
+async function saveManualMask() {
+    if (!currentOutDir) return;
+    const statusEl = document.getElementById('remask-status');
+    statusEl.style.display = 'block';
+    statusEl.innerText = 'Saving manual mask...';
+    
+    // Create black and white mask from characterCanvas alpha channel
+    const maskCanvas = document.createElement('canvas');
+    maskCanvas.width = characterCanvas.width;
+    maskCanvas.height = characterCanvas.height;
+    const mCtx = maskCanvas.getContext('2d');
+    
+    const imgData = charCtx.getImageData(0, 0, characterCanvas.width, characterCanvas.height);
+    const data = imgData.data;
+    const maskData = mCtx.createImageData(maskCanvas.width, maskCanvas.height);
+    const mData = maskData.data;
+    
+    for (let i = 0; i < data.length; i += 4) {
+        const alpha = data[i + 3];
+        // If alpha is > 0, we consider it part of the mask (white). Else black.
+        // Actually, rembg returns soft alpha, so we just use the alpha value for grayscale.
+        mData[i] = alpha;
+        mData[i+1] = alpha;
+        mData[i+2] = alpha;
+        mData[i+3] = 255;
+    }
+    mCtx.putImageData(maskData, 0, 0);
+    const base64 = maskCanvas.toDataURL('image/png');
+    
+    try {
+        const res = await fetch('/api/fixer/manual-mask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ outDir: currentOutDir, maskBase64: base64 })
+        });
+        const respData = await res.json();
+        if (res.ok) {
+            statusEl.innerText = 'Mask saved!';
+            toggleEraser(); // turn off eraser mode
+            setTimeout(() => statusEl.style.display = 'none', 2000);
+        } else {
+            statusEl.innerText = 'Error: ' + respData.error;
+        }
+    } catch (e) {
+        console.error(e);
+        statusEl.innerText = 'Save failed.';
+    }
 }

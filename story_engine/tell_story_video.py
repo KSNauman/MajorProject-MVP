@@ -41,6 +41,7 @@ EXAMPLES   = AD_ROOT / "examples"
 MOTION_DIR = EXAMPLES / "config" / "motion"
 RETARGET_FAIR1 = str(EXAMPLES / "config" / "retarget" / "fair1_ppf.yaml")
 RETARGET_CMU1  = str(EXAMPLES / "config" / "retarget" / "cmu1_pfp.yaml")
+RETARGET_MIXAMO = str(EXAMPLES / "config" / "retarget" / "mixamo_fff.yaml")
 ANIM_SCRIPT    = str(EXAMPLES / "annotations_to_animation.py")
 
 STORY_OUT  = Path(__file__).resolve().parent / "output"
@@ -57,41 +58,56 @@ CONDA_ENV  = "animated_drawings"
 # fair1 motions  : dab, wave_hello, zombie, jumping  → fair1_ppf
 # cmu1  motions  : jumping_jacks                     → cmu1_pfp
 
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('--child', type=str, default=str(EXAMPLES / "test2_out"))
+parser.add_argument('--friend', type=str, default=str(EXAMPLES / "test3_out"))
+parser.add_argument('--teacher', type=str, default=str(EXAMPLES / "test4_out"))
+args, unknown = parser.parse_known_args()
+
+CHILD_DIR = Path(args.child)
+FRIEND_DIR = Path(args.friend)
+TEACHER_DIR = Path(args.teacher)
+
 STORY = [
     {
         "title":    "Scene 1",
-        "caption":  "Once upon a time, an honest woodcutter trudged sadly through the forest.",
+        "caption":  "Today was a beautiful day at the park.",
         "characters": [
-            {"name": "woodcutter", "char_dir": EXAMPLES / "test2_out",
-             "motion": "zombie", "retarget": RETARGET_FAIR1},
-        ],
-    },
-    {
-        "title":   "Scene 2",
-        "caption": "He had lost his axe in the river! Suddenly, a magical fairy appeared to help.",
-        "characters": [
-            {"name": "woodcutter", "char_dir": EXAMPLES / "test2_out",
-             "motion": "jumping", "retarget": RETARGET_FAIR1},
-            {"name": "fairy", "char_dir": EXAMPLES / "test3_out",
+            {"name": "child", "char_dir": CHILD_DIR,
              "motion": "wave_hello", "retarget": RETARGET_FAIR1},
         ],
     },
     {
-        "title":   "Scene 3",
-        "caption": "She offered him a golden axe, but the woodcutter honestly refused it.",
+        "title":   "Scene 2",
+        "caption": "The child saw a friend, and they were so excited!",
         "characters": [
-            {"name": "woodcutter", "char_dir": EXAMPLES / "test2_out",
+            {"name": "child", "char_dir": CHILD_DIR,
+             "motion": "jumping", "retarget": RETARGET_FAIR1},
+            {"name": "friend", "char_dir": FRIEND_DIR,
+             "motion": "jumping", "retarget": RETARGET_FAIR1},
+        ],
+    },
+    {
+        "title":   "Scene 3",
+        "caption": "Their favorite teacher arrived and gave a cool greeting!",
+        "characters": [
+            {"name": "child", "char_dir": CHILD_DIR,
+             "motion": "wave_hello", "retarget": RETARGET_FAIR1},
+            {"name": "teacher", "char_dir": TEACHER_DIR,
              "motion": "dab", "retarget": RETARGET_FAIR1},
         ],
     },
     {
         "title":   "Scene 4",
-        "caption": "Because he told the truth, the fairy rewarded him, and they celebrated together!",
+        "caption": "They all had a wonderful time playing together.",
         "characters": [
-            {"name": "woodcutter", "char_dir": EXAMPLES / "test2_out",
-             "motion": "jumping_jacks", "retarget": RETARGET_CMU1},
-            {"name": "fairy", "char_dir": EXAMPLES / "test3_out",
-             "motion": "jumping_jacks", "retarget": RETARGET_CMU1},
+            {"name": "child", "char_dir": CHILD_DIR,
+             "motion": "jesse_dance", "retarget": RETARGET_MIXAMO},
+            {"name": "friend", "char_dir": FRIEND_DIR,
+             "motion": "jesse_dance", "retarget": RETARGET_MIXAMO},
+            {"name": "teacher", "char_dir": TEACHER_DIR,
+             "motion": "jesse_dance", "retarget": RETARGET_MIXAMO},
         ],
     },
 ]
@@ -128,8 +144,7 @@ def render_character(char_dir: Path, motion: str, retarget: str, save_as: Path) 
     log.info(f"    ▶ rendering  {char_dir.name} × {motion} ...")
 
     cmd = [
-        "conda", "run", "--no-capture-output", "-n", CONDA_ENV,
-        "python", ANIM_SCRIPT,
+        sys.executable, ANIM_SCRIPT,
         str(char_dir),
         motion_cfg,
         retarget,
@@ -188,6 +203,8 @@ def get_font(size: int = 20):
         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
         "/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf",
+        r"C:\Windows\Fontsrialbd.ttf",
+        r"C:\Windows\Fontsrial.ttf"
     ]
     for p in candidates:
         if Path(p).exists():

@@ -128,6 +128,11 @@
             <h3 style="margin-bottom: 16px;">Final Narrated Video</h3>
             <video id="result-video" controls autoplay></video>
         </div>
+
+        <div id="log-container" style="display: none; margin-top: 20px; background: #1e1e1e; border-radius: 8px; padding: 15px; color: #a9b7c6; font-family: Consolas, monospace; font-size: 14px; max-height: 400px; overflow-y: auto;">
+            <h4 style="color: #fff; margin-bottom: 10px; font-family: 'Inter', sans-serif;">Server Logs</h4>
+            <div id="log-console" style="white-space: pre-wrap;"></div>
+        </div>
     </div>
 
     <script>
@@ -145,6 +150,17 @@
             const btn = document.getElementById('generate-btn');
             btn.disabled = true;
             btn.innerText = "Generating story... (This may take a minute)";
+            
+            document.getElementById('log-container').style.display = 'block';
+            const logConsole = document.getElementById('log-console');
+            logConsole.innerText = '';
+            
+            let es = new EventSource('/api/logs/stream');
+            es.onmessage = function(event) {
+                const msg = JSON.parse(event.data);
+                logConsole.innerText += msg + '\n';
+                logConsole.parentElement.scrollTop = logConsole.parentElement.scrollHeight;
+            };
 
             const formData = new FormData(document.getElementById('story-form'));
             
@@ -156,10 +172,8 @@
                 const data = await res.json();
                 
                 if (res.ok) {
-                    // For Phase 4 integration
-                    alert("Integration endpoint triggered. MP4 logic will stream here.");
-                    // document.getElementById('video-container').style.display = 'block';
-                    // document.getElementById('result-video').src = data.url;
+                    document.getElementById('video-container').style.display = 'block';
+                    document.getElementById('result-video').src = data.url;
                 } else {
                     alert("Error: " + data.error);
                 }
@@ -168,6 +182,7 @@
                 alert("Failed to connect to server.");
             }
             
+            if (es) es.close();
             btn.disabled = false;
             btn.innerText = "Generate Story";
         }
