@@ -20,6 +20,7 @@ const TORCHSERVE_BIN = '/home/champion/anaconda3/envs/animated_drawings/bin/torc
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Request Logging Middleware
 app.use((req, res, next) => {
@@ -283,6 +284,26 @@ app.post('/api/engine/preview', (req, res) => {
             res.end();
         }
     });
+});
+
+
+// Engine: Delete recent animation
+app.delete('/api/engine/recent/:id', (req, res) => {
+    const charId = req.params.id;
+    if (!charId || !charId.startsWith('char_data_')) return res.status(400).json({error: "Invalid ID"});
+    
+    const charPath = path.join(__dirname, 'uploads', charId);
+    if (fs.existsSync(charPath)) {
+        try {
+            fs.rmSync(charPath, { recursive: true, force: true });
+            res.json({ success: true });
+        } catch(e) {
+            console.error(e);
+            res.status(500).json({ error: "Failed to delete" });
+        }
+    } else {
+        res.json({ success: true }); // Already gone
+    }
 });
 
 // Utility to serve files outside public dir safely
