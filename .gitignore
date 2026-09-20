@@ -95,3 +95,7 @@ examples/test4_out/
 run_output.log
 eduvision_ui/uploads/
 hs_err_pid*.log
+
+# Temp scripts and Public Uploads
+scratch/
+eduvision_ui/public/uploads/
