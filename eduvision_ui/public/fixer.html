@@ -205,7 +205,10 @@
 
     <div class="navbar">
         <div class="navbar-brand"><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--primary); margin-right: 8px;"></i> EduVision Character Prep</div>
-        <div class="nav-actions">
+        <div class="nav-actions" style="display:flex; align-items:center; gap:15px;">
+            <label style="font-size:14px; display:flex; align-items:center; gap:5px; cursor:pointer;">
+                <input type="checkbox" id="gpuToggle" onchange="localStorage.setItem('useGpu', this.checked)" checked> Use GPU Acceleration
+            </label>
             <input type="file" id="imageUpload" accept="image/*" style="display: none;">
             <button class="btn-secondary" onclick="document.getElementById('imageUpload').click()"><i class="fa-solid fa-upload"></i> Upload Image</button>
             <button class="btn-primary" id="btn-save" style="display: none;"><i class="fa-solid fa-bolt"></i> Process & Go to Engine</button>
@@ -355,6 +358,7 @@
             try {
                 const formData = new FormData();
                 formData.append('image', file);
+                formData.append('useGpu', document.getElementById('gpuToggle').checked);
 
                 const response = await fetch('/api/fixer/extract', {
                     method: 'POST',
@@ -497,6 +501,7 @@
                     
                     const extForm = new FormData();
                     extForm.append('image', drawnBlob, 'drawn_image.png');
+                    extForm.append('useGpu', document.getElementById('gpuToggle').checked);
                     
                     const extRes = await fetch('/api/fixer/extract', { method: 'POST', body: extForm });
                     const extData = await extRes.json();
@@ -554,6 +559,7 @@
             }
         }
 
+        if(localStorage.getItem("useGpu") !== null) document.getElementById("gpuToggle").checked = localStorage.getItem("useGpu") === "true";
         initCanvas();
     </script>
 </body>
