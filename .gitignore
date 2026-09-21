@@ -129,4 +129,7 @@ ehthumbs.db
 *.zip
 Screenshot*.*
 hs_err_pid*.log
-run_output.log
+
+# Temp scripts and Public Uploads
+scratch/
+eduvision_ui/public/uploads/

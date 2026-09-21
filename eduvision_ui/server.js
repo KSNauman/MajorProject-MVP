@@ -14,6 +14,23 @@ const EXAMPLES_DIR = path.join(REPO_ROOT, 'examples');
 const TORCHSERVE_DIR = path.join(REPO_ROOT, 'torchserve');
 
 const PYTHON_BIN = 'python';
+
+// Utility to dynamically toggle GPU visibility for Python processes based on UI request
+function getSpawnEnv(req) {
+    const env = Object.assign({}, process.env);
+    if (req && req.body && (req.body.useGpu === false || req.body.useGpu === 'false' || req.body.useGpu === undefined)) {
+        // We assume CPU fallback if not explicitly true
+        // But let's check if the client sent 'useGpu' at all. If it sent 'true', enable GPU.
+        if (req.body.useGpu === true || req.body.useGpu === 'true') {
+            // Keep GPU
+        } else {
+            env['USE_GPU'] = 'false';
+            env['CUDA_VISIBLE_DEVICES'] = ''; // Ensure it isn't set to -1
+        }
+    }
+    return env;
+}
+
 const TORCHSERVE_BIN = '/home/champion/anaconda3/envs/animated_drawings/bin/torchserve';
 
 // Middleware
@@ -56,8 +73,9 @@ function startTorchServe() {
     
     stopProcess.on('close', () => {
         torchserveProcess = spawn(TORCHSERVE_BIN, ['--start', '--ts-config', 'config.local.properties', '--foreground'], {
-            cwd: TORCHSERVE_DIR
-        });
+            cwd: TORCHSERVE_DIR,
+          env: getSpawnEnv(req)
+      });
 
     let tsOutput = "";
 
@@ -91,14 +109,10 @@ function startTorchServe() {
 app.post('/api/story/generate', (req, res) => {
     console.log("Generating story...");
     const storyScriptDir = path.resolve(__dirname, '../story_engine');
-    
-    // We expect req.body to have storyId and characters object
-    const payload = JSON.stringify(req.body);
-    console.log("Payload:", payload);
-    
-    const pyProcess = spawn(PYTHON_BIN, ['compose_story.py', payload], {
-        cwd: storyScriptDir
-    });
+    const pyProcess = spawn(PYTHON_BIN, ['run_all.py'], {
+        cwd: storyScriptDir,
+          env: getSpawnEnv(req)
+      });
 
     let output = '';
     pyProcess.stdout.on('data', data => output += data.toString());
@@ -150,8 +164,9 @@ app.post('/api/fixer/extract', upload.single('image'), (req, res) => {
     
     // We will use a quick python helper to run the engine, copy the texture, and return JSON.
     const pyProcess = spawn(PYTHON_BIN, ['robust_extract_api.py', imgPath], {
-        cwd: storyScriptDir
-    });
+        cwd: storyScriptDir,
+          env: getSpawnEnv(req)
+      });
     
     let output = '';
     pyProcess.stdout.on('data', data => output += data.toString());
@@ -188,8 +203,9 @@ app.post('/api/fixer/save', upload.single('image'), (req, res) => {
     
     console.log("Spawning prepare_character_api.py without shell...");
     const pyProcess = spawn(PYTHON_BIN, ['prepare_character_api.py', imgPath, 'dummy', kpsArg], {
-        cwd: storyScriptDir
-    });
+        cwd: storyScriptDir,
+          env: getSpawnEnv(req)
+      });
     
     let output = '';
     pyProcess.stdout.on('data', data => output += data.toString());
@@ -283,8 +299,9 @@ app.post('/api/engine/preview', (req, res) => {
     }
 
     const pyProcess = spawn(PYTHON_BIN, ['examples/annotations_to_animation.py', outDir, motionYaml, retargetYaml], {
-        cwd: REPO_ROOT
-    });
+        cwd: REPO_ROOT,
+          env: getSpawnEnv(req)
+      });
 
     let output = '';
     pyProcess.stderr.on('data', data => {
