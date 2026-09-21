@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Story - EduVision</title>
+    <title>Story - Rahim's Family</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         .character-card {
@@ -34,6 +35,9 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 0.9rem;
+            text-decoration: none;
+            color: var(--text-main);
+            display: inline-block;
         }
 
         .upload-btn:hover {
@@ -67,6 +71,11 @@
         }
         .btn-large:hover { background: var(--primary-hover); }
         .btn-large:disabled { background: #93c5fd; cursor: not-allowed; }
+        
+        .success-text {
+            color: #16a34a;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -79,45 +88,81 @@
             </div>
         </div>
 
-        <h1 class="page-title">Story: A Day at the Park</h1>
+        <h1 class="page-title">Story: Rahim's Family</h1>
         <p style="color: var(--text-muted); margin-bottom: 30px;">
-            Create your characters for this story. Upload a drawing, or leave it blank to use the default character.
+            Cast the characters for this story. Upload a custom drawing via the Fixer, or leave it blank to use the default character.
         </p>
 
         <form id="story-form">
-            <!-- Child -->
+            <!-- Rahim -->
             <div class="character-card">
                 <div class="char-info">
-                    <h3>Child</h3>
-                    <p id="child-status">Default character will be used</p>
+                    <h3>Rahim (Main Character)</h3>
+                    <p id="rahim-status">Default character will be used</p>
                 </div>
                 <div>
-                    <input type="file" id="child-upload" name="child" style="display: none" accept="image/*" onchange="updateStatus('child')">
-                    <button type="button" class="upload-btn" onclick="document.getElementById('child-upload').click()">Upload / Draw</button>
+                    <button type="button" class="upload-btn" onclick="goToFixer('rahim')"><i class="fa-solid fa-paintbrush"></i> Draw Custom</button>
+                    <button type="button" class="upload-btn" onclick="clearSlot('rahim')" id="rahim-clear" style="display:none; color: #dc2626; border-color: #fca5a5;"><i class="fa-solid fa-trash"></i> Reset</button>
                 </div>
             </div>
 
-            <!-- Friend -->
+            <!-- Sister -->
             <div class="character-card">
                 <div class="char-info">
-                    <h3>Friend</h3>
-                    <p id="friend-status">Default character will be used</p>
+                    <h3>Sister</h3>
+                    <p id="sister-status">Default character will be used</p>
                 </div>
                 <div>
-                    <input type="file" id="friend-upload" name="friend" style="display: none" accept="image/*" onchange="updateStatus('friend')">
-                    <button type="button" class="upload-btn" onclick="document.getElementById('friend-upload').click()">Upload / Draw</button>
+                    <button type="button" class="upload-btn" onclick="goToFixer('sister')"><i class="fa-solid fa-paintbrush"></i> Draw Custom</button>
+                    <button type="button" class="upload-btn" onclick="clearSlot('sister')" id="sister-clear" style="display:none; color: #dc2626; border-color: #fca5a5;"><i class="fa-solid fa-trash"></i> Reset</button>
                 </div>
             </div>
 
-            <!-- Teacher -->
+            <!-- Mother -->
             <div class="character-card">
                 <div class="char-info">
-                    <h3>Teacher</h3>
-                    <p id="teacher-status">Default character will be used</p>
+                    <h3>Mother</h3>
+                    <p id="mother-status">Default character will be used</p>
                 </div>
                 <div>
-                    <input type="file" id="teacher-upload" name="teacher" style="display: none" accept="image/*" onchange="updateStatus('teacher')">
-                    <button type="button" class="upload-btn" onclick="document.getElementById('teacher-upload').click()">Upload / Draw</button>
+                    <button type="button" class="upload-btn" onclick="goToFixer('mother')"><i class="fa-solid fa-paintbrush"></i> Draw Custom</button>
+                    <button type="button" class="upload-btn" onclick="clearSlot('mother')" id="mother-clear" style="display:none; color: #dc2626; border-color: #fca5a5;"><i class="fa-solid fa-trash"></i> Reset</button>
+                </div>
+            </div>
+
+            <!-- Father -->
+            <div class="character-card">
+                <div class="char-info">
+                    <h3>Father</h3>
+                    <p id="father-status">Default character will be used</p>
+                </div>
+                <div>
+                    <button type="button" class="upload-btn" onclick="goToFixer('father')"><i class="fa-solid fa-paintbrush"></i> Draw Custom</button>
+                    <button type="button" class="upload-btn" onclick="clearSlot('father')" id="father-clear" style="display:none; color: #dc2626; border-color: #fca5a5;"><i class="fa-solid fa-trash"></i> Reset</button>
+                </div>
+            </div>
+
+            <!-- Grandma -->
+            <div class="character-card">
+                <div class="char-info">
+                    <h3>Grandma</h3>
+                    <p id="grandma-status">Default character will be used</p>
+                </div>
+                <div>
+                    <button type="button" class="upload-btn" onclick="goToFixer('grandma')"><i class="fa-solid fa-paintbrush"></i> Draw Custom</button>
+                    <button type="button" class="upload-btn" onclick="clearSlot('grandma')" id="grandma-clear" style="display:none; color: #dc2626; border-color: #fca5a5;"><i class="fa-solid fa-trash"></i> Reset</button>
+                </div>
+            </div>
+
+            <!-- Grandpa -->
+            <div class="character-card">
+                <div class="char-info">
+                    <h3>Grandpa</h3>
+                    <p id="grandpa-status">Default character will be used</p>
+                </div>
+                <div>
+                    <button type="button" class="upload-btn" onclick="goToFixer('grandpa')"><i class="fa-solid fa-paintbrush"></i> Draw Custom</button>
+                    <button type="button" class="upload-btn" onclick="clearSlot('grandpa')" id="grandpa-clear" style="display:none; color: #dc2626; border-color: #fca5a5;"><i class="fa-solid fa-trash"></i> Reset</button>
                 </div>
             </div>
 
@@ -125,8 +170,15 @@
         </form>
 
         <div id="video-container" class="video-container">
-            <h3 style="margin-bottom: 16px;">Final Narrated Video</h3>
+            <h3 style="margin-bottom: 16px;">Final Narrated Story</h3>
             <video id="result-video" controls autoplay></video>
+        </div>
+
+                <div id="recent-stories-container" style="margin-top: 30px; background: #252526; padding: 20px; border-radius: 8px; border: 1px solid #3e3e42;">
+            <h3 style="margin-bottom: 16px;">Recent Stories</h3>
+            <div id="recent-stories-list" style="display:flex; overflow-x: auto; gap: 15px; padding-bottom: 10px;">
+                <!-- Populated via JS -->
+            </div>
         </div>
 
         <div id="log-container" style="display: none; margin-top: 20px; background: #1e1e1e; border-radius: 8px; padding: 15px; color: #a9b7c6; font-family: Consolas, monospace; font-size: 14px; max-height: 400px; overflow-y: auto;">
@@ -136,20 +188,59 @@
     </div>
 
     <script>
-        function updateStatus(charName) {
-            const fileInput = document.getElementById(charName + '-upload');
-            const statusText = document.getElementById(charName + '-status');
-            if (fileInput.files.length > 0) {
-                statusText.innerHTML = '<span style="color: #16a34a;">✓ Custom drawing</span>';
-            } else {
-                statusText.innerText = 'Default character will be used';
+        const SLOTS = ['rahim', 'sister', 'mother', 'father', 'grandma', 'grandpa'];
+
+        window.onload = () => {
+            loadRecentStories();
+            SLOTS.forEach(slot => {
+                const charDir = sessionStorage.getItem('story_slot_' + slot);
+                if (charDir) {
+                    document.getElementById(slot + '-status').innerHTML = '<span class="success-text"><i class="fa-solid fa-check"></i> Custom character prepared</span>';
+                    document.getElementById(slot + '-clear').style.display = 'inline-block';
+                }
+            });
+        };
+
+                async function loadRecentStories() {
+            try {
+                const res = await fetch('/api/story/recent');
+                const data = await res.json();
+                const container = document.getElementById('recent-stories-list');
+                container.innerHTML = '';
+                
+                if (data.stories && data.stories.length > 0) {
+                    data.stories.forEach(story => {
+                        const date = new Date(story.date).toLocaleString();
+                        const div = document.createElement('div');
+                        div.style.minWidth = '300px';
+                        div.innerHTML = `
+                            <video src="${story.url}" controls style="width: 100%; border-radius: 8px; border: 2px solid #5a5a5a;"></video>
+                            <p style="margin-top: 8px; font-size: 13px; color: #a9b7c6;">${date}</p>
+                        `;
+                        container.appendChild(div);
+                    });
+                } else {
+                    container.innerHTML = '<p style="color: #a9b7c6; font-size: 14px;">No recent stories found.</p>';
+                }
+            } catch (e) {
+                console.error("Failed to load recent stories", e);
             }
+        }
+
+        function goToFixer(slot) {
+            window.location.href = `/fixer.html?returnUrl=/story.html&slot=${slot}`;
+        }
+
+        function clearSlot(slot) {
+            sessionStorage.removeItem('story_slot_' + slot);
+            document.getElementById(slot + '-status').innerText = 'Default character will be used';
+            document.getElementById(slot + '-clear').style.display = 'none';
         }
 
         async function generateStory() {
             const btn = document.getElementById('generate-btn');
             btn.disabled = true;
-            btn.innerText = "Generating story... (This may take a minute)";
+            btn.innerText = "Generating story... (This takes a few minutes)";
             
             document.getElementById('log-container').style.display = 'block';
             const logConsole = document.getElementById('log-console');
@@ -162,18 +253,24 @@
                 logConsole.parentElement.scrollTop = logConsole.parentElement.scrollHeight;
             };
 
-            const formData = new FormData(document.getElementById('story-form'));
+            const characters = {};
+            SLOTS.forEach(slot => {
+                // Use slot name as default character ID (maps to characters/{slot}/)
+                characters[slot] = sessionStorage.getItem('story_slot_' + slot) || slot;
+            });
             
             try {
                 const res = await fetch('/api/story/generate', {
                     method: 'POST',
-                    body: formData
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ storyId: 'rahims_story', characters: characters })
                 });
                 const data = await res.json();
                 
                 if (res.ok) {
                     document.getElementById('video-container').style.display = 'block';
                     document.getElementById('result-video').src = data.url;
+                    loadRecentStories();
                 } else {
                     alert("Error: " + data.error);
                 }
@@ -189,3 +286,5 @@
     </script>
 </body>
 </html>
+
+

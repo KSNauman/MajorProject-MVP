@@ -128,3 +128,50 @@ These captions will be automatically read aloud by the Google TTS engine during 
 * **Scene 2:** "He had lost his axe in the river! Suddenly, a magical fairy appeared to help."
 * **Scene 3:** "She offered him a golden axe, but the woodcutter honestly refused it."
 * **Scene 4:** "Because he told the truth, the fairy rewarded him, and they celebrated together!"
+
+---
+
+## Case Study: Rahim's Story (Kindergarten Focus)
+
+We expanded the pipeline to support a 9-scene kindergarten story featuring 6 unique characters (Rahim, Sister, Mother, Father, Grandma, Grandpa). This required significant upgrades to the architecture to support custom .bvh files and complex scene compositions.
+
+### 1. Robust Mixamo BVH Support
+The AnimatedDrawings engine natively struggles with standard Mixamo BVH exports because Mixamo prefixes every bone with mixamorig: and often omits minor bones (like finger joints) when using simple 2D rigs. 
+**Extra Code Written:** We implemented a transparent adapter in atch_animate.py that automatically strips the mixamorig: prefix in memory and applies a custom mixamo_custom.yaml retargeting profile that gracefully ignores missing finger joints.
+
+### 2. High-Performance Caching
+Instead of running the heavy AI processing every time a story is generated, we decoupled the pipeline:
+- **Character Preparation:** YOLOv8 masking and skeleton mapping is run once per uploaded character.
+- **Animation Generation:** The engine pre-renders all required animations (idel, wave, sleep, etc.) as transparent GIFs and stores them in a permanent cache directory (characters/{slot}/animations/).
+
+### 3. Lightweight Scene Compositor
+**Extra Code Written:** We built compose_story.py, a new compositor that entirely bypasses the AI engine during story generation. It reads a JSON layout definition specifying semantic anchors (e.g., "anchor": "floor" or "bed"), scales, and precise X/Y coordinates. 
+It uses a bundled fmpeg encoder (via moviepy) to stitch the cached transparent GIFs onto static backgrounds, meticulously stretching the scene durations to preserve the silent pauses in the master ahim_story_audio.mp3 narration.
+
+### The Bottleneck Situation Arised
+While caching solved the repeated story generation time (bringing it down to ~75 seconds), the **initial** cache generation for 6 uploaded characters took **9 to 12 minutes**, which is completely infeasible for a live classroom setting.
+
+**The Cause:**
+The system naively exported the *entire* length of the .bvh motion files. For example, wave.bvh contained 839 frames (35 seconds of waving). The engine spent massive amounts of CPU time rendering 35 seconds of a character waving into a GIF, even though Rahim only ever waves for 2.5 seconds on screen!
+
+**The Required Fix:**
+To make live character uploads feasible, the pipeline must:
+1. **Truncate rendering:** Cap the animation export to only the required duration of the scene (e.g., max 3 seconds / 72 frames).
+2. **Lazy/Specific Generation:** Only generate the animations required by that specific character's role (e.g., don't generate the sleep animation for Rahim, as he is never asleep in the story). 
+Implementing these two caps will reduce the initial 10-minute wait down to roughly 60-90 seconds.
+
+### 4. Final Integration & Performance Fixes (The Solution)
+
+To completely finalize the engine for production, we tackled the massive CPU bottleneck and the UI integration issues. 
+
+**Extra Code Written for Performance (Frame Truncation):**
+We intercepted the AnimatedDrawings configuration in atch_animate.py and dynamically injected end_frame_idx: 90 into the motion_cfg dictionary before passing it to the engine. 
+- *Why it was needed:* The ARAP character deformation stage is extremely CPU-heavy and strictly single-threaded. By capping the animation export to 90 frames (~3.75 seconds), we stopped the engine from uselessly rendering the full 35-second .bvh files. 
+- *The Result:* Cache generation time for a full set of character animations dropped instantly from over 10 minutes down to roughly **54 seconds**.
+
+**Extra Code Written for UI Integration (Asynchronous Rendering):**
+Even with the speedup, waiting 54 seconds during an HTTP upload request is terrible UX and often leads to browser timeouts (HTTP 408). 
+- *The Fix:* We completely refactored prepare_character_api.py. Instead of waiting for atch_animate.py to finish, we spawned it as a fully detached background process using subprocess.Popen(..., creationflags=subprocess.CREATE_NO_WINDOW). The upload API now returns success in under 1 second, allowing the user to seamlessly navigate the EduVision web app while the 54-second rendering happens silently in the background. 
+
+**Recent Stories History System:**
+We also overhauled the story output mechanism. We modified compose_story.py to append Unix timestamps to the output .mp4 filenames, preventing the engine from overwriting old stories. We built a new Express route (/api/story/recent) in server.js that scans the output directory, sorts the videos by metadata timestamps, and serves them to a newly injected horizontal scrolling video gallery in story.html.

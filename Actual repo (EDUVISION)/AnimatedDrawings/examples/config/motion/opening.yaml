@@ -1,0 +1,11 @@
+filepath: examples/bvh/mixamo/opening.bvh
+start_frame_idx: 0
+end_frame_idx: 80
+groundplane_joint: RightToeBase
+forward_perp_joint_vectors:
+- - LeftShoulder
+  - RightShoulder
+- - LeftUpLeg
+  - RightUpLeg
+scale: 0.015
+up: +y

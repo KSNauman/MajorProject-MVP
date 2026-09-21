@@ -1,0 +1,15 @@
+{
+  "slot": "mother",
+  "processed_at": "2026-09-21T02:18:18",
+  "char_cfg": "char_cfg.yaml",
+  "texture": "texture.png",
+  "mask": "mask.png",
+  "animations": {
+    "idel": "animations/idel.gif",
+    "wave": "animations/wave.gif",
+    "jump": "animations/jump.gif",
+    "sleep": "animations/sleep.gif",
+    "opening": "animations/opening.gif",
+    "walk_in_circle": "animations/walk_in_circle.gif"
+  }
+}
