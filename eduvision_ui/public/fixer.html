@@ -235,7 +235,7 @@
             
             <div id="upload-placeholder" style="position: absolute; text-align: center; color: var(--text-muted);">
                 <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; margin-bottom: 10px; color: #cbd5e1;"></i>
-                <p>Upload an image to start</p>
+                <p>Upload an image to start</p><p style="font-size:12px; margin-top:5px;">Scroll to Zoom. Hold ALT to Pan.</p>
             </div>
         </div>
     </div>
@@ -277,6 +277,7 @@
         let isImageModified = false;
         
         let kpPoints = {};
+        let currentTextureUrl = "";
         let kpLines = [];
 
         function initCanvas() {
@@ -288,7 +289,69 @@
             
             document.getElementById('imageUpload').addEventListener('change', uploadToBackendFirst);
             document.getElementById('btn-save').addEventListener('click', processAndGoToEngine);
+            
+            // Check for restore
+            if (window.location.search.includes('restore=true')) {
+                const rTex = sessionStorage.getItem('restore_textureUrl');
+                const rKps = sessionStorage.getItem('restore_keypoints');
+                if (rTex && rKps) {
+                    currentTextureUrl = rTex;
+                    document.getElementById('upload-placeholder').style.display = 'none';
+                    document.getElementById('toolbar').style.display = 'flex';
+                    document.getElementById('btn-save').style.display = 'inline-block';
+                    
+                    fabric.Image.fromURL(rTex + "?t=" + new Date().getTime(), (img) => {
+                        canvas.clear();
+                        canvas.setBackgroundColor('#f3f4f6', canvas.renderAll.bind(canvas));
+                        img.set({ selectable: false, evented: false });
+                        canvas.add(img);
+                        mainImageObj = img;
+                        
+                        let kpsData = JSON.parse(rKps);
+                        drawSkeleton(kpsData);
+                    });
+                }
+            }
 
+            
+            canvas.on('mouse:wheel', function(opt) {
+                var delta = opt.e.deltaY;
+                var zoom = canvas.getZoom();
+                zoom *= 0.999 ** delta;
+                if (zoom > 5) zoom = 5;
+                if (zoom < 0.2) zoom = 0.2;
+                canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
+                opt.e.preventDefault();
+                opt.e.stopPropagation();
+            });
+            
+            // Allow panning when holding Alt
+            canvas.on('mouse:down', function(opt) {
+                var evt = opt.e;
+                if (evt.altKey === true) {
+                    this.isDragging = true;
+                    this.selection = false;
+                    this.lastPosX = evt.clientX;
+                    this.lastPosY = evt.clientY;
+                }
+            });
+            canvas.on('mouse:move', function(opt) {
+                if (this.isDragging) {
+                    var e = opt.e;
+                    var vpt = this.viewportTransform;
+                    vpt[4] += e.clientX - this.lastPosX;
+                    vpt[5] += e.clientY - this.lastPosY;
+                    this.requestRenderAll();
+                    this.lastPosX = e.clientX;
+                    this.lastPosY = e.clientY;
+                }
+            });
+            canvas.on('mouse:up', function(opt) {
+                this.setViewportTransform(this.viewportTransform);
+                this.isDragging = false;
+                this.selection = true;
+            });
+            
             canvas.on('path:created', () => {
                 if (currentMode === 'erase') {
                     const paths = canvas.getObjects();
@@ -312,6 +375,7 @@
                     isImageModified = true;
                     setSkeletonVisibility(false);
                     showToast("Skeleton hidden. Draw limbs or erase background.", false);
+                    document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Re-analyze Drawing';
                 }
             } else {
                 brushProps.style.display = 'none';
@@ -349,6 +413,7 @@
             
             // Reset state
             isImageModified = false;
+            document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-bolt"></i> Process & Go to Engine';
             setMode('drag');
 
             showLoading("Running Inference...");
@@ -361,6 +426,7 @@
                     body: formData
                 });
                 const result = await response.json();
+                  if(!result.error) currentTextureUrl = result.textureUrl;
                 
                 if (result.error) {
                     showToast("Error: " + result.error, true);
@@ -500,6 +566,7 @@
                     
                     const extRes = await fetch('/api/fixer/extract', { method: 'POST', body: extForm });
                     const extData = await extRes.json();
+                      if(!extData.error) currentTextureUrl = extData.textureUrl;
                     
                     if (extData.error) throw new Error("Extraction failed: " + extData.error);
                     
@@ -517,7 +584,19 @@
                     const saveData = await saveRes.json();
                     
                     if (saveData.success && saveData.charDir) {
-                        window.location.href = '/engine.html?charDir=' + encodeURIComponent(saveData.charDir);
+                        sessionStorage.setItem('restore_textureUrl', currentTextureUrl);
+                        sessionStorage.setItem('restore_keypoints', JSON.stringify(getCurrentKeypoints()));
+                        
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const returnUrl = urlParams.get('returnUrl');
+                        const slot = urlParams.get('slot');
+                        
+                        if (returnUrl && slot) {
+                            sessionStorage.setItem('story_slot_' + slot, saveData.charDir);
+                            window.location.href = returnUrl;
+                        } else {
+                            window.location.href = '/engine.html?charDir=' + encodeURIComponent(saveData.charDir);
+                        }
                     } else {
                         throw new Error("Failed to prepare character after re-inference.");
                     }
@@ -542,7 +621,19 @@
                     const result = await response.json();
                     
                     if (result.success && result.charDir) {
-                        window.location.href = '/engine.html?charDir=' + encodeURIComponent(result.charDir);
+                        sessionStorage.setItem('restore_textureUrl', currentTextureUrl);
+                        sessionStorage.setItem('restore_keypoints', JSON.stringify(getCurrentKeypoints()));
+                        
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const returnUrl = urlParams.get('returnUrl');
+                        const slot = urlParams.get('slot');
+                        
+                        if (returnUrl && slot) {
+                            sessionStorage.setItem('story_slot_' + slot, result.charDir);
+                            window.location.href = returnUrl;
+                        } else {
+                            window.location.href = '/engine.html?charDir=' + encodeURIComponent(result.charDir);
+                        }
                     } else {
                         throw new Error("Failed to prepare character.");
                     }

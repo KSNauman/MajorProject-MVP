@@ -20,6 +20,7 @@ const TORCHSERVE_BIN = '/home/champion/anaconda3/envs/animated_drawings/bin/torc
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Request Logging Middleware
 app.use((req, res, next) => {
@@ -87,10 +88,15 @@ function startTorchServe() {
 // ==========================================
 
 // Story: Generate final video
-app.post('/api/story/generate', upload.any(), (req, res) => {
+app.post('/api/story/generate', (req, res) => {
     console.log("Generating story...");
     const storyScriptDir = path.resolve(__dirname, '../story_engine');
-    const pyProcess = spawn(PYTHON_BIN, ['run_all.py'], {
+    
+    // We expect req.body to have storyId and characters object
+    const payload = JSON.stringify(req.body);
+    console.log("Payload:", payload);
+    
+    const pyProcess = spawn(PYTHON_BIN, ['compose_story.py', payload], {
         cwd: storyScriptDir
     });
 
@@ -104,11 +110,37 @@ app.post('/api/story/generate', upload.any(), (req, res) => {
             console.error(`[STORY ENGINE ERROR OUTPUT]\n${output}\n-------------------------`);
             return res.status(500).json({ error: "Story generation failed." });
         }
-        res.json({ message: "Success", url: "/api/files?path=" + encodeURIComponent(path.join(storyScriptDir, 'output', 'park_story_final.mp4')) });
+                // Find latest mp4 in output dir
+        const outputDir = path.join(storyScriptDir, 'output');
+        const files = fs.readdirSync(outputDir).filter(f => f.endsWith('.mp4'));
+        files.sort((a, b) => fs.statSync(path.join(outputDir, b)).mtime.getTime() - fs.statSync(path.join(outputDir, a)).mtime.getTime());
+        const latestFile = files.length > 0 ? files[0] : 'rahims_story_final.mp4';
+        res.json({ message: "Success", url: "/api/files?path=" + encodeURIComponent(path.join(outputDir, latestFile)) });
     });
 });
 
 // Fixer: Upload image and run keypoint estimation
+// Get recent stories
+app.get('/api/story/recent', (req, res) => {
+    const outputDir = path.resolve(__dirname, '../story_engine/output');
+    if (!fs.existsSync(outputDir)) return res.json({ stories: [] });
+    
+    const files = fs.readdirSync(outputDir)
+        .filter(f => f.endsWith('.mp4'))
+        .map(f => {
+            const filePath = path.join(outputDir, f);
+            const stat = fs.statSync(filePath);
+            return {
+                name: f,
+                url: "/api/files?path=" + encodeURIComponent(filePath),
+                date: stat.mtime
+            };
+        })
+        .sort((a, b) => b.date.getTime() - a.date.getTime());
+        
+    res.json({ stories: files });
+});
+
 app.post('/api/fixer/extract', upload.single('image'), (req, res) => {
     console.log("Running Robust Engine Extraction...");
     if (!req.file) return res.status(400).json({ error: "No image uploaded" });
@@ -285,10 +317,30 @@ app.post('/api/engine/preview', (req, res) => {
     });
 });
 
+
+// Engine: Delete recent animation
+app.delete('/api/engine/recent/:id', (req, res) => {
+    const charId = req.params.id;
+    if (!charId || !charId.startsWith('char_data_')) return res.status(400).json({error: "Invalid ID"});
+    
+    const charPath = path.join(__dirname, 'uploads', charId);
+    if (fs.existsSync(charPath)) {
+        try {
+            fs.rmSync(charPath, { recursive: true, force: true });
+            res.json({ success: true });
+        } catch(e) {
+            console.error(e);
+            res.status(500).json({ error: "Failed to delete" });
+        }
+    } else {
+        res.json({ success: true }); // Already gone
+    }
+});
+
 // Utility to serve files outside public dir safely
 app.get('/api/files', (req, res) => {
     const filePath = req.query.path;
-    if (!filePath || !filePath.startsWith(path.join(__dirname, 'uploads'))) {
+    if (!filePath || (!filePath.startsWith(path.join(__dirname, 'uploads')) && !filePath.startsWith(path.resolve(__dirname, '../story_engine')) && !filePath.startsWith(path.resolve(__dirname, '../characters')))) {
         return res.status(403).json({ error: "Forbidden" });
     }
     res.sendFile(filePath);
@@ -308,3 +360,5 @@ app.listen(PORT, () => {
     console.log(`EduVision Minimal UI running on http://localhost:${PORT}`);
     // startTorchServe();
 });
+
+

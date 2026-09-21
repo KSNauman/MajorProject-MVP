@@ -1,97 +1,132 @@
-# Virtual environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+﻿# ==========================================
+# EduVision Engine - Global .gitignore
+# ==========================================
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+# ------------------------------------------
+# 1. Project-Specific Temporary & Output Assets
+# ------------------------------------------
+# Character processing cache
+char_data_*/
 
-# Machine Learning & AI
-*.pt
-*.pth
-*.mar
-*.onnx
-*.tflite
-*.pb
-*.h5
-*.hdf5
-*.ckpt
-*.weights
-models/
-datasets/
-logs/
-runs/
-yolo_output.jpg
+# Story Engine intermediate scenes and frames (Keep final MP4s)
+story_engine/output/scene_*/
 
-# Node.js
-node_modules/
-npm-debug.log
-yarn-error.log
-yarn-debug.log
-.pnp
-.pnp.js
+# UI uploads folder
+eduvision_ui/uploads/
 
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Project-specific datasets and large artifacts
-amateur_drawings_annotations.json
-amateur_drawings.tar
-sketch_yolo_corrected/
-sketch_phase2_padded/
-sketch_yolo_dataset/
-sketch_coco_dataset/
-output_test_anno/
-inference_results/
-massive_sketch_dataset/
-*.zip
-
-# Virtual environment (named)
-animated_drawings_env/
-
-# MediaPipe model assets (large binary files)
-*.task
-
-# Inference and render output folders
-inference_results2/
-yolo_test/inference_results2/
-mediapipe_web_test/pose_overlay.png
+# Output and inference results
 garlic_output/
 examples/garlic_out/
 examples/test2_out/
 examples/test3_out/
 examples/test4_out/
-run_output.log
-eduvision_ui/uploads/
+inference_results/
+inference_results2/
+yolo_test/inference_results2/
+mediapipe_web_test/pose_overlay.png
+output_test_anno/
+yolo_output.jpg
+
+# ------------------------------------------
+# 2. Datasets & Large Machine Learning Models
+# ------------------------------------------
+# Huge datasets
+amateur_drawings_annotations.json
+amateur_drawings.tar
+massive_sketch_dataset/
+sketch_coco_dataset/
+sketch_phase2_padded/
+sketch_yolo_corrected/
+sketch_yolo_dataset/
+
+# ML Model weights (PyTorch, ONNX, TFLite, etc)
+*.ckpt
+*.h5
+*.hdf5
+*.mar
+*.onnx
+*.pb
+*.pt
+*.pth
+*.task
+*.tflite
+*.weights
+datasets/
+logs/
+models/
+runs/
+
+# ------------------------------------------
+# 3. Python Environment & Caches
+# ------------------------------------------
+# Virtual environments
+.env
+.venv
+ENV/
+env/
+env.bak/
+venv/
+venv.bak/
+animated_drawings_env/
+
+# Cache and build artifacts
+*.egg
+*.egg-info/
+*.py[cod]
+*.so
+*.class
+.eggs/
+.installed.cfg
+.Python
+__pycache__/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+share/python-wheels/
+var/
+wheels/
+MANIFEST
+
+# ------------------------------------------
+# 4. Node.js Environment (EduVision UI)
+# ------------------------------------------
+.pnp
+.pnp.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# ------------------------------------------
+# 5. OS & IDE Generated Files
+# ------------------------------------------
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# IDEs (VSCode, PyCharm, etc)
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ------------------------------------------
+# 6. Miscellaneous
+# ------------------------------------------
+*.zip
+Screenshot*.*
 hs_err_pid*.log
+run_output.log

@@ -1,4 +1,4 @@
-import sys
+﻿import sys
 import os
 import json
 import time
@@ -30,6 +30,15 @@ def main():
         print(json.dumps({"error": f"Engine failed: {result.stderr}"}))
         sys.exit(1)
         
+    batch_script = os.path.join(os.path.dirname(__file__), 'batch_animate.py')
+    # Run in background (detached)
+    subprocess.Popen(
+        [sys.executable, batch_script, char_dir], 
+        stdout=subprocess.DEVNULL, 
+        stderr=subprocess.DEVNULL,
+        creationflags=subprocess.CREATE_NO_WINDOW
+    )
+
     print(json.dumps({
         "success": True, 
         "charDir": char_dir
