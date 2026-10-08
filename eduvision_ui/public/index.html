@@ -5,28 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EduVision</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
+    <div class="container" style="text-align: center; margin-top: 100px;">
         <header class="home-header">
-            <h1>EduVision</h1>
-            <p class="subtitle">Turn drawings into animation</p>
+            <h1 style="font-size: 3rem; margin-bottom: 10px;">EDUVISION</h1>
+            <p class="subtitle" style="font-size: 1.2rem; color: #6b7280; margin-bottom: 50px;">Turn children's drawings into animated stories</p>
         </header>
 
-        <div class="cards-grid">
+        <div class="cards-grid" style="display: flex; justify-content: center; gap: 30px; max-width: 800px; margin: 0 auto;">
             <!-- Option 1: Story -->
-            <a href="/story.html" class="card">
-                <div class="card-icon">📖</div>
-                <h2>Story</h2>
-                <p>Create the fixed story using your drawings</p>
+            <a href="/story.html" class="card" style="flex: 1; padding: 40px; text-decoration: none; border-radius: 12px; background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s;">
+                <h2 style="font-size: 1.5rem; color: #1f2937; margin-bottom: 15px;"><i class="fa-solid fa-book-open" style="margin-right: 10px; color: #3b82f6;"></i> CREATE STORY</h2>
+                <p style="color: #6b7280;">Cast characters and generate your story video.</p>
             </a>
 
             <!-- Option 2: Fixer & Engine -->
-            <a href="/fixer.html" class="card">
-                <div class="card-icon">🛠</div>
-                <h2>Fixer & Engine</h2>
-                <p>Fix character keypoints and test BVH animations</p>
+            <a href="/fixer.html" class="card" style="flex: 1; padding: 40px; text-decoration: none; border-radius: 12px; background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s;">
+                <h2 style="font-size: 1.5rem; color: #1f2937; margin-bottom: 15px;"><i class="fa-solid fa-paintbrush" style="margin-right: 10px; color: #a855f7;"></i> FIXER / ENGINE</h2>
+                <p style="color: #6b7280;">Correct a drawing's skeleton or test animations.</p>
             </a>
         </div>
     </div>

@@ -204,7 +204,10 @@
 <body>
 
     <div class="navbar">
-        <div class="navbar-brand"><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--primary); margin-right: 8px;"></i> EduVision Character Prep</div>
+        <div class="navbar-brand">
+            <a id="back-btn" href="/" style="text-decoration: none; color: var(--text-muted); font-size: 1rem; margin-right: 20px;"><i class="fa-solid fa-arrow-left"></i> Back to Home</a>
+            <i class="fa-solid fa-wand-magic-sparkles" style="color:var(--primary); margin-right: 8px;"></i> EduVision Character Prep
+        </div>
         <div class="nav-actions">
             <input type="file" id="imageUpload" accept="image/*" style="display: none;">
             <button class="btn-secondary" onclick="document.getElementById('imageUpload').click()"><i class="fa-solid fa-upload"></i> Upload Image</button>
@@ -580,10 +583,28 @@
                         saveForm.append('keypoints', JSON.stringify(extData.keypoints));
                     }
                     
+                    // Pass story slot so server generates only required motions
+                    const _urlP1 = new URLSearchParams(window.location.search);
+                    if (_urlP1.get('slot')) saveForm.append('slot', _urlP1.get('slot'));
+                    
                     const saveRes = await fetch('/api/fixer/save', { method: 'POST', body: saveForm });
                     const saveData = await saveRes.json();
                     
-                    if (saveData.success && saveData.charDir) {
+                    if (saveData.success && saveData.jobId) {
+                        // Poll for job completion
+                        while(true) {
+                            const jobRes = await fetch('/api/jobs/' + saveData.jobId);
+                            const jobData = await jobRes.json();
+                            showLoading(jobData.message || jobData.stage || "Loading...");
+                            
+                            if (jobData.status === 'COMPLETED') {
+                                saveData.charDir = jobData.charDir;
+                                break;
+                            } else if (jobData.status === 'FAILED') {
+                                throw new Error(jobData.error || "Job failed");
+                            }
+                            await new Promise(r => setTimeout(r, 1000));
+                        }
                         sessionStorage.setItem('restore_textureUrl', currentTextureUrl);
                         sessionStorage.setItem('restore_keypoints', JSON.stringify(getCurrentKeypoints()));
                         
@@ -617,10 +638,29 @@
                         saveForm.append('keypoints', JSON.stringify(currentKps));
                     }
                     
+                    // Pass story slot so server generates only required motions
+                    const _urlP2 = new URLSearchParams(window.location.search);
+                    if (_urlP2.get('slot')) saveForm.append('slot', _urlP2.get('slot'));
+                    
                     const response = await fetch('/api/fixer/save', { method: 'POST', body: saveForm });
                     const result = await response.json();
                     
-                    if (result.success && result.charDir) {
+                    if (result.success && result.jobId) {
+                        // Poll for job completion
+                        while(true) {
+                            const jobRes = await fetch('/api/jobs/' + result.jobId);
+                            const jobData = await jobRes.json();
+                            showLoading(jobData.message || jobData.stage || "Loading...");
+                            
+                            if (jobData.status === 'COMPLETED') {
+                                result.charDir = jobData.charDir;
+                                break;
+                            } else if (jobData.status === 'FAILED') {
+                                throw new Error(jobData.error || "Job failed");
+                            }
+                            await new Promise(r => setTimeout(r, 1000));
+                        }
+                        
                         sessionStorage.setItem('restore_textureUrl', currentTextureUrl);
                         sessionStorage.setItem('restore_keypoints', JSON.stringify(getCurrentKeypoints()));
                         

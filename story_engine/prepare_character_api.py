@@ -1,8 +1,9 @@
-﻿import sys
+import sys
 import os
 import json
 import time
 import subprocess
+from progress_logger import ProgressLogger
 
 def main():
     if len(sys.argv) < 2:
@@ -11,6 +12,11 @@ def main():
         
     img_path = sys.argv[1].strip('"')
     kps_arg = sys.argv[3].strip('"') if len(sys.argv) > 3 else "none"
+    job_id = sys.argv[4].strip('"') if len(sys.argv) > 4 else "unknown_job"
+    
+    logger = ProgressLogger(job_id, "Fixer")
+    logger.log_stage("PREPROCESSING_STARTED", "Starting character preprocessing")
+    logger.start_timer("preprocessing")
     
     upload_dir = os.path.dirname(img_path)
     char_id = str(int(time.time()))
@@ -27,22 +33,14 @@ def main():
     result = subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True)
     
     if result.returncode != 0:
-        print(json.dumps({"error": f"Engine failed: {result.stderr}"}))
+        logger.log_error("Preprocessing engine failed", result.stderr)
         sys.exit(1)
         
-    batch_script = os.path.join(os.path.dirname(__file__), 'batch_animate.py')
-    # Run in background (detached)
-    subprocess.Popen(
-        [sys.executable, batch_script, char_dir], 
-        stdout=subprocess.DEVNULL, 
-        stderr=subprocess.DEVNULL,
-        creationflags=subprocess.CREATE_NO_WINDOW
-    )
+    logger.end_timer("preprocessing")
+    logger.log_stage("PREPROCESSING_COMPLETED", "Character bounding box, mask, and skeleton created")
 
-    print(json.dumps({
-        "success": True, 
-        "charDir": char_dir
-    }))
+    # Send charDir back to Node.js for batch_animate spawning
+    print(json.dumps({"charDir": char_dir}))
 
 if __name__ == '__main__':
     main()

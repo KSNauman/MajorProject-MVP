@@ -20,6 +20,7 @@ import yaml
 import shutil
 import argparse
 import time
+from progress_logger import ProgressLogger
 from pathlib import Path
 
 # Add AnimatedDrawings to path
@@ -214,6 +215,7 @@ def write_manifest(char_dir: str, slot_name: str, results: dict):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Batch-generate animation GIFs for a character")
     parser.add_argument("char_dir", help="Path to processed character directory (must have char_cfg.yaml)")
+    parser.add_argument("job_id", nargs="?", default="unknown_job", help="Job ID")
     parser.add_argument("--motions", help="Comma-separated motion names (default: all story motions)")
     parser.add_argument("--slot", default="unknown", help="Character slot name for manifest")
     args = parser.parse_args()

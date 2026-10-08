@@ -1,62 +1,62 @@
-# EduVision: AI-Powered Collaborative Story Animation
+﻿# EduVision: AI-Powered Collaborative Story Animation
 
 > **A classroom tool where children draw characters on paper, and AI brings their entire class story to life.**
 
 ---
 
-## 🎯 Project Idea
+## ðŸŽ¯ Project Idea
 
 **EduVision** is a collaborative story animation platform designed for early childhood classrooms.
 
 ### The Flow
 1. **Teacher** creates a story session and writes a short story description  
    *(e.g., "The farmer walks to the barn. The dog jumps around.")*
-2. **Kids** each draw one character on paper — a farmer, a cow, a dog, a tree
+2. **Kids** each draw one character on paper â€” a farmer, a cow, a dog, a tree
 3. **Teacher uploads** all the sketches into the platform
 4. **AI detects** each character's skeleton, reads the story, and assigns the right motion to each drawing
-5. **System renders** each character animated — farmer walks, dog jumps, cow stands idle
+5. **System renders** each character animated â€” farmer walks, dog jumps, cow stands idle
 6. **Class watches** their drawings come alive together as a shared story
 
 ### Why it matters
-- Every child contributes — no one is a passive viewer
+- Every child contributes â€” no one is a passive viewer
 - First tool to animate a **collaborative, multi-character scene** from kids' own drawings
-- No artistic skill required from the teacher — just upload and describe
+- No artistic skill required from the teacher â€” just upload and describe
 - Real AI driving real animation, not templates
 
 ---
 
-## 🏗️ System Architecture
+## ðŸ—ï¸ System Architecture
 
 ```
 Teacher types story + uploads sketches
-              │
-              ▼
-  ┌────────────────────────────────────────────┐
-  │           Python Flask Backend             │
-  │                                            │
-  │  ┌────────────────┐  ┌──────────────────┐  │
-  │  │  TorchServe    │  │  Gemini LLM API  │  │
-  │  │ (Meta Models)  │  │ (Story→Motion)   │  │
-  │  │ detect pose on │  │ "farmer" → walk  │  │
-  │  │ each sketch PNG│  │ "dog"    → jump  │  │
-  │  └───────┬────────┘  └────────┬─────────┘  │
-  │          │ skeleton JSON      │ BVH file    │
-  │          └──────────┬─────────┘            │
-  │                     ▼                       │
-  │          ┌──────────────────────┐           │
-  │          │ AnimatedDrawings     │           │
-  │          │ Render Engine        │           │
-  │          │ (ARAP + OpenGL)      │           │
-  │          └──────────┬───────────┘           │
-  └─────────────────────┼─────────────────────-─┘
-                        │ animated GIFs
-                        ▼
-            Scene stitched → shown in browser
+              â”‚
+              â–¼
+  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+  â”‚           Python Flask Backend             â”‚
+  â”‚                                            â”‚
+  â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”‚
+  â”‚  â”‚  TorchServe    â”‚  â”‚  Gemini LLM API  â”‚  â”‚
+  â”‚  â”‚ (Meta Models)  â”‚  â”‚ (Storyâ†’Motion)   â”‚  â”‚
+  â”‚  â”‚ detect pose on â”‚  â”‚ "farmer" â†’ walk  â”‚  â”‚
+  â”‚  â”‚ each sketch PNGâ”‚  â”‚ "dog"    â†’ jump  â”‚  â”‚
+  â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â”‚
+  â”‚          â”‚ skeleton JSON      â”‚ BVH file    â”‚
+  â”‚          â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜            â”‚
+  â”‚                     â–¼                       â”‚
+  â”‚          â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”           â”‚
+  â”‚          â”‚ AnimatedDrawings     â”‚           â”‚
+  â”‚          â”‚ Render Engine        â”‚           â”‚
+  â”‚          â”‚ (ARAP + OpenGL)      â”‚           â”‚
+  â”‚          â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜           â”‚
+  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€-â”€â”˜
+                        â”‚ animated GIFs
+                        â–¼
+            Scene stitched â†’ shown in browser
 ```
 
 ---
 
-## 📖 Research & Engineering Textbook
+## ðŸ“– Research & Engineering Textbook
 
 This textbook documents all the math, theory, experiments (including failures), and technical learnings behind building EduVision.
 
@@ -84,32 +84,34 @@ This textbook documents all the math, theory, experiments (including failures), 
 * How to resolve neural network mode collapse using spatial padding augmentation.
 * Covers: Overfitting diagnosis, canvas embedding math, Meta CDN streaming.
 
-### [Chapter 7: Deep Learning Failure & Architecture Pivot ❌](chapter7_failure_and_pivot.md)
+### [Chapter 7: Deep Learning Failure & Architecture Pivot âŒ](chapter7_failure_and_pivot.md)
 * Log of YOLOv8n-pose failure (mode collapse) and the decision to pivot to Meta's engine.
 
-### [Chapter 8: MediaPipe Web Pose Estimation Failure Log ❌](chapter8_mediapipe_web_failure.md)
+### [Chapter 8: MediaPipe Web Pose Estimation Failure Log âŒ](chapter8_mediapipe_web_failure.md)
 * Log of Google MediaPipe WebAssembly landmarker failure on sketch-domain images.
 
-### [Chapter 9: Multi-Scene Story Engine & BVH Import ✅](chapter9_story_engine.md)
+### [Chapter 9: Multi-Scene Story Engine & BVH Import âœ…](chapter9_story_engine.md)
 * Automated storytelling pipeline using MoviePy and Google TTS (gTTS).
 * Details on how to download, configure, and seamlessly retarget custom Mixamo BVH motion files into the rendering engine.
 
 ---
 
-## 🚀 Future Advancements
+## ðŸš€ Future Advancements
 
-Potential directions beyond the current MVP — for future versions or research extensions.
+Potential directions beyond the current MVP â€” for future versions or research extensions.
 
 | Idea | Description |
 |:---|:---|
 | **Custom Sketch Pose Model** | Train YOLOv8m-pose on Meta's Amateur Drawings Dataset to replace TorchServe with a lightweight model that runs entirely in-browser |
-| **Auto Story Generation** | LLM generates the full story from just a theme word (e.g., "farm") — no teacher input needed |
+| **Auto Story Generation** | LLM generates the full story from just a theme word (e.g., "farm") â€” no teacher input needed |
 | **Non-Humanoid Animation** | Extend to animate animals, vehicles, and objects using quadruped or custom skeleton rigs |
-| **Real-Time Drawing Mode** | Draw directly in-browser on a tablet — character animates live as the sketch is completed |
-| **Voice Narration (DONE ✅)** | TTS narration plays over the animated scene, reading the story aloud while characters move |
-| **Multi-Scene Sequencing (DONE ✅)** | Teachers build a multi-scene storyboard — characters move across different backgrounds |
+| **Real-Time Drawing Mode** | Draw directly in-browser on a tablet â€” character animates live as the sketch is completed |
+| **Voice Narration (DONE âœ…)** | TTS narration plays over the animated scene, reading the story aloud while characters move |
+| **Multi-Scene Sequencing (DONE âœ…)** | Teachers build a multi-scene storyboard â€” characters move across different backgrounds |
 | **Student Portfolio** | Each child's animated character is saved to a personal gallery accessible by parents |
 
 ---
 
 *Last updated: August 27, 2026*
+- [Chapter 12: Engine Optimization and Sealing](chapter12_engine_optimization.md)
+
