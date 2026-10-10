@@ -8,8 +8,13 @@
 # Character processing cache
 char_data_*/
 
-# Story Engine intermediate scenes and frames (Keep final MP4s)
-story_engine/output/scene_*/
+# Story Engine generated renders, intermediate scenes, and test outputs
+story_engine/output/
+story_engine/test_baseline/
+story_engine/test_grandma/
+story_engine/test_mother/
+story_engine/test_rahim/
+story_engine/test_sister/
 
 # UI uploads folder
 eduvision_ui/uploads/

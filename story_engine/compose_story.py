@@ -15,6 +15,7 @@ FFMPEG_BIN = get_ffmpeg_exe()
 import json
 import subprocess
 import time
+from progress_logger import ProgressLogger
 from pathlib import Path
 from PIL import Image, ImageSequence
 
@@ -29,69 +30,68 @@ SCENES = [
         "id": 1, "start": 0.13, "end": 2.58,
         "bg": "bg_bedroom.png",
         "chars": [
-            {"slot": "rahim", "motion": "idel", "x": 0.5, "y": 0.86, "scale": 0.48, "anchor": "floor"}
+            {"slot": "rahim", "motion": "idel", "x": 0.5, "y": 0.86, "scale": 0.29, "anchor": "floor"}
         ]
     },
     {
         "id": 2, "start": 2.58, "end": 5.16,
         "bg": "bg_hallway.png",
         "chars": [
-            {"slot": "rahim", "motion": "wave", "x": 0.5, "y": 0.86, "scale": 0.48, "anchor": "floor"}
+            {"slot": "rahim", "motion": "wave", "x": 0.5, "y": 0.86, "scale": 0.29, "anchor": "floor"}
         ]
     },
     {
         "id": 3, "start": 5.16, "end": 7.65,
         "bg": "bg_bedroom.png",
         "chars": [
-            {"slot": "sister", "motion": "sleep", "x": 0.45, "y": 0.70, "scale": 0.34, "anchor": "bed"}
+            {"slot": "sister", "motion": "sleep", "x": 0.45, "y": 0.70, "scale": 0.28, "anchor": "floor"}
         ]
     },
     {
         "id": 4, "start": 7.65, "end": 10.15,
         "bg": "bg_hallway.png",
         "chars": [
-            {"slot": "rahim", "motion": "wave", "x": 0.5, "y": 0.86, "scale": 0.48, "anchor": "floor"}
+            {"slot": "rahim", "motion": "wave", "x": 0.5, "y": 0.86, "scale": 0.29, "anchor": "floor"}
         ]
     },
     {
         "id": 5, "start": 10.15, "end": 13.57,
         "bg": "bg_kitchen.png",
         "chars": [
-            {"slot": "mother",  "motion": "opening",         "x": 0.35, "y": 0.86, "scale": 0.45, "anchor": "floor"},
-            {"slot": "grandma", "motion": "walk_in_circle",   "x": 0.65, "y": 0.86, "scale": 0.43, "anchor": "floor"}
+            {"slot": "mother",  "motion": "opening",         "x": 0.35, "y": 0.86, "scale": 0.35, "anchor": "floor"},
+            {"slot": "grandma", "motion": "walk_in_circle",   "x": 0.65, "y": 0.86, "scale": 0.32, "anchor": "floor"}
         ]
     },
     {
         "id": 6, "start": 13.57, "end": 16.05,
         "bg": "bg_hallway.png",
         "chars": [
-            {"slot": "rahim", "motion": "wave", "x": 0.5, "y": 0.86, "scale": 0.48, "anchor": "floor"}
+            {"slot": "rahim", "motion": "wave", "x": 0.5, "y": 0.86, "scale": 0.29, "anchor": "floor"}
         ]
     },
     {
         "id": 7, "start": 16.05, "end": 19.62,
         "bg": "bg_study_garden.png",
         "chars": [
-            {"slot": "father",  "motion": "opening",         "x": 0.35, "y": 0.86, "scale": 0.45, "anchor": "floor"},
-            {"slot": "grandpa", "motion": "walk_in_circle",   "x": 0.65, "y": 0.86, "scale": 0.43, "anchor": "floor"}
+            {"slot": "father",  "motion": "opening",         "x": 0.35, "y": 0.86, "scale": 0.35, "anchor": "floor"},
+            {"slot": "grandpa", "motion": "walk_in_circle",   "x": 0.65, "y": 0.86, "scale": 0.32, "anchor": "floor"}
         ]
     },
     {
         "id": 8, "start": 19.62, "end": 22.41,
         "bg": "bg_hallway.png",
         "chars": [
-            {"slot": "rahim", "motion": "wave", "x": 0.5, "y": 0.86, "scale": 0.48, "anchor": "floor"}
+            {"slot": "rahim", "motion": "wave", "x": 0.5, "y": 0.86, "scale": 0.29, "anchor": "floor"}
         ]
     },
     {
-        "id": 9, "start": 22.41, "end": 24.50,
+        "id": 9, "start": 22.41, "end": 23.88,
         "bg": "bg_bedroom.png",
         "chars": [
-            {"slot": "rahim", "motion": "jump", "x": 0.5, "y": 0.86, "scale": 0.48, "anchor": "floor"}
+            {"slot": "rahim", "motion": "jump", "x": 0.5, "y": 0.86, "scale": 0.29, "anchor": "floor"}
         ]
     }
 ]
-
 CANVAS_W, CANVAS_H = 1280, 720
 FPS = 24
 
@@ -116,13 +116,30 @@ def load_gif_frames(gif_path: Path) -> list:
             frames.append(frame.convert("RGBA"))
     except EOFError:
         pass
+        
+    union_bbox = None
+    for frame in frames:
+        bbox = frame.getbbox()
+        if bbox:
+            if union_bbox is None:
+                union_bbox = list(bbox)
+            else:
+                union_bbox[0] = min(union_bbox[0], bbox[0])
+                union_bbox[1] = min(union_bbox[1], bbox[1])
+                union_bbox[2] = max(union_bbox[2], bbox[2])
+                union_bbox[3] = max(union_bbox[3], bbox[3])
+                
+    if union_bbox:
+        return [f.crop(union_bbox) for f in frames]
     return frames
 
-def compose_scene(scene: dict, characters: dict) -> str:
+def compose_scene(scene: dict, characters: dict, logger=None) -> str:
     sid = scene["id"]
     duration = scene["end"] - scene["start"]
     total_frames = max(1, int(duration * FPS))
     print(f"  Composing Scene {sid}: {duration:.2f}s, {total_frames} frames")
+    if logger: logger.log_stage("SCENE_PREPARATION", f"Preparing scene {sid}", scene=sid)
+    if logger: logger.start_timer(f"scene_{sid}")
 
     bg_path = ASSETS_DIR / scene["bg"]
     if bg_path.exists():
@@ -172,7 +189,7 @@ def compose_scene(scene: dict, characters: dict) -> str:
             px = int(cd["x"] * CANVAS_W - char_w / 2)
             
             # Position based on semantic anchor
-            if cd.get("anchor") in ["floor", "bed", "bottom"]:
+            if cd.get("anchor") in ["floor", "bottom"]:
                 py = int(cd["y"] * CANVAS_H - char_h)
             else:
                 py = int(cd["y"] * CANVAS_H - char_h / 2)
@@ -210,6 +227,7 @@ def compose_scene(scene: dict, characters: dict) -> str:
         "-pix_fmt", "yuv420p", "-shortest",
         str(muxed)
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if logger: logger.end_timer(f"scene_{sid}")
     return str(muxed)
 
 def main():
@@ -219,6 +237,10 @@ def main():
     payload = json.loads(sys.argv[1])
     characters = payload.get("characters", {})
     story_id = payload.get("storyId", "rahims_story")
+    job_id = sys.argv[2] if len(sys.argv) > 2 else "unknown_job"
+    logger = ProgressLogger(job_id, "Compositor")
+    logger.log_stage("STARTING", "Initializing Story Compositor")
+    logger.start_timer("total_story")
     print("=" * 60)
     print(f"EDUVISION Story Compositor - {story_id}")
     print("=" * 60)
@@ -228,12 +250,13 @@ def main():
     scene_videos = []
     for scene in SCENES:
         print(f"\n--- Scene {scene['id']} ---")
-        muxed_path = compose_scene(scene, characters)
+        muxed_path = compose_scene(scene, characters, logger)
         if os.path.exists(muxed_path):
             scene_videos.append(muxed_path)
         else:
             print(f"  ERROR: Scene {scene['id']} failed to produce video")
     print(f"\n--- Concatenating {len(scene_videos)} scenes ---")
+    logger.log_stage("COMPOSITING", "Concatenating rendered scenes into final video")
     concat_list = OUTPUT_DIR / "concat_list.txt"
     with open(str(concat_list), 'w') as f:
         for vid in scene_videos:
@@ -249,9 +272,11 @@ def main():
     elapsed = time.time() - start_time
     print(f"\nStory generated in {elapsed:.1f}s: {final_output}")
     if final_output.exists():
-        print(f"Final video size: {final_output.stat().st_size / 1024 / 1024:.1f} MB")
+        logger.end_timer("total_story")
+        logger.log_stage("COMPLETED", "Final video created")
+        print(json.dumps({"finalVideoUrl": "/api/files?path=" + str(final_output).replace(chr(92), '/')}))
     else:
-        print("ERROR: Final video was not created")
+        logger.log_error("Final video was not created")
         sys.exit(1)
 
 if __name__ == "__main__":

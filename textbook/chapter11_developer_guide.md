@@ -132,6 +132,34 @@ To fully grasp the architecture, it is easiest to trace the path of a single use
 ---
 
 
+## The Image Transformation Pipeline
+
+Before diving into the complex mathematics, here is the exact lifecycle of a single user-uploaded image as it travels through the engine's processing nodes:
+
+`mermaid
+graph TD
+    A[Original User Upload JPG/PNG] --> B(YOLOv8 Pose Estimation)
+    B --> C{Binary Mask Generation}
+    C --> D[Contour Extraction & Simplification]
+    D --> E[Delaunay Mesh Triangulation]
+    E --> F((Skeletal Binding via Skinning Weights))
+    F --> G[ARAP Frame-by-Frame Deformation]
+    G --> H[OpenGL UV Texture Rendering]
+    H --> I[Alpha Blending & Compositing]
+    I --> J[Final H.264 MP4 Output]
+`
+
+1. **Raw Pixel Array**: The system receives a raw RGB image array from the user.
+2. **Segmentation Masking**: A neural network (YOLO) evaluates the pixels, discarding the background and creating a boolean True/False character mask.
+3. **Polygon Mapping**: The edges of the mask are traced to create a 2D boundary polygon.
+4. **Topology Generation**: The polygon is filled with hundreds of tiny connected triangles to give it physical structure.
+5. **Rigging**: The triangles are mathematically glued to invisible skeletal bones.
+6. **Warping**: The skeleton is moved by motion capture data, pulling and warping the triangles along with it.
+7. **Redrawing**: The original pixels are painted back onto the warped triangles (UV Texturing) to generate a single frame of animation.
+8. **Stitching**: Hundreds of these frames are rendered out and glued together to form the final video.
+
+---
+
 ## Deep Dive: The Mathematics of Animation
 
 To fully comprehend the Animated Drawings engine, we must examine the rigorous mathematical models used to transform a flat, static pixel array into a fluid, articulated 2D mesh. The process is governed by topology, linear algebra, and numerical optimization.
@@ -206,3 +234,4 @@ For every pixel, the mathematical blend between the character pixel (Source) and
 Where $C$ represents the RGB color vector and $A$ represents the Alpha channel (opacity from 0.0 to 1.0).
 
 By applying this matrix calculation across all 1920x1080 pixels for hundreds of frames using Python's `Pillow` (PIL) library, we stitch the moving character seamlessly into the scene. Finally, `FFMPEG` compresses this raw pixel data using Discrete Cosine Transforms (DCT) in the H.264 codec, fusing the `.mp3` audio track to output the final `.mp4` video.
+

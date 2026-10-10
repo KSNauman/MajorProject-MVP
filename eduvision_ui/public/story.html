@@ -81,10 +81,9 @@
 <body>
     <div class="container">
         <div class="nav-bar">
-            <a href="/" class="nav-logo">EduVision</a>
-            <div class="nav-links">
-                <a href="/story.html">Story</a>
-                <a href="/fixer.html">Fixer & Engine</a>
+            <div class="nav-brand">
+                <a href="/" style="text-decoration: none; color: var(--text-muted); font-size: 1rem; margin-right: 20px;"><i class="fa-solid fa-arrow-left"></i> Back</a>
+                <a href="/" class="nav-logo">EduVision</a>
             </div>
         </div>
 
@@ -97,12 +96,17 @@
             <!-- Rahim -->
             <div class="character-card">
                 <div class="char-info">
-                    <h3>Rahim (Main Character)</h3>
-                    <p id="rahim-status">Default character will be used</p>
+                    <h3>Rahim (Protagonist)</h3>
+                    <p id="rahim-status" class="status-text">Ready (Default)</p>
                 </div>
                 <div>
-                    <button type="button" class="upload-btn" onclick="goToFixer('rahim')"><i class="fa-solid fa-paintbrush"></i> Draw Custom</button>
+                    <label class="upload-btn" style="cursor: pointer; display: inline-block;">
+                        <input type="file" id="file-rahim" accept="image/*" style="display: none;" onchange="handleFileSelect('rahim')">
+                        <i class="fa-solid fa-upload"></i> Select Image
+                    </label>
+                    <button type="button" class="upload-btn" onclick="goToFixer('rahim')" title="Manual correction" style="color: #a855f7; border-color: #d8b4fe;"><i class="fa-solid fa-paintbrush"></i> Fixer</button>
                     <button type="button" class="upload-btn" onclick="clearSlot('rahim')" id="rahim-clear" style="display:none; color: #dc2626; border-color: #fca5a5;"><i class="fa-solid fa-trash"></i> Reset</button>
+                    <button type="button" class="upload-btn" onclick="retrySlot('rahim')" id="rahim-retry" style="display:none; color: #ca8a04; border-color: #fef08a;"><i class="fa-solid fa-rotate-right"></i> Retry</button>
                 </div>
             </div>
 
@@ -110,11 +114,16 @@
             <div class="character-card">
                 <div class="char-info">
                     <h3>Sister</h3>
-                    <p id="sister-status">Default character will be used</p>
+                    <p id="sister-status" class="status-text">Ready (Default)</p>
                 </div>
                 <div>
-                    <button type="button" class="upload-btn" onclick="goToFixer('sister')"><i class="fa-solid fa-paintbrush"></i> Draw Custom</button>
+                    <label class="upload-btn" style="cursor: pointer; display: inline-block;">
+                        <input type="file" id="file-sister" accept="image/*" style="display: none;" onchange="handleFileSelect('sister')">
+                        <i class="fa-solid fa-upload"></i> Select Image
+                    </label>
+                    <button type="button" class="upload-btn" onclick="goToFixer('sister')" title="Manual correction" style="color: #a855f7; border-color: #d8b4fe;"><i class="fa-solid fa-paintbrush"></i> Fixer</button>
                     <button type="button" class="upload-btn" onclick="clearSlot('sister')" id="sister-clear" style="display:none; color: #dc2626; border-color: #fca5a5;"><i class="fa-solid fa-trash"></i> Reset</button>
+                    <button type="button" class="upload-btn" onclick="retrySlot('sister')" id="sister-retry" style="display:none; color: #ca8a04; border-color: #fef08a;"><i class="fa-solid fa-rotate-right"></i> Retry</button>
                 </div>
             </div>
 
@@ -122,11 +131,16 @@
             <div class="character-card">
                 <div class="char-info">
                     <h3>Mother</h3>
-                    <p id="mother-status">Default character will be used</p>
+                    <p id="mother-status" class="status-text">Ready (Default)</p>
                 </div>
                 <div>
-                    <button type="button" class="upload-btn" onclick="goToFixer('mother')"><i class="fa-solid fa-paintbrush"></i> Draw Custom</button>
+                    <label class="upload-btn" style="cursor: pointer; display: inline-block;">
+                        <input type="file" id="file-mother" accept="image/*" style="display: none;" onchange="handleFileSelect('mother')">
+                        <i class="fa-solid fa-upload"></i> Select Image
+                    </label>
+                    <button type="button" class="upload-btn" onclick="goToFixer('mother')" title="Manual correction" style="color: #a855f7; border-color: #d8b4fe;"><i class="fa-solid fa-paintbrush"></i> Fixer</button>
                     <button type="button" class="upload-btn" onclick="clearSlot('mother')" id="mother-clear" style="display:none; color: #dc2626; border-color: #fca5a5;"><i class="fa-solid fa-trash"></i> Reset</button>
+                    <button type="button" class="upload-btn" onclick="retrySlot('mother')" id="mother-retry" style="display:none; color: #ca8a04; border-color: #fef08a;"><i class="fa-solid fa-rotate-right"></i> Retry</button>
                 </div>
             </div>
 
@@ -134,11 +148,16 @@
             <div class="character-card">
                 <div class="char-info">
                     <h3>Father</h3>
-                    <p id="father-status">Default character will be used</p>
+                    <p id="father-status" class="status-text">Ready (Default)</p>
                 </div>
                 <div>
-                    <button type="button" class="upload-btn" onclick="goToFixer('father')"><i class="fa-solid fa-paintbrush"></i> Draw Custom</button>
+                    <label class="upload-btn" style="cursor: pointer; display: inline-block;">
+                        <input type="file" id="file-father" accept="image/*" style="display: none;" onchange="handleFileSelect('father')">
+                        <i class="fa-solid fa-upload"></i> Select Image
+                    </label>
+                    <button type="button" class="upload-btn" onclick="goToFixer('father')" title="Manual correction" style="color: #a855f7; border-color: #d8b4fe;"><i class="fa-solid fa-paintbrush"></i> Fixer</button>
                     <button type="button" class="upload-btn" onclick="clearSlot('father')" id="father-clear" style="display:none; color: #dc2626; border-color: #fca5a5;"><i class="fa-solid fa-trash"></i> Reset</button>
+                    <button type="button" class="upload-btn" onclick="retrySlot('father')" id="father-retry" style="display:none; color: #ca8a04; border-color: #fef08a;"><i class="fa-solid fa-rotate-right"></i> Retry</button>
                 </div>
             </div>
 
@@ -146,11 +165,16 @@
             <div class="character-card">
                 <div class="char-info">
                     <h3>Grandma</h3>
-                    <p id="grandma-status">Default character will be used</p>
+                    <p id="grandma-status" class="status-text">Ready (Default)</p>
                 </div>
                 <div>
-                    <button type="button" class="upload-btn" onclick="goToFixer('grandma')"><i class="fa-solid fa-paintbrush"></i> Draw Custom</button>
+                    <label class="upload-btn" style="cursor: pointer; display: inline-block;">
+                        <input type="file" id="file-grandma" accept="image/*" style="display: none;" onchange="handleFileSelect('grandma')">
+                        <i class="fa-solid fa-upload"></i> Select Image
+                    </label>
+                    <button type="button" class="upload-btn" onclick="goToFixer('grandma')" title="Manual correction" style="color: #a855f7; border-color: #d8b4fe;"><i class="fa-solid fa-paintbrush"></i> Fixer</button>
                     <button type="button" class="upload-btn" onclick="clearSlot('grandma')" id="grandma-clear" style="display:none; color: #dc2626; border-color: #fca5a5;"><i class="fa-solid fa-trash"></i> Reset</button>
+                    <button type="button" class="upload-btn" onclick="retrySlot('grandma')" id="grandma-retry" style="display:none; color: #ca8a04; border-color: #fef08a;"><i class="fa-solid fa-rotate-right"></i> Retry</button>
                 </div>
             </div>
 
@@ -158,14 +182,20 @@
             <div class="character-card">
                 <div class="char-info">
                     <h3>Grandpa</h3>
-                    <p id="grandpa-status">Default character will be used</p>
+                    <p id="grandpa-status" class="status-text">Ready (Default)</p>
                 </div>
                 <div>
-                    <button type="button" class="upload-btn" onclick="goToFixer('grandpa')"><i class="fa-solid fa-paintbrush"></i> Draw Custom</button>
+                    <label class="upload-btn" style="cursor: pointer; display: inline-block;">
+                        <input type="file" id="file-grandpa" accept="image/*" style="display: none;" onchange="handleFileSelect('grandpa')">
+                        <i class="fa-solid fa-upload"></i> Select Image
+                    </label>
+                    <button type="button" class="upload-btn" onclick="goToFixer('grandpa')" title="Manual correction" style="color: #a855f7; border-color: #d8b4fe;"><i class="fa-solid fa-paintbrush"></i> Fixer</button>
                     <button type="button" class="upload-btn" onclick="clearSlot('grandpa')" id="grandpa-clear" style="display:none; color: #dc2626; border-color: #fca5a5;"><i class="fa-solid fa-trash"></i> Reset</button>
+                    <button type="button" class="upload-btn" onclick="retrySlot('grandpa')" id="grandpa-retry" style="display:none; color: #ca8a04; border-color: #fef08a;"><i class="fa-solid fa-rotate-right"></i> Retry</button>
                 </div>
             </div>
 
+            <button type="button" id="prepare-btn" class="btn-large" onclick="prepareCharacters()" style="background-color: #1d4ed8; margin-bottom: 10px; display: none;">Prepare Characters</button>
             <button type="button" id="generate-btn" class="btn-large" onclick="generateStory()">Generate Story</button>
         </form>
 
@@ -181,27 +211,139 @@
             </div>
         </div>
 
-        <div id="log-container" style="display: none; margin-top: 20px; background: #1e1e1e; border-radius: 8px; padding: 15px; color: #a9b7c6; font-family: Consolas, monospace; font-size: 14px; max-height: 400px; overflow-y: auto;">
-            <h4 style="color: #fff; margin-bottom: 10px; font-family: 'Inter', sans-serif;">Server Logs</h4>
-            <div id="log-console" style="white-space: pre-wrap;"></div>
+        <div id="log-container" style="display: none; margin-top: 20px; background: var(--bg-color); border-radius: 8px; padding: 15px; text-align: center; font-size: 1.1rem; font-weight: 500;">
+            <div id="log-console" style="color: var(--primary);">Preparing to generate story...</div>
         </div>
     </div>
 
+    
     <script>
         const SLOTS = ['rahim', 'sister', 'mother', 'father', 'grandma', 'grandpa'];
+        let activeJobs = {};
 
         window.onload = () => {
             loadRecentStories();
             SLOTS.forEach(slot => {
                 const charDir = sessionStorage.getItem('story_slot_' + slot);
                 if (charDir) {
-                    document.getElementById(slot + '-status').innerHTML = '<span class="success-text"><i class="fa-solid fa-check"></i> Custom character prepared</span>';
+                    document.getElementById(slot + '-status').innerHTML = '<span class="success-text"><i class="fa-solid fa-check"></i> Ready (Custom)</span>';
                     document.getElementById(slot + '-clear').style.display = 'inline-block';
+                } else {
+                    document.getElementById(slot + '-status').innerHTML = '<span class="success-text"><i class="fa-solid fa-check"></i> Ready (Default)</span>';
                 }
             });
+            updateButtons();
         };
 
-                async function loadRecentStories() {
+        async function handleFileSelect(slot) {
+            const input = document.getElementById('file-' + slot);
+            if (input.files && input.files[0]) {
+                const formData = new FormData();
+                formData.append(slot, input.files[0]);
+                
+                document.getElementById(slot + '-status').innerHTML = '<span style="color: #94a3b8;"><i class="fa-solid fa-spinner fa-spin"></i> Preparing...</span>';
+                document.getElementById(slot + '-clear').style.display = 'inline-block';
+                document.getElementById(slot + '-retry').style.display = 'none';
+                updateButtons();
+                
+                try {
+                    const res = await fetch('/api/story/prepare', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (data.success) {
+                        const jobId = data.jobId;
+                        activeJobs[slot] = setInterval(() => pollSlot(jobId, slot), 1000);
+                        updateButtons();
+                    } else {
+                        document.getElementById(slot + '-status').innerHTML = '<span style="color: #ef4444;"><i class="fa-solid fa-xmark"></i> Failed to start job</span>';
+                        document.getElementById(slot + '-retry').style.display = 'inline-block';
+                        updateButtons();
+                    }
+                } catch(e) {
+                    document.getElementById(slot + '-status').innerHTML = '<span style="color: #ef4444;"><i class="fa-solid fa-xmark"></i> Network error</span>';
+                    document.getElementById(slot + '-retry').style.display = 'inline-block';
+                    updateButtons();
+                }
+            }
+        }
+        
+        async function pollSlot(jobId, slot) {
+            try {
+                const res = await fetch('/api/jobs/' + jobId);
+                const job = await res.json();
+                
+                if (job.error) return;
+                
+                if (job.characters && job.characters[slot]) {
+                    const charJob = job.characters[slot];
+                    const statusEl = document.getElementById(slot + '-status');
+                    if (charJob.status === 'RUNNING') {
+                        statusEl.innerHTML = '<span style="color: #fbbf24;"><i class="fa-solid fa-spinner fa-spin"></i> ' + charJob.message + '</span>';
+                    } else if (charJob.status === 'QUEUED') {
+                        statusEl.innerHTML = '<span style="color: #94a3b8;"><i class="fa-solid fa-clock"></i> Queued</span>';
+                    } else if (charJob.status === 'READY') {
+                        statusEl.innerHTML = '<span class="success-text"><i class="fa-solid fa-check"></i> Ready (Custom)</span>';
+                        sessionStorage.setItem('story_slot_' + slot, charJob.charDir);
+                        document.getElementById(slot + '-clear').style.display = 'inline-block';
+                        document.getElementById(slot + '-retry').style.display = 'none';
+                        clearInterval(activeJobs[slot]);
+                        delete activeJobs[slot];
+                        updateButtons();
+                    } else if (charJob.status === 'FAILED') {
+                        statusEl.innerHTML = '<span style="color: #ef4444;"><i class="fa-solid fa-xmark"></i> Failed: ' + charJob.message + '</span>';
+                        document.getElementById(slot + '-retry').style.display = 'inline-block';
+                        clearInterval(activeJobs[slot]);
+                        delete activeJobs[slot];
+                        updateButtons();
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function clearSlot(slot) {
+            sessionStorage.removeItem('story_slot_' + slot);
+            document.getElementById('file-' + slot).value = "";
+            document.getElementById(slot + '-status').innerHTML = '<span class="success-text"><i class="fa-solid fa-check"></i> Ready (Default)</span>';
+            document.getElementById(slot + '-clear').style.display = 'none';
+            document.getElementById(slot + '-retry').style.display = 'none';
+            updateButtons();
+        }
+
+        function retrySlot(slot) {
+            document.getElementById(slot + '-retry').style.display = 'none';
+            document.getElementById(slot + '-status').innerHTML = '<span style="color: #94a3b8;">Waiting for upload</span>';
+            updateButtons();
+            document.getElementById('file-' + slot).click();
+        }
+
+        function goToFixer(slot) {
+            window.location.href = '/fixer.html?returnUrl=/story.html&slot=' + slot;
+        }
+
+        function updateButtons() {
+            const genBtn = document.getElementById('generate-btn');
+            
+            let anyNotReady = false;
+            SLOTS.forEach(s => {
+                const status = document.getElementById(s + '-status').innerText;
+                if (!status.includes("Ready (")) {
+                    anyNotReady = true;
+                }
+            });
+            
+            const isPolling = Object.keys(activeJobs).length > 0;
+            
+            if (anyNotReady || isPolling) {
+                genBtn.disabled = true;
+                genBtn.innerText = "Preparing characters...";
+            } else {
+                genBtn.disabled = false;
+                genBtn.innerText = "Generate Story";
+            }
+        }
+
+        async function loadRecentStories() {
             try {
                 const res = await fetch('/api/story/recent');
                 const data = await res.json();
@@ -210,31 +352,24 @@
                 
                 if (data.stories && data.stories.length > 0) {
                     data.stories.forEach(story => {
-                        const date = new Date(story.date).toLocaleString();
                         const div = document.createElement('div');
-                        div.style.minWidth = '300px';
+                        div.style = 'background: #333; padding: 10px; border-radius: 8px; cursor: pointer; border: 1px solid #444; width: 120px; text-align: center;';
                         div.innerHTML = `
-                            <video src="${story.url}" controls style="width: 100%; border-radius: 8px; border: 2px solid #5a5a5a;"></video>
-                            <p style="margin-top: 8px; font-size: 13px; color: #a9b7c6;">${date}</p>
+                            <div style="font-size: 11px; color: #a9b7c6; margin-bottom: 5px;">${new Date(story.time).toLocaleString()}</div>
+                            <div style="color: #fff; font-size: 12px; word-break: break-all;">${story.name}</div>
                         `;
+                        div.onclick = () => {
+                            document.getElementById('video-container').style.display = 'block';
+                            document.getElementById('result-video').src = story.url;
+                        };
                         container.appendChild(div);
                     });
                 } else {
-                    container.innerHTML = '<p style="color: #a9b7c6; font-size: 14px;">No recent stories found.</p>';
+                    container.innerHTML = '<div style="color: #666; font-style: italic;">No recent stories</div>';
                 }
             } catch (e) {
                 console.error("Failed to load recent stories", e);
             }
-        }
-
-        function goToFixer(slot) {
-            window.location.href = `/fixer.html?returnUrl=/story.html&slot=${slot}`;
-        }
-
-        function clearSlot(slot) {
-            sessionStorage.removeItem('story_slot_' + slot);
-            document.getElementById(slot + '-status').innerText = 'Default character will be used';
-            document.getElementById(slot + '-clear').style.display = 'none';
         }
 
         async function generateStory() {
@@ -244,18 +379,25 @@
             
             document.getElementById('log-container').style.display = 'block';
             const logConsole = document.getElementById('log-console');
-            logConsole.innerText = '';
+            logConsole.innerText = 'Initializing...';
             
             let es = new EventSource('/api/logs/stream');
             es.onmessage = function(event) {
-                const msg = JSON.parse(event.data);
-                logConsole.innerText += msg + '\n';
-                logConsole.parentElement.scrollTop = logConsole.parentElement.scrollHeight;
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.progress_event) {
+                        logConsole.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ' + data.message;
+                        if (data.stage === "COMPLETED") {
+                            logConsole.innerHTML = '<i class="fa-solid fa-check"></i> Story ready!';
+                        }
+                    }
+                } catch(e) {
+                    // Ignore raw logs
+                }
             };
 
             const characters = {};
             SLOTS.forEach(slot => {
-                // Use slot name as default character ID (maps to characters/{slot}/)
                 characters[slot] = sessionStorage.getItem('story_slot_' + slot) || slot;
             });
             
@@ -267,15 +409,42 @@
                 });
                 const data = await res.json();
                 
-                if (res.ok) {
-                    document.getElementById('video-container').style.display = 'block';
-                    document.getElementById('result-video').src = data.url;
-                    loadRecentStories();
+                if (data.success) {
+                    const jobId = data.jobId;
+                    
+                    const pollInt = setInterval(async () => {
+                        try {
+                            const jobRes = await fetch('/api/jobs/' + jobId);
+                            const job = await jobRes.json();
+                            
+                            if (job.status === 'COMPLETED') {
+                                clearInterval(pollInt);
+                                es.close();
+                                document.getElementById('video-container').style.display = 'block';
+                                document.getElementById('result-video').src = job.finalVideoUrl;
+                                logConsole.innerHTML = '<i class="fa-solid fa-check"></i> Story ready!';
+                                loadRecentStories();
+                                btn.disabled = false;
+                                btn.innerText = "Generate Story";
+                            } else if (job.status === 'FAILED') {
+                                clearInterval(pollInt);
+                                es.close();
+                                logConsole.innerHTML = '<span style="color: #ef4444;"><i class="fa-solid fa-xmark"></i> Story generation failed</span>';
+                                btn.disabled = false;
+                                btn.innerText = "Retry Generate Story";
+                            }
+                        } catch(err) {
+                            console.error(err);
+                        }
+                    }, 2000);
+                    return;
                 } else {
+                    logConsole.innerHTML = '<span style="color: #ef4444;"><i class="fa-solid fa-xmark"></i> Story generation failed: ' + data.error + '</span>';
                     alert("Error: " + data.error);
                 }
             } catch (e) {
                 console.error(e);
+                logConsole.innerHTML = '<span style="color: #ef4444;"><i class="fa-solid fa-xmark"></i> Network error</span>';
                 alert("Failed to connect to server.");
             }
             
@@ -284,6 +453,7 @@
             btn.innerText = "Generate Story";
         }
     </script>
+
 </body>
 </html>
 
