@@ -1,0 +1,7 @@
+{
+  "appId": "story-studio",
+  "name": "Story Studio",
+  "version": "1.0.0",
+  "launchPath": "http://localhost:3000/",
+  "permissions": ["report_results"]
+}

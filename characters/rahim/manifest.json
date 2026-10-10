@@ -1,15 +1,10 @@
 {
-  "slot": "unknown",
-  "processed_at": "2026-09-21T10:33:29",
+  "slot": "rahim",
+  "processed_at": "2026-10-10T17:51:12",
   "char_cfg": "char_cfg.yaml",
   "texture": "texture.png",
   "mask": "mask.png",
   "animations": {
-    "idel": "animations/idel.gif",
-    "wave": "animations/wave.gif",
-    "jump": "animations/jump.gif",
-    "sleep": "animations/sleep.gif",
-    "opening": "animations/opening.gif",
-    "walk_in_circle": "animations/walk_in_circle.gif"
+    "wave": "animations/wave.gif"
   }
 }

@@ -1,4 +1,4 @@
-﻿# EduVision: AI-Powered Collaborative Story Animation
+# EduVision: AI-Powered Collaborative Story Animation
 
 > **A classroom tool where children draw characters on paper, and AI brings their entire class story to life.**
 
@@ -112,6 +112,21 @@ Potential directions beyond the current MVP â€” for future versions or rese
 
 ---
 
-*Last updated: August 27, 2026*
+## â–¶ï¸  How to Run (One-Click Launcher)
+
+To simplify the entire environment startup, you can use the provided Windows batch scripts.
+
+1. Ensure the PostgreSQL `postgresql-x64-18` service is installed.
+2. Double-click `start-eduvision.bat` (or run it as Administrator if PostgreSQL is stopped and needs to be started).
+   - This script automatically performs pre-flight checks, prevents duplicate instances, starts the Express API, starts the React Portal, and starts the Story Studio interface in separate visible terminal windows.
+   - It will automatically launch `http://localhost:5173` in your default browser.
+3. To safely stop all services started by the launcher, double-click `stop-eduvision.bat`.
+
+*Note: The Math Blaster sample application does not have an automated start command and must be started manually if required.*
+
+---
+
+*Last updated: October 10, 2026*
 - [Chapter 12: Engine Optimization and Sealing](chapter12_engine_optimization.md)
+- [Chapter 13: Phase 2 to 10 - Platform Foundation, DB Setup, Integrations, Student Portal Redesign & Platform Logging](chapter13_platform_foundation.md)
 
