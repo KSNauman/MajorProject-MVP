@@ -37,7 +37,11 @@ from ultralytics import YOLO
 # MODEL LOADER
 # ─────────────────────────────────────────────────────────────────────────────
 
+_cached_yolo_model = None
 def _load_model() -> YOLO:
+    global _cached_yolo_model
+    if _cached_yolo_model is not None:
+        return _cached_yolo_model
     """
     Locate and load best.pt (custom YOLOv8-Pose for children's sketches).
     Searches several relative paths so it works regardless of CWD.
@@ -51,7 +55,8 @@ def _load_model() -> YOLO:
     for p in candidates:
         if p.exists():
             logging.info(f"[YOLO] Loading custom pose model: {p}")
-            return YOLO(str(p))
+            _cached_yolo_model = YOLO(str(p))
+            return _cached_yolo_model
     raise FileNotFoundError(
         "best.pt not found. Expected at: " + str(candidates[0])
     )
@@ -142,7 +147,14 @@ def segment(img: np.ndarray):
       4. Flood-fill border removal + largest contour retained
     """
     # 1. AI background removal
-    ai_mask = rembg.remove(img, only_mask=True)
+    from rembg import remove, new_session
+    import os
+    global _cached_rembg_session
+    if '_cached_rembg_session' not in globals():
+        use_gpu = os.environ.get("USE_GPU", "true").lower() == "true"
+        providers = ['CUDAExecutionProvider', 'CPUExecutionProvider'] if use_gpu else ['CPUExecutionProvider']
+        _cached_rembg_session = new_session("u2net", providers=providers)
+    ai_mask = remove(img, session=_cached_rembg_session, only_mask=True)
 
     # 2. OpenCV adaptive threshold on darkest channel (pen lines)
     gray   = np.min(img, axis=2)
@@ -237,7 +249,10 @@ def image_to_annotations(img_fn: str, out_dir: str, kpts_file: str = None) -> No
 
     # ── Phase 1-A: Detection ──────────────────────────────────────────────────
     model   = _load_model()
-    results = model(img, verbose=False)
+    import os, torch
+    use_gpu = os.environ.get("USE_GPU", "true").lower() == "true"
+    device = 'cuda' if use_gpu and torch.cuda.is_available() else 'cpu'
+    results = model(img, verbose=False, device=device)
     result  = results[0]
 
     if result.boxes is None or len(result.boxes) == 0:
@@ -268,7 +283,7 @@ def image_to_annotations(img_fn: str, out_dir: str, kpts_file: str = None) -> No
     mask = segment(cropped)
 
     # ── Phase 1-C: Keypoint Extraction on cropped image ──────────────────────
-    crop_results = model(cropped, verbose=False)
+    crop_results = model(cropped, verbose=False, device=device)
     crop_result  = crop_results[0]
 
     if (crop_result.keypoints is None
