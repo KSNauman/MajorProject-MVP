@@ -3,35 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduVision</title>
+    <title>Story Studio</title>
     <link rel="stylesheet" href="/css/style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container" style="text-align: center; margin-top: 100px;">
+    <div class="container" style="text-align: center; margin-top: 40px;">
         <header class="home-header">
-            <h1 style="font-size: 3rem; margin-bottom: 10px;">EDUVISION</h1>
-            <p class="subtitle" style="font-size: 1.2rem; color: #6b7280; margin-bottom: 50px;">Turn children's drawings into animated stories</p>
+            <h1 class="animate-bounce">Story Studio ✨</h1>
+            
+            <img src="/assets/welcome_storybook.jpg" alt="Magical Storybook" style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover; margin: 20px auto; border: 4px solid var(--sunshine); box-shadow: 0 10px 15px rgba(0,0,0,0.1);">
+            
         </header>
 
-        <div class="cards-grid" style="display: flex; justify-content: center; gap: 30px; max-width: 800px; margin: 0 auto;">
-            <!-- Option 1: Story -->
-            <a href="/story.html" class="card" style="flex: 1; padding: 40px; text-decoration: none; border-radius: 12px; background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s;">
-                <h2 style="font-size: 1.5rem; color: #1f2937; margin-bottom: 15px;"><i class="fa-solid fa-book-open" style="margin-right: 10px; color: #3b82f6;"></i> CREATE STORY</h2>
-                <p style="color: #6b7280;">Cast characters and generate your story video.</p>
+        <div class="cards-grid">
+            <a href="/story.html" class="card story-card">
+                <i class="fa-solid fa-wand-magic-sparkles" style="font-size: 3rem; color: var(--play-blue); margin-bottom: 15px;"></i>
+                <h2>Make a Story</h2>
             </a>
 
-            <!-- Option 2: Fixer & Engine -->
-            <a href="/fixer.html" class="card" style="flex: 1; padding: 40px; text-decoration: none; border-radius: 12px; background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s;">
-                <h2 style="font-size: 1.5rem; color: #1f2937; margin-bottom: 15px;"><i class="fa-solid fa-paintbrush" style="margin-right: 10px; color: #a855f7;"></i> FIXER / ENGINE</h2>
-                <p style="color: #6b7280;">Correct a drawing's skeleton or test animations.</p>
+            <a href="/fixer.html" class="card fixer-card">
+                <i class="fa-solid fa-paintbrush" style="font-size: 3rem; color: #7e22ce; margin-bottom: 15px;"></i>
+                <h2>Fix Drawing</h2>
             </a>
         </div>
 
-        <div id="integration-banner" style="display: none; margin-top: 30px; padding: 15px; background: #dbeafe; color: #1e40af; border-radius: 8px; font-weight: 500;">
+        <div id="integration-banner" style="display: none; margin-top: 30px; padding: 15px; background: var(--mint); color: #16a34a; border-radius: 16px; font-weight: 700; border: 2px solid #86efac;">
             <i class="fa-solid fa-link" style="margin-right: 5px;"></i>
-            Integrated with EduVision Platform
+            Linked to EduVision
             <span id="assignment-context" style="display: none; margin-left: 10px; font-size: 0.9em; opacity: 0.8;"></span>
         </div>
     </div>
@@ -61,7 +60,7 @@
             if (savedAssignment) {
                 const ctx = document.getElementById('assignment-context');
                 ctx.textContent = `(Assignment ID: ${savedAssignment})`;
-                ctx.style.display = 'inline-block';
+                // ctx.style.display = 'inline-block'; // hide assignment ID from kids
             }
         }
     </script>
