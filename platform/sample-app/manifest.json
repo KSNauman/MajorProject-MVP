@@ -1,0 +1,7 @@
+{
+  "appId": "math-blaster-sample",
+  "name": "Math Blaster Sample",
+  "version": "1.0.0",
+  "launchPath": "http://localhost:5000/index.html",
+  "permissions": ["report_results"]
+}

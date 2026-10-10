@@ -1,0 +1,96 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id             String            @id @default(uuid())
+  username       String            @unique
+  passwordHash   String
+  displayName    String?
+  avatar         String?
+  role           Role              @default(STUDENT)
+  memberships    ClassMembership[]
+  assignments    Assignment[]
+  activityResults ActivityResult[]
+  studentStories  StudentStory[]
+  createdAt       DateTime          @default(now())
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  PARENT
+  STUDENT
+}
+
+model Class {
+  id          String            @id @default(uuid())
+  name        String
+  memberships ClassMembership[]
+  assignments Assignment[]
+  createdAt   DateTime          @default(now())
+}
+
+model ClassMembership {
+  id        String   @id @default(uuid())
+  userId    String
+  classId   String
+  role      String   // e.g. "TEACHER" or "STUDENT" within the class
+  user      User     @relation(fields: [userId], references: [id])
+  class     Class    @relation(fields: [classId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, classId])
+}
+
+model Application {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  version     String
+  launchUrl   String?
+  isReady     Boolean      @default(true)
+  assignments Assignment[]
+  createdAt   DateTime     @default(now())
+}
+
+model StudentStory {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String?
+  prompt    String
+  videoUrl  String?
+  status    String   // PENDING, COMPLETED, FAILED
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Assignment {
+  id            String           @id @default(uuid())
+  title         String
+  classId       String
+  appId         String
+  assignedToId  String?          // If assigned to a specific student
+  dueDate       DateTime?
+  class         Class            @relation(fields: [classId], references: [id])
+  application   Application      @relation(fields: [appId], references: [id])
+  assignedTo    User?            @relation(fields: [assignedToId], references: [id])
+  results       ActivityResult[]
+  createdAt     DateTime         @default(now())
+}
+
+model ActivityResult {
+  id           String     @id @default(uuid())
+  assignmentId String
+  userId       String
+  score        Int?
+  status       String     // e.g. "COMPLETED", "IN_PROGRESS"
+  details      Json?
+  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
+  createdAt    DateTime   @default(now())
+}

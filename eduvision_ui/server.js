@@ -577,11 +577,22 @@ app.delete('/api/engine/recent/:id', (req, res) => {
 app.get('/api/files', (req, res) => {
     if (!req.query.path) return res.status(403).json({ error: "Forbidden" });
     const filePath = path.resolve(req.query.path);
-    if (!filePath.startsWith(path.join(__dirname, 'uploads')) && 
-        !filePath.startsWith(path.resolve(__dirname, '../story_engine')) && 
-        !filePath.startsWith(path.resolve(__dirname, '../characters'))) {
+    
+    const filePathLower = filePath.toLowerCase();
+    const uploadsDirLower = path.join(__dirname, 'uploads').toLowerCase();
+    const engineDirLower = path.resolve(__dirname, '../story_engine').toLowerCase();
+    const charsDirLower = path.resolve(__dirname, '../characters').toLowerCase();
+
+    if (!filePathLower.startsWith(uploadsDirLower) && 
+        !filePathLower.startsWith(engineDirLower) && 
+        !filePathLower.startsWith(charsDirLower)) {
         return res.status(403).json({ error: "Forbidden" });
     }
+    
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: "Not Found" });
+    }
+    
     res.sendFile(filePath);
 });
 

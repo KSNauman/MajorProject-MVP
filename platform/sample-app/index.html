@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sample App Integration</title>
+</head>
+<body>
+    <h1>Sample Educational App</h1>
+    <p>This app demonstrates the EduVision integration contract.</p>
+    <button id="finishBtn">Finish Assignment</button>
+    <p id="status"></p>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token');
+        const assignmentId = params.get('assignmentId');
+
+        document.getElementById('finishBtn').addEventListener('click', async () => {
+            if (!token) {
+                document.getElementById('status').innerText = "Error: No launch token provided.";
+                return;
+            }
+
+            const response = await fetch('http://localhost:4000/api/integrations/results', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    assignmentId: assignmentId || "test-assignment-id",
+                    score: 100,
+                    status: "COMPLETED",
+                    details: { timeSpent: 300 }
+                })
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                document.getElementById('status').innerText = "Result reported successfully!";
+            } else {
+                document.getElementById('status').innerText = "Failed to report result: " + data.error;
+            }
+        });
+    </script>
+</body>
+</html>
