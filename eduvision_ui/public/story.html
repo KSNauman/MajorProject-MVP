@@ -81,8 +81,9 @@
 <body>
     <div class="container">
         <div class="nav-bar">
-            <div class="nav-brand">
-                <a href="/" style="text-decoration: none; color: var(--text-muted); font-size: 1rem; margin-right: 20px;"><i class="fa-solid fa-arrow-left"></i> Back</a>
+            <div class="nav-brand" style="display: flex; align-items: center; gap: 15px;">
+                <a id="btn-return-portal" href="http://localhost:5173" style="text-decoration: none; color: #3b82f6; font-size: 0.95rem; font-weight: 700; background: white; padding: 6px 14px; border-radius: 8px; border: 1px solid #e2e8f0;"><i class="fa-solid fa-arrow-left"></i> Back to Portal</a>
+                <a href="/" style="text-decoration: none; color: var(--text-muted); font-size: 0.95rem;"><i class="fa-solid fa-house"></i> Home</a>
                 <a href="/" class="nav-logo">EduVision</a>
             </div>
         </div>
@@ -202,6 +203,11 @@
         <div id="video-container" class="video-container">
             <h3 style="margin-bottom: 16px;">Final Narrated Story</h3>
             <video id="result-video" controls autoplay></video>
+            <div id="video-finish-actions" style="margin-top: 20px; text-align: center;">
+                <a id="finish-return-btn" href="http://localhost:5173" class="btn" style="text-decoration: none; background: #22c55e; color: white; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 12px 24px; border-radius: 8px;">
+                    <i class="fa-solid fa-circle-check"></i> Finished! Back to EduVision Dashboard
+                </a>
+            </div>
         </div>
 
                 <div id="recent-stories-container" style="margin-top: 30px; background: #252526; padding: 20px; border-radius: 8px; border: 1px solid #3e3e42;">
@@ -327,7 +333,7 @@
             let anyNotReady = false;
             SLOTS.forEach(s => {
                 const status = document.getElementById(s + '-status').innerText;
-                if (!status.includes("Ready (")) {
+                if (!status.includes("Ready")) {
                     anyNotReady = true;
                 }
             });
@@ -452,6 +458,23 @@
             btn.disabled = false;
             btn.innerText = "Generate Story";
         }
+
+        // Configure return URL
+        (function() {
+            const savedReturnUrl = localStorage.getItem('eduvision_return_url') || 'http://localhost:5173';
+            const navReturn = document.getElementById('btn-return-portal');
+            const finishReturn = document.getElementById('finish-return-btn');
+            if (navReturn) navReturn.href = savedReturnUrl;
+            if (finishReturn) finishReturn.href = savedReturnUrl;
+
+            window.addEventListener('beforeunload', (e) => {
+                const isGenerating = Object.keys(activeJobs).length > 0;
+                if (isGenerating) {
+                    e.preventDefault();
+                    e.returnValue = 'Story generation is in progress. Are you sure you want to leave?';
+                }
+            });
+        })();
     </script>
 
 </body>

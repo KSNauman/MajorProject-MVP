@@ -89,6 +89,31 @@ async function main() {
     });
     console.log('Created Class and Memberships:', testClass);
 
+    // Write: Create Parent and link students
+    const parent = await prisma.user.upsert({
+        where: { username: 'parent1' },
+        update: {},
+        create: {
+            username: 'parent1',
+            passwordHash: hash,
+            displayName: 'Mr. Parent',
+            role: 'PARENT'
+        }
+    });
+
+    await prisma.parentChild.upsert({
+        where: { parentId_childId: { parentId: parent.id, childId: student.id } },
+        update: {},
+        create: { parentId: parent.id, childId: student.id }
+    });
+
+    await prisma.parentChild.upsert({
+        where: { parentId_childId: { parentId: parent.id, childId: student2.id } },
+        update: {},
+        create: { parentId: parent.id, childId: student2.id }
+    });
+    console.log('Created Parent and Linked Students:', parent);
+
     // Read: Fetch all apps
     const allApps = await prisma.application.findMany();
     console.log('All Apps:', allApps);

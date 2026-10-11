@@ -18,7 +18,20 @@ model User {
   assignments    Assignment[]
   activityResults ActivityResult[]
   studentStories  StudentStory[]
+  children       ParentChild[]     @relation("ParentRelation")
+  parents        ParentChild[]     @relation("ChildRelation")
   createdAt       DateTime          @default(now())
+}
+
+model ParentChild {
+  id        String   @id @default(uuid())
+  parentId  String
+  childId   String
+  parent    User     @relation("ParentRelation", fields: [parentId], references: [id])
+  child     User     @relation("ChildRelation", fields: [childId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([parentId, childId])
 }
 
 enum Role {

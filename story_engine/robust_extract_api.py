@@ -36,24 +36,29 @@ def extract(img_path):
             # Use original image as fallback
             shutil.copy2(img_path, fallback_dest)
             
-            # Create default skeleton in the center (assuming ~512x512 image, center is 256, 256)
+            import cv2
+            img_raw = cv2.imread(img_path)
+            h, w = (512, 512) if img_raw is None else img_raw.shape[:2]
+            cx = w // 2
+            
+            # Create default skeleton proportionally scaled to image size
             default_kps = [
-                {"name": "root", "x": 256, "y": 256, "parent": None},
-                {"name": "hip", "x": 256, "y": 256, "parent": "root"},
-                {"name": "torso", "x": 256, "y": 200, "parent": "hip"},
-                {"name": "neck", "x": 256, "y": 150, "parent": "torso"},
-                {"name": "right_shoulder", "x": 200, "y": 150, "parent": "torso"},
-                {"name": "right_elbow", "x": 170, "y": 200, "parent": "right_shoulder"},
-                {"name": "right_hand", "x": 150, "y": 250, "parent": "right_elbow"},
-                {"name": "left_shoulder", "x": 312, "y": 150, "parent": "torso"},
-                {"name": "left_elbow", "x": 342, "y": 200, "parent": "left_shoulder"},
-                {"name": "left_hand", "x": 362, "y": 250, "parent": "left_elbow"},
-                {"name": "right_hip", "x": 230, "y": 256, "parent": "root"},
-                {"name": "right_knee", "x": 230, "y": 320, "parent": "right_hip"},
-                {"name": "right_foot", "x": 230, "y": 380, "parent": "right_knee"},
-                {"name": "left_hip", "x": 282, "y": 256, "parent": "root"},
-                {"name": "left_knee", "x": 282, "y": 320, "parent": "left_hip"},
-                {"name": "left_foot", "x": 282, "y": 380, "parent": "left_knee"}
+                {"name": "root", "x": cx, "y": int(h * 0.50), "parent": None},
+                {"name": "hip", "x": cx, "y": int(h * 0.50), "parent": "root"},
+                {"name": "torso", "x": cx, "y": int(h * 0.38), "parent": "hip"},
+                {"name": "neck", "x": cx, "y": int(h * 0.25), "parent": "torso"},
+                {"name": "right_shoulder", "x": int(cx - w * 0.12), "y": int(h * 0.28), "parent": "torso"},
+                {"name": "right_elbow", "x": int(cx - w * 0.18), "y": int(h * 0.40), "parent": "right_shoulder"},
+                {"name": "right_hand", "x": int(cx - w * 0.22), "y": int(h * 0.52), "parent": "right_elbow"},
+                {"name": "left_shoulder", "x": int(cx + w * 0.12), "y": int(h * 0.28), "parent": "torso"},
+                {"name": "left_elbow", "x": int(cx + w * 0.18), "y": int(h * 0.40), "parent": "left_shoulder"},
+                {"name": "left_hand", "x": int(cx + w * 0.22), "y": int(h * 0.52), "parent": "left_elbow"},
+                {"name": "right_hip", "x": int(cx - w * 0.08), "y": int(h * 0.50), "parent": "root"},
+                {"name": "right_knee", "x": int(cx - w * 0.08), "y": int(h * 0.65), "parent": "right_hip"},
+                {"name": "right_foot", "x": int(cx - w * 0.08), "y": int(h * 0.85), "parent": "right_knee"},
+                {"name": "left_hip", "x": int(cx + w * 0.08), "y": int(h * 0.50), "parent": "root"},
+                {"name": "left_knee", "x": int(cx + w * 0.08), "y": int(h * 0.65), "parent": "left_hip"},
+                {"name": "left_foot", "x": int(cx + w * 0.08), "y": int(h * 0.85), "parent": "left_knee"}
             ]
             res = {
                 "isNonHumanoid": True,

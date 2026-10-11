@@ -10,8 +10,9 @@ def main():
         print(json.dumps({"error": "Missing image path"}))
         sys.exit(1)
         
-    img_path = sys.argv[1].strip('"')
-    kps_arg = sys.argv[3].strip('"') if len(sys.argv) > 3 else "none"
+    img_path = os.path.abspath(sys.argv[1].strip('"'))
+    raw_kps = sys.argv[3].strip('"') if len(sys.argv) > 3 else "none"
+    kps_arg = os.path.abspath(raw_kps) if raw_kps != "none" else "none"
     job_id = sys.argv[4].strip('"') if len(sys.argv) > 4 else "unknown_job"
     
     logger = ProgressLogger(job_id, "Fixer")
