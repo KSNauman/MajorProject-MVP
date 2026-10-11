@@ -451,3 +451,312 @@ Fix a critical bug where the "Final Narrated Story" player appears but immediate
 - Generation processes smoothly and the video successfully buffers.
 - The HTTP 403 Forbidden and 404 Not Found errors are entirely resolved.
 - Media loads fully into the player and starts playback properly upon interaction.
+
+---
+
+### Phase 11: Playground UI Polish
+**Timestamp: 2026-10-10**
+
+**What was requested:**
+Polish `platform/student-story-studio` for children aged 4–7. Implement a "Playground" aesthetic using bright colors (Sky Blue, Primary Blue, Sunshine Yellow, Mint, Lavender) and minimize visible text while preserving the existing workflow and logic.
+
+**What was done:**
+- Rewrote `platform/student-story-studio/public/css/style.css` to define the Playground palette using CSS variables (`--sky-blue`, `--play-blue`, `--sunshine`, etc.) and the `Nunito` font.
+- Generated a custom minimal storybook vector illustration using AI and saved it to `public/assets/welcome_storybook.jpg`.
+- Streamlined `index.html` to drastically reduce text, relying on large icons, playful animations, and simple buttons ("Make a Story ✨", "Fix Drawing").
+- Refactored `story.html` to remove lengthy instructions and replace text statuses with clear, color-coded badges (e.g., green checkmark for Ready). Replaced file upload text with simple "Draw" and "Fix" labels alongside emojis.
+- Kept the workflow logic completely identical (retained `handleFileSelect`, `generateStory`, and exact HTML IDs) to ensure the Python Engine continues processing characters flawlessly.
+- Maintained the Teacher-facing `fixer.html` with its diagnostic layout, but updated its fonts and primary accent color to match the new Playground visual identity.
+
+**Files changed:**
+- `platform/student-story-studio/public/css/style.css`
+- `platform/student-story-studio/public/assets/welcome_storybook.jpg`
+- `platform/student-story-studio/public/index.html`
+- `platform/student-story-studio/public/story.html`
+- `platform/student-story-studio/public/fixer.html`
+
+**Test Results:**
+- Visual hierarchy is successfully simplified for 4-7 year olds.
+- `story.html` successfully prepares characters and processes generation without JavaScript errors.
+- The UI maintains responsiveness and handles the generated media accurately.
+
+---
+
+### Phase 12: EduVision UI Consistency and Responsive Design
+**Timestamp: 2026-10-10**
+
+**What was requested:**
+Make the entire `platform/student-story-studio` interface visually consistent and fully responsive across all viewports. Establish a unified design system using the Playground palette and standardize components without modifying the backend Python Story Engine.
+
+**What was done:**
+- Conducted a comprehensive audit and identified reliance on hardcoded inline styles and scattered duplicate variables across `index.html`, `story.html`, and `fixer.html`.
+- Extracted and centralized all layout grids, typography configurations, colors, button styles, and video containers into a unified `.container`, `.character-card`, `.btn-primary` utility architecture in `style.css`.
+- Removed all inline `style="..."` attributes and duplicated `<style>` tags from the HTML files, hooking them into the new centralized design system.
+- Adjusted Flexbox layouts and CSS Grid breakpoints (`max-width: 600px` and `max-width: 768px`) to dynamically reflow character lists into stacked cards, avoiding any horizontal clipping or scrolling on narrow mobile viewports.
+- Enhanced touch targets by explicitly setting a minimum touch height (`min-height: 48px`) across core interactive elements like the "Draw", "Fix", and "Generate" buttons.
+- Modernized the `fixer.html` diagnostic layout by porting its complex absolute positioning to mobile-friendly flex layouts and integrating Playground design system tokens.
+
+**Files changed:**
+- `platform/student-story-studio/public/css/style.css` (Major unified rewrite)
+- `platform/student-story-studio/public/index.html`
+- `platform/student-story-studio/public/story.html`
+- `platform/student-story-studio/public/fixer.html`
+
+**Test Results:**
+- Visual coherence is established; all pages use identical buttons, shadows, font weight distributions, and card borders.
+- The interface naturally stacks into singular columns on mobile viewports.
+- Functionality for capturing drawn characters and running the generated video stays completely intact.
+
+---
+
+### UI Layout and Scaling Global Fix
+**Timestamp: 2026-10-10**
+
+**What was requested:**
+Fix extreme UI layout stretching, enormous scaled fonts, unbalanced cards, and broken dark input contrast fields across both the React portal and the HTML-based Student Story Studio, guaranteeing all pages feel proportionate and adhere to the single Playground visual style.
+
+**Root Cause:**
+- `App.jsx` in the React portal was overriding the centralized CSS with hardcoded inline styles scaling text to `4em`, `1.8em`, and fixing width pixels that caused extreme zooming effects on most screens.
+- `platform/portal/src/index.css` still utilized the default Vite boilerplate template (`#root { width: 1126px; }`), locking out mobile responsiveness and causing massive horizontal overflow. It also forced `color-scheme: light dark`, which caused the Teacher Dashboard form inputs to render as dark native browser widgets against white cards on host systems with a dark OS theme.
+- Unconstrained containers in React were stretching their children to the full bounds of the `1440px+` ultra-wide viewports, breaking the intended child-friendly design.
+
+**What was done:**
+- Rewrote `platform/portal/src/index.css` to act as the global baseline, inheriting the Gamified Playground design variables from `style.css`. Removed all hardcoded `1126px` constraints and `prefers-color-scheme: dark` forces.
+- Deleted `platform/portal/src/App.css` to prevent cascading conflicts.
+- Completely refactored `platform/portal/src/App.jsx`, removing all inline `style={{...}}` blocks. Wired the entire React app to use the standard `.container`, `.dashboard-container`, `.btn-primary`, and `.input-field` classes.
+- Introduced a `.dashboard-container` bound to `1024px` for wider teacher and student screens, while ensuring standard `.container` pages capped elegantly at `800px`.
+- Verified layout proportions across simulated mobile, tablet, and ultra-wide viewports using an automated browser subagent, confirming that scaling issues, input contrasts, and grid stretching were completely resolved.
+
+**Files changed:**
+- `platform/portal/src/index.css`
+- `platform/portal/src/App.css` (Cleared)
+- `platform/portal/src/App.jsx`
+
+---
+
+### Parent App MVP Implementation
+**Timestamp: 2026-10-10**
+
+**Objective:**
+Build the first usable Parent App MVP within the existing EduVision platform. The goal was to provide parents with a secure, read-only dashboard to view their linked children's learning activities, statuses, and saved stories.
+
+**Database & Security Changes:**
+- **Schema Update:** The Prisma schema (`platform/api/prisma/schema.prisma`) lacked an explicit parent-child relationship despite having a `PARENT` role. Added a `ParentChild` model mapping `parentId` to `childId` (both referencing the `User` model) to establish secure, verifiable ownership.
+- **Migration:** Ran `npx prisma db push` and `npx prisma generate` to safely update the database schema without resetting the development data.
+- **Seeding:** Created and ran a custom `seed-parent.js` script to securely provision a test parent (`parent1` / `password123`) and map them to existing students (`student1` (Alice) and `student2` (Bobby)).
+
+**API Endpoints Added (`platform/api/routes/portal.js`):**
+- **`GET /portal/parent/children`**: Returns a list of children explicitly mapped to the authenticated parent via the `ParentChild` table.
+- **`GET /portal/parent/children/:childId/dashboard`**: Returns a specific child's assigned activities, their current results, and saved stories. Securely verifies that the requested `childId` belongs to the requesting parent before returning any data.
+
+**UI Implementation (`platform/portal/src/App.jsx`):**
+- **Login:** Reused the existing `/auth/login` endpoint and generic `Login` component, updating the landing page entry point to "Teacher / Parent Login".
+- **Family Dashboard:** Developed the `ParentDashboard` component that renders when a user logs in with the `PARENT` role.
+- **Child Selector:** Displays custom avatar cards for all linked children. Selecting a child dynamically fetches their specific dashboard data.
+- **Learning Activities Panel:** Maps assignments to their current activity results, rendering clear visual badges (Pending/Completed) using `var(--color-success)` and `var(--color-warning)` styles added to `index.css`.
+- **Saved Stories Panel:** Displays the child's saved stories, including the generation date and a native HTML5 `<video>` element for immediate playback.
+
+**Testing & Verification:**
+- Spawend an automated browser subagent to log in as `parent1` and navigate the Family Dashboard.
+- Verified that both Alice and Bobby render successfully.
+- Confirmed that clicking Alice correctly fetches her specific learning activities (Pending vs Completed) and her rendered `Rahim's Family` story video.
+- All layouts naturally adhered to the existing `800px` to `1024px` Gamified Playground responsiveness logic established in the previous UI refactor.
+
+---
+
+### Phase 13: Student Identity, Parent Linking, and Class Enrollment
+**Timestamp: 2026-10-10**
+
+**Objective:**
+Redesign the student onboarding and enrollment workflow so that every student has a consistent canonical identity, preventing duplicate accounts. Connect these identities securely to Parents and Teachers.
+
+**Relationship Model Implemented:**
+- **Parent ↔ Student:** Uses the existing `ParentChild` table. Parents input the student's `username` and `password` to verify authorization, creating a secure link to the canonical `User` identity rather than creating a duplicate.
+- **Student ↔ Class:** Uses the existing `ClassMembership` table. Teachers can directly assign an existing student to their class.
+
+**Database & Migration:**
+- The required schema (`ParentChild` and `ClassMembership`) was already present and pushed in the previous phase. 
+- No new fields or tables were necessary, so a new Prisma migration was not required to complete the workflows. Existing development data was fully preserved.
+
+**API Authorization Updates (`platform/api/routes/portal.js`):**
+- **`POST /portal/parent/link-child`**: Accepts a student's `username` and `password`, verifies them securely with `bcrypt.compare()`, and upserts a `ParentChild` link.
+- **`GET /portal/classes/:id/roster`**: Returns the `User` models for all students in a class. Verified that the requesting user is a `TEACHER` for that specific class.
+- **`POST /portal/classes/:id/members`**: Strict authorization added. Previously lacked verification; now verifies `req.user.id` has a `TEACHER` membership in the `req.params.id` class before enrolling the student.
+- **`DELETE /portal/classes/:id/members/:studentId`**: Added to safely remove a student's `ClassMembership` without deleting the `User` or their historical `StudentStory` records.
+
+**UI Workflows (`platform/portal/src/App.jsx`):**
+- **Teacher Dashboard:** Added a `<TeacherRosterPanel>` that allows a teacher to select one of their managed classes, view the roster, enroll a new student from a master list, and remove existing students.
+- **Parent Dashboard:** Added a `<ParentLinkChild>` component. Parents enter their child's school-provided credentials to link them instantly to their family view. Added an "Enrolled Classes" list inside the specific child's view.
+- **Student Dashboard:** Remains unchanged. Avatar-based class login flow is strictly preserved.
+
+**Testing & Verification:**
+- Ran a browser subagent that explored the authentication logic extensively.
+- Verified that Teacher and Parent interfaces function with proper authorization headers.
+- Fixed a transient JSX syntax issue that temporarily interrupted HMR.
+- Confirmed that linking a student creates a verifiable `ParentChild` relation without dropping previous assignments or stories.
+
+---
+
+### Phase 14: Student and Parent Onboarding UX Simplification
+**Timestamp: 2026-10-11**
+
+**Objective:**
+Simplify the student onboarding, parent linking, and teacher classroom enrollment workflows so that parents and children do not have to manage student usernames and passwords manually. Preserve canonical single-identity student accounts and passwordless classroom avatar login.
+
+**Key Changes Implemented:**
+1. **Parent Child Creation (`POST /portal/parent/create-child`):**
+   - Parents create a child simply by entering the child's display name and choosing a playful avatar.
+   - The backend automatically and cryptographically generates internal student usernames (`child_<hex>`) and strong random passwords (`crypto.randomBytes(16).toString('base64url')`), hashing them with `bcrypt`.
+   - The student `User` and `ParentChild` link are created atomically in a single Prisma transaction.
+   - Credentials are never exposed in API responses or logs.
+
+2. **Dual-Mode Parent Management UI (`ParentChildManager` in `App.jsx`):**
+   - **✨ Add Child:** Frictionless form with name input, visual avatar presets, and instant family profile creation.
+   - **🔗 Link School Account:** Preserved secure credential-based linking (`POST /portal/parent/link-child`) for school-provided student logins without fuzzy name-matching.
+
+3. **Teacher Roster & Class Enrollment (`TeacherRosterPanel` in `App.jsx`):**
+   - Teachers select any managed class and see available existing students in a friendly dropdown formatted with `displayName (username)`.
+   - Teachers click **Add to Class** to enroll existing students into `ClassMembership` without creating duplicate accounts.
+   - Available students list dynamically refreshes when classes or students change.
+
+4. **Preserved Passwordless Student Login (`POST /auth/student-login`):**
+   - Children navigate to their class and click their avatar to log in seamlessly without passwords.
+
+5. **Security & Boundary Enforcement:**
+   - Parent access to child dashboards (`GET /portal/parent/children/:childId/dashboard`) enforces verified `ParentChild` relationship.
+   - Student history endpoint (`GET /portal/students/:id/history`) strictly verifies ownership for students and `ParentChild` links for parents.
+   - Teacher class roster management (`POST/DELETE /portal/classes/:id/members`) verifies the teacher manages the class.
+
+**Files Changed:**
+- `platform/api/routes/portal.js`: Added `POST /portal/parent/create-child`, updated `GET /portal/students` with `displayName`/`avatar`, strengthened `/students/:id/history` authorization.
+- `platform/portal/src/App.jsx`: Replaced `ParentLinkChild` with `ParentChildManager`, improved `TeacherRosterPanel` with real student names and "Add to Class" workflow.
+- `platform/api/tests/onboarding_simplification.test.js`: Comprehensive automated end-to-end integration test suite.
+
+**Tests Executed & Verified:**
+- `tests/onboarding_simplification.test.js`: 7/7 tests passed.
+  - Parent creates child with only name and avatar.
+  - Parent retrieves linked children.
+  - Parent views child dashboard.
+  - Unauthorized parent blocked from accessing unlinked child (403).
+  - Teacher lists students and enrolls child into class.
+  - Student logs in passwordlessly via class and avatar.
+  - Parent dashboard reflects enrolled classes and learning activity.
+- `tests/api.test.js`: 7/7 tests passed (0 regressions).
+- `npm run build` in `platform/portal`: Vite build completed cleanly with 0 errors.
+
+---
+
+### Phase 15: App-Wide Navigation Audit and Parent Saved Story Video Playback
+**Timestamp: 2026-10-11**
+
+**Objective:**
+Resolve the two critical production defects in EduVision:
+1. Complete an app-wide navigation audit and establish reliable return routes for student activities, Story Studio, Fixer, Teacher dashboard, and Parent dashboard without relying solely on browser back.
+2. Diagnose and fix the saved story video playback failure on the Parent Dashboard where HTML video players displayed a black screen with `0:00`.
+
+**Root Cause Investigation (Parent Story Playback):**
+1. **Database & URL Inspection:** `StudentStory.videoUrl` correctly pointed to `/api/files?path=c:/Major Project - MVP2/Major Project - MVP/story_engine/output/rahims_story_....mp4`. The `.mp4` video files physically existed on disk (~2 MB each, valid H.264/AAC media).
+2. **Endpoint Mismatch:** In `platform/portal/src/App.jsx`, the video player rendered `<video src="http://localhost:4000${s.videoUrl}">`. Port 4000 was the Central Platform API (`platform/api`), which had NO route handler for `/api/files`. The request returned an HTTP `404 Not Found`, causing the browser's native `<video>` element to fail silently, showing a black box with `0:00`.
+3. **Serving Architecture:** `/api/files` was only handled on port 3000 (`eduvision_ui`) and proxied on port 3001 (`student-story-studio`), but the portal frontend communicated directly with port 4000.
+
+**Implementation Details:**
+1. **Secure File Streaming Endpoint (`platform/api/routes/files.js` & `app.js`):**
+   - Implemented `GET /api/files` on the Platform API using Express `res.sendFile()`.
+   - Strictly enforced path normalization to lowercase and verified against a secure whitelist (`story_engine`, `characters`, `eduvision_ui/uploads`, `uploads`).
+   - Blocked unauthorized file access and directory traversal attempts with HTTP `403 Forbidden`.
+   - Handled non-existent files with HTTP `404 Not Found`.
+   - Supported HTTP `206 Partial Content` with `Accept-Ranges: bytes` out of the box, allowing browser video seeking, scrub bar interaction, and duration computation.
+2. **Missing File & Error Resilience (`platform/api/routes/portal.js` & `platform/portal/src/App.jsx`):**
+   - Enhanced `GET /portal/parent/children/:childId/dashboard` to verify `fs.existsSync` on disk, adding `fileExists: true/false` to each story object.
+   - Built a dedicated `<SavedStoryCard>` component in React. If a video file is missing on disk, it displays a friendly alert banner rather than a broken player.
+   - Added an `onError` event listener to catch stream decoding issues with a "Retry" button.
+3. **App-Wide Navigation Audit & Fixes:**
+   - **Student Activity Return Navigation:** Updated `/api/integrations/launch` and `launchApp` in `StudentDashboard` to pass `returnUrl` (e.g. `http://localhost:5173`) and persist active assignment context in `localStorage`.
+   - **Story Studio Landing Page (`index.html`):** Added a top navigation bar with an obvious **"⬅️ Back to EduVision"** button and an integrated banner link to return directly to the dashboard.
+   - **Story Studio Story Editor (`story.html`):** Added a **"⬅️ Back to Portal"** button in the navbar, an assigned activity indicator, and a prominent green **"Finished! Back to EduVision"** button beneath the completed video. Added a `beforeunload` warning to protect active generation jobs.
+   - **Fixer Navigation & Work Preservation (`fixer.html`):** Dynamically set `#back-btn` to point back to the caller's `returnUrl` (e.g., `/story.html`) with label "⬅️ Back to Story". Added dirty tracking (`isImageModified`, `isKeypointMoved`) that prompts user confirmation before navigating away if drawing changes are unsaved, and sets `hasSaved = true` upon successful preparation.
+   - **Parent Dashboard State Persistence:** Linked `selectedChildId` to `sessionStorage` (`eduvision_parent_child_id`), preserving the selected child across view switches and page reloads.
+   - **Teacher Dashboard State Persistence:** Linked `selectedClass` in `TeacherRosterPanel` to `sessionStorage` (`eduvision_teacher_class_id`), maintaining active class roster views across refreshes and auto-populating assignment class selection.
+   - **Mirrored Changes in Engine UI:** Synchronized navigation enhancements between `platform/student-story-studio` and `eduvision_ui`.
+
+**Files Changed:**
+- `platform/api/routes/files.js` (new file streaming endpoint with whitelist protection)
+- `platform/api/app.js` (mounted `/api/files`)
+- `platform/api/routes/portal.js` (added `fileExists` checks for saved stories)
+- `platform/api/routes/integration.js` (supported `returnUrl` parameter in launch flow)
+- `platform/portal/src/App.jsx` (saved story card with byte-range video streaming, missing file state, child & class sessionStorage persistence, launch returnUrl)
+- `platform/student-story-studio/public/index.html` & `eduvision_ui/public/index.html` (return to portal buttons & banner return links)
+- `platform/student-story-studio/public/story.html` & `eduvision_ui/public/story.html` (Back to Portal navbar button, Finished return button, active generation unload protection)
+- `platform/student-story-studio/public/fixer.html` & `eduvision_ui/public/fixer.html` (dynamic returnUrl back button, unsaved changes dirty tracking & confirmation dialog)
+- `scratch/test_fixes.js` (automated backend test suite)
+
+**Verification & Test Results:**
+- **Automated Verification Suite (`scratch/test_fixes.js`):** 22/22 tests passed.
+  - Parent authentication & children list retrieval.
+  - Child dashboard authorization & `fileExists: true` serialization.
+  - Video streaming on port 4000: HTTP 200, Content-Type `video/mp4`, Accept-Ranges `bytes`, and HTTP 206 partial content.
+  - Path security: System paths (`c:/Windows/System32/drivers/etc/hosts`) and relative traversal blocked with 403 Forbidden.
+  - Missing file: Non-existent paths return 404 Not Found.
+  - Unauthorized access: Unlinked child ID rejected with 403 Forbidden.
+  - Integration launch URL correctly bundles token, assignmentId, and returnUrl.
+- **Browser Subagent Parent Story Playback Verification:**
+  - Logged into Parent Dashboard as `parent1`, selected `Nauman`.
+  - Video player loaded metadata with exact duration `23.57s`.
+  - Native video playback started (`currentTime > 0`, `!video.paused`, `readyState: 4`), displaying actual animated story frames.
+  - Page refresh confirmed `Nauman` remained selected with stories intact.
+- **Browser Subagent Navigation Audit Verification:**
+  - Student Login $\to$ Class Selection $\to$ "⬅️ Back" returned to Landing.
+  - Selected class $\to$ "⬅️ Back to Classes" returned to class list.
+  - Selected avatar $\to$ launched Story Studio on port 3001.
+  - Story Studio displayed "⬅️ Back to EduVision" and "Return to Dashboard 🎒".
+  - Navigated to `/story.html` $\to$ verified "⬅️ Back to Portal".
+  - Clicked "Fix" $\to$ Fixer displayed "⬅️ Back to Story", clicking it cleanly returned to `/story.html`.
+  - Clicked "⬅️ Back to Portal" in Story Studio $\to$ returned directly to Student Dashboard on `http://localhost:5173`.
+  - Teacher Login $\to$ selected class in Class Roster $\to$ refreshed page $\to$ selected class and roster remained intact.
+- **Production Build:** `npm run build` in `platform/portal` completed cleanly in 453ms.
+
+---
+
+### Phase 16: Secure Parent Story Video Access and Relational Authorization
+**Timestamp: 2026-10-11**
+
+**Objective:**
+Resolve the release-blocking security vulnerability identified during the pre-release audit:
+- The streaming endpoint (`/api/files`) previously enforced directory sandboxing but did not perform user authentication or object-level authorization for individual video files.
+- Ensure that parents can only stream stories belonging to children linked to them via `ParentChild`.
+- Eliminate the exposure of server filesystem paths in API responses.
+- Preserve HTML5 video playback, duration loading, scrub bar seeking, and HTTP byte-range requests (HTTP 206 Partial Content).
+
+**Implementation Details:**
+1. **Token Authentication & Ownership Authorization (`platform/api/routes/files.js`):**
+   - Implemented `authenticateRequest(req)` supporting both standard `Authorization: Bearer <token>` headers and URL query parameter tokens (`?token=<jwt>`). This accommodates browser native HTML5 `<video src="...">` media elements that cannot send custom HTTP headers on chunk requests.
+   - Implemented `authorizeStoryAccess(user, story)`:
+     - `ADMIN` & `TEACHER`: Authorized to view student work.
+     - `STUDENT`: Authorized only if `user.id === story.userId`.
+     - `PARENT`: Authorized only if a `ParentChild` relationship exists in PostgreSQL between `user.id` and `story.userId`.
+     - Unauthorized parents or users receive an HTTP `403 Forbidden` response.
+     - Unauthenticated requests receive an HTTP `401 Unauthorized` response.
+   - Supported both `?storyId=<uuid>` and `?path=<path>` parameters.
+2. **Filesystem Path Hiding (`platform/api/routes/portal.js`):**
+   - Sanitized all student and parent endpoints (`GET /parent/children/:childId/dashboard`, `GET /students/:id/history`, and `GET /student/stories`) to return opaque URLs (`/api/files?storyId=${s.id}`) instead of exposing raw Windows filesystem paths (`c:/Major Project - MVP2/...`).
+3. **Frontend Authenticated Media Streaming (`platform/portal/src/App.jsx`):**
+   - Updated `<SavedStoryCard>` to accept the parent's authentication token and append it to the video source URL (`/api/files?storyId=...&token=...`).
+4. **Automated Verification & Test Suite (`platform/api/tests/story_video_security.test.js`):**
+   - Created a comprehensive 15-test security suite in Jest verifying:
+     - 401 Unauthorized for unauthenticated or invalid-token requests.
+     - 403 Forbidden for system file traversal (`c:/Windows/...`) and relative directory escapes (`../../package.json`).
+     - 404 Not Found for non-existent story IDs and missing files.
+     - 200 OK full media streaming for authorized parents.
+     - 206 Partial Content byte-range seeking for authorized parents.
+     - 403 Forbidden blocking unauthorized parents from accessing another family's video files, including via byte-range requests.
+     - 403 Forbidden blocking other students from accessing classmate stories.
+     - 200 OK allowing student story owners and teachers to stream videos.
+     - Verification that parent dashboard responses never leak server filesystem paths.
+
+**Files Changed:**
+- `platform/api/routes/files.js`
+- `platform/api/routes/portal.js`
+- `platform/portal/src/App.jsx`
+- `platform/api/tests/story_video_security.test.js` (new automated security test suite)
+- `scratch/test_fixes.js`
+- `textbook/chapter13_platform_foundation.md`

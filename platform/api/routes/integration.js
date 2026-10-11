@@ -6,7 +6,7 @@ const prisma = require('../utils/prismaClient');
 
 // Generate a short-lived launch token for an app
 router.post('/launch', authenticate, async (req, res, next) => {
-    const { appId, assignmentId } = req.body;
+    const { appId, assignmentId, returnUrl } = req.body;
     if (!appId) return res.status(400).json({ error: 'appId is required' });
 
     try {
@@ -23,7 +23,13 @@ router.post('/launch', authenticate, async (req, res, next) => {
         };
 
         const appToken = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '1h' });
-        const finalUrl = `${launchUrl}?token=${appToken}${assignmentId ? `&assignmentId=${assignmentId}` : ''}`;
+        const queryParams = new URLSearchParams();
+        queryParams.set('token', appToken);
+        if (assignmentId) queryParams.set('assignmentId', assignmentId);
+        if (returnUrl) queryParams.set('returnUrl', returnUrl);
+
+        const separator = launchUrl.includes('?') ? '&' : '?';
+        const finalUrl = `${launchUrl}${separator}${queryParams.toString()}`;
         res.json({ launchUrl: finalUrl });
     } catch (err) {
         next(err);

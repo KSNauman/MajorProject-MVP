@@ -9,7 +9,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container" style="text-align: center; margin-top: 100px;">
+    <div class="container" style="text-align: center; margin-top: 60px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; max-width: 800px; margin: 0 auto 30px auto;">
+            <a id="btn-return-portal" href="http://localhost:5173" class="btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 10px 18px; border-radius: 8px; background: white; color: #3b82f6; border: 1px solid #e5e7eb; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <i class="fa-solid fa-arrow-left"></i> Back to EduVision Portal
+            </a>
+            <div id="portal-session-indicator" style="display: none; font-size: 0.9em; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 6px 14px; border-radius: 20px;">
+                🎒 Assigned Activity
+            </div>
+        </div>
+
         <header class="home-header">
             <h1 style="font-size: 3rem; margin-bottom: 10px;">EDUVISION</h1>
             <p class="subtitle" style="font-size: 1.2rem; color: #6b7280; margin-bottom: 50px;">Turn children's drawings into animated stories</p>
@@ -29,10 +38,15 @@
             </a>
         </div>
 
-        <div id="integration-banner" style="display: none; margin-top: 30px; padding: 15px; background: #dbeafe; color: #1e40af; border-radius: 8px; font-weight: 500;">
-            <i class="fa-solid fa-link" style="margin-right: 5px;"></i>
-            Integrated with EduVision Platform
-            <span id="assignment-context" style="display: none; margin-left: 10px; font-size: 0.9em; opacity: 0.8;"></span>
+        <div id="integration-banner" style="display: none; justify-content: space-between; align-items: center; margin-top: 30px; padding: 15px; background: #dbeafe; color: #1e40af; border-radius: 8px; font-weight: 500; max-width: 800px; margin-left: auto; margin-right: auto;">
+            <div style="display: flex; align-items: center;">
+                <i class="fa-solid fa-link" style="margin-right: 5px;"></i>
+                <span>Integrated with EduVision Platform</span>
+                <span id="assignment-context" style="display: none; margin-left: 10px; font-size: 0.9em; opacity: 0.8;"></span>
+            </div>
+            <a id="banner-return-link" href="http://localhost:5173" style="color: #1e40af; text-decoration: underline; font-weight: 700; margin-left: 15px;">
+                Return to Dashboard 🎒
+            </a>
         </div>
     </div>
 
@@ -41,6 +55,11 @@
         const params = new URLSearchParams(window.location.search);
         const token = params.get('token');
         const assignmentId = params.get('assignmentId');
+        const returnUrl = params.get('returnUrl');
+
+        if (returnUrl) {
+            localStorage.setItem('eduvision_return_url', returnUrl);
+        }
 
         if (token) {
             localStorage.setItem('eduvision_token', token);
@@ -52,12 +71,19 @@
             window.history.replaceState({}, document.title, "/");
         }
 
+        const savedReturnUrl = localStorage.getItem('eduvision_return_url') || 'http://localhost:5173';
+        const returnBtn = document.getElementById('btn-return-portal');
+        const bannerReturnLink = document.getElementById('banner-return-link');
+        if (returnBtn) returnBtn.href = savedReturnUrl;
+        if (bannerReturnLink) bannerReturnLink.href = savedReturnUrl;
+
         // Show banner if integrated
         const savedToken = localStorage.getItem('eduvision_token');
         const savedAssignment = localStorage.getItem('eduvision_assignment');
 
         if (savedToken) {
-            document.getElementById('integration-banner').style.display = 'block';
+            document.getElementById('integration-banner').style.display = 'flex';
+            document.getElementById('portal-session-indicator').style.display = 'block';
             if (savedAssignment) {
                 const ctx = document.getElementById('assignment-context');
                 ctx.textContent = `(Assignment ID: ${savedAssignment})`;

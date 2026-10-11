@@ -84,4 +84,46 @@ describe('Logging & Correlation Scenarios', () => {
             })
         );
     });
+
+    test('Redacts token query parameter from logged request URLs', async () => {
+        const sensitiveToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.sensitivePayload.signature';
+        const res = await request(app)
+            .get(`/api/portal/public/classes?storyId=story-123&token=${sensitiveToken}&format=mp4`);
+
+        expect(res.status).toBe(200);
+
+        // Verify logger.log recorded the redacted URL while preserving other parameters
+        expect(logger.log).toHaveBeenCalledWith(expect.objectContaining({
+            message: expect.stringContaining('/api/portal/public/classes?storyId=story-123&token=[REDACTED]&format=mp4'),
+            http: expect.objectContaining({
+                url: '/api/portal/public/classes?storyId=story-123&token=[REDACTED]&format=mp4'
+            })
+        }));
+
+        // Verify the raw sensitive token is never present in logged output
+        expect(logger.log).not.toHaveBeenCalledWith(expect.objectContaining({
+            message: expect.stringContaining(sensitiveToken)
+        }));
+        expect(logger.log).not.toHaveBeenCalledWith(expect.objectContaining({
+            http: expect.objectContaining({
+                url: expect.stringContaining(sensitiveToken)
+            })
+        }));
+    });
+
+    test('Redacts token case-insensitively when token is sole parameter', async () => {
+        const sensitiveToken = 'secret-token-xyz';
+        await request(app)
+            .get(`/api/portal/public/classes?TOKEN=${sensitiveToken}`);
+
+        expect(logger.log).toHaveBeenCalledWith(expect.objectContaining({
+            message: expect.stringContaining('/api/portal/public/classes?TOKEN=[REDACTED]'),
+            http: expect.objectContaining({
+                url: '/api/portal/public/classes?TOKEN=[REDACTED]'
+            })
+        }));
+        expect(logger.log).not.toHaveBeenCalledWith(expect.objectContaining({
+            message: expect.stringContaining(sensitiveToken)
+        }));
+    });
 });

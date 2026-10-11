@@ -46,6 +46,13 @@ def _load_model() -> YOLO:
     Locate and load best.pt (custom YOLOv8-Pose for children's sketches).
     Searches several relative paths so it works regardless of CWD.
     """
+    # Ultralytics 8.2.0 compatibility: Pose(Detect) calls self.detect(self, x)
+    # during forward pass. Checkpoints trained on different versions may not have
+    # 'detect' saved in the unpickled instance dict.
+    from ultralytics.nn.modules.head import Detect, Pose
+    if not hasattr(Pose, 'detect') or Pose.detect is None:
+        Pose.detect = staticmethod(Detect.forward)
+
     script_dir = Path(__file__).resolve().parent
     candidates = [
         script_dir.parent / "best.pt",        # AnimatedDrawings/best.pt  ← primary
@@ -300,21 +307,38 @@ def image_to_annotations(img_fn: str, out_dir: str, kpts_file: str = None) -> No
         kpts[:, 0] -= l   # shift x into crop space
         kpts[:, 1] -= t   # shift y into crop space
     else:
-        best_crop = (
-            int(crop_result.boxes.conf.argmax())
-            if crop_result.boxes is not None and len(crop_result.boxes) > 1
-            else 0
-        )
-        kpts = crop_result.keypoints.data[best_crop].cpu().numpy()
+        crop_results = model(cropped, verbose=False)
+        crop_result  = crop_results[0]
 
-    # Clamp to crop bounds
-    kpts[:, 0] = np.clip(kpts[:, 0], 0, cropped.shape[1] - 1)
-    kpts[:, 1] = np.clip(kpts[:, 1], 0, cropped.shape[0] - 1)
+        if (crop_result.keypoints is None
+                or len(crop_result.keypoints) == 0
+                or crop_result.keypoints.data is None
+                or len(crop_result.keypoints.data) == 0):
+            # Fallback: translate full-image keypoints into crop-space coordinates
+            logging.warning("No keypoints on crop — translating full-image keypoints to crop space.")
+            if result.keypoints is None or len(result.keypoints.data) == 0:
+                msg = "YOLOv8 produced no keypoints. Cannot build skeleton."
+                logging.critical(msg)
+                assert False, msg
+            kpts = result.keypoints.data[0].cpu().numpy().copy()
+            kpts[:, 0] -= l   # shift x into crop space
+            kpts[:, 1] -= t   # shift y into crop space
+        else:
+            best_crop = (
+                int(crop_result.boxes.conf.argmax())
+                if crop_result.boxes is not None and len(crop_result.boxes) > 1
+                else 0
+            )
+            kpts = crop_result.keypoints.data[best_crop].cpu().numpy()
 
-    logging.info(f"Keypoints extracted: {kpts.shape[0]} joints")
+        # Clamp to crop bounds
+        kpts[:, 0] = np.clip(kpts[:, 0], 0, cropped.shape[1] - 1)
+        kpts[:, 1] = np.clip(kpts[:, 1], 0, cropped.shape[0] - 1)
 
-    # ── Build AnimatedDrawings skeleton ───────────────────────────────────────
-    skeleton = _build_skeleton(kpts)
+        logging.info(f"Keypoints extracted: {kpts.shape[0]} joints")
+
+        # ── Build AnimatedDrawings skeleton ───────────────────────────────────────
+        skeleton = _build_skeleton(kpts)
 
     # ── Save all Phase-2 inputs ───────────────────────────────────────────────
     char_cfg = {

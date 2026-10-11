@@ -11,6 +11,7 @@ const appRoutes = require('./routes/apps');
 const healthRoutes = require('./routes/health');
 const integrationRoutes = require('./routes/integration');
 const portalRoutes = require('./routes/portal');
+const filesRoutes = require('./routes/files');
 
 const app = express();
 app.use(cors({
@@ -33,6 +34,7 @@ app.use('/api/apps', appRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/integrations', integrationRoutes);
 app.use('/api/portal', portalRoutes);
+app.use('/api/files', filesRoutes);
 
 app.use(errorHandler);
 

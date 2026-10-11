@@ -278,16 +278,53 @@
         let canvas, mainImageObj;
         let currentMode = 'drag';
         let isImageModified = false;
+        let isKeypointMoved = false;
+        let hasSaved = false;
         
         let kpPoints = {};
         let currentTextureUrl = "";
         let kpLines = [];
+
+        function hasUnsavedWork() {
+            return !hasSaved && (isImageModified || isKeypointMoved || (mainImageObj !== undefined && mainImageObj !== null));
+        }
 
         function initCanvas() {
             canvas = new fabric.Canvas('editorCanvas', {
                 width: 512,
                 height: 512,
                 isDrawingMode: false
+            });
+
+            // Dynamic returnUrl setup and unsaved work warnings
+            const urlParams = new URLSearchParams(window.location.search);
+            const returnUrl = urlParams.get('returnUrl');
+            const backBtn = document.getElementById('back-btn');
+            if (backBtn) {
+                if (returnUrl) {
+                    backBtn.href = returnUrl;
+                    backBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i> Back to Story';
+                } else {
+                    backBtn.href = '/';
+                    backBtn.innerHTML = '<i class="fa-solid fa-house"></i> Home';
+                }
+
+                backBtn.addEventListener('click', (e) => {
+                    if (hasUnsavedWork()) {
+                        const leave = confirm("You have unsaved changes in your character drawing. Are you sure you want to leave without saving?");
+                        if (!leave) {
+                            e.preventDefault();
+                            return false;
+                        }
+                    }
+                });
+            }
+
+            window.addEventListener('beforeunload', (e) => {
+                if (hasUnsavedWork()) {
+                    e.preventDefault();
+                    e.returnValue = 'You have unsaved changes in your character drawing.';
+                }
             });
             
             document.getElementById('imageUpload').addEventListener('change', uploadToBackendFirst);
@@ -614,6 +651,7 @@
                         const returnUrl = urlParams.get('returnUrl');
                         const slot = urlParams.get('slot');
                         
+                        hasSaved = true;
                         if (returnUrl && slot) {
                             sessionStorage.setItem('story_slot_' + slot, saveData.charDir);
                             window.location.href = returnUrl;
@@ -670,6 +708,7 @@
                         const returnUrl = urlParams.get('returnUrl');
                         const slot = urlParams.get('slot');
                         
+                        hasSaved = true;
                         if (returnUrl && slot) {
                             sessionStorage.setItem('story_slot_' + slot, result.charDir);
                             window.location.href = returnUrl;

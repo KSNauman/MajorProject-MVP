@@ -108,7 +108,7 @@ Potential directions beyond the current MVP â€” for future versions or rese
 | **Real-Time Drawing Mode** | Draw directly in-browser on a tablet â€” character animates live as the sketch is completed |
 | **Voice Narration (DONE âœ…)** | TTS narration plays over the animated scene, reading the story aloud while characters move |
 | **Multi-Scene Sequencing (DONE âœ…)** | Teachers build a multi-scene storyboard â€” characters move across different backgrounds |
-| **Student Portfolio** | Each child's animated character is saved to a personal gallery accessible by parents |
+| **Student Portfolio (DONE ✅)** | Each child's animated character is saved to a personal gallery accessible by parents via the Parent App |
 
 ---
 
@@ -128,5 +128,4 @@ To simplify the entire environment startup, you can use the provided Windows bat
 
 *Last updated: October 10, 2026*
 - [Chapter 12: Engine Optimization and Sealing](chapter12_engine_optimization.md)
-- [Chapter 13: Phase 2 to 10 - Platform Foundation, DB Setup, Integrations, Student Portal Redesign & Platform Logging](chapter13_platform_foundation.md)
-
+- [Chapter 13: Phase 2 to 11 - Platform Foundation, DB Setup, Integrations, Student Portal Redesign, Logging & Playground UI](chapter13_platform_foundation.md)
