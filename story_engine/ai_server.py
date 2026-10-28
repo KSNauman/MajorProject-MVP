@@ -9,7 +9,8 @@ import yaml
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-repo_root = r'c:\Major Project - MVP2\Major Project - MVP\Actual repo (EDUVISION)\AnimatedDrawings'
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+repo_root = os.path.join(base_dir, 'Actual repo (EDUVISION)', 'AnimatedDrawings')
 sys.path.insert(0, repo_root)
 
 from examples.image_to_annotations import image_to_annotations
@@ -17,7 +18,7 @@ from examples.image_to_annotations import image_to_annotations
 app = Flask(__name__)
 CORS(app)
 
-public_uploads = r'c:\Major Project - MVP2\Major Project - MVP\eduvision_ui\public\uploads'
+public_uploads = os.path.join(base_dir, 'eduvision_ui', 'public', 'uploads')
 os.makedirs(public_uploads, exist_ok=True)
 
 @app.route('/extract', methods=['POST'])

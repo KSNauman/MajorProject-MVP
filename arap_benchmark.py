@@ -1,6 +1,6 @@
-﻿import sys
+import sys
 from pathlib import Path
-REPO_ROOT = Path(r'c:\Major Project - MVP2\Major Project - MVP\Actual repo (EDUVISION)\AnimatedDrawings')
+REPO_ROOT = Path(__file__).resolve().parent / 'Actual repo (EDUVISION)' / 'AnimatedDrawings'
 sys.path.insert(0, str(REPO_ROOT))
 
 import time
@@ -152,7 +152,7 @@ def main():
     import cv2
     from scipy.spatial import Delaunay
     
-    char_cfgs = glob.glob(r'c:\Major Project - MVP2\Major Project - MVP\eduvision_ui\uploads\char_data_*\char_cfg.yaml')
+    char_cfgs = glob.glob(str(Path(__file__).resolve().parent / 'eduvision_ui' / 'uploads' / 'char_data_*' / 'char_cfg.yaml'))
     if not char_cfgs:
         print('No char_cfg found.')
         return

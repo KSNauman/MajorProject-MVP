@@ -6,9 +6,10 @@ import subprocess
 import shutil
 
 # Paths
-REPO_ROOT = r"c:\Major Project - MVP2\Major Project - MVP\Actual repo (EDUVISION)\AnimatedDrawings"
-STORY_ENGINE = r"c:\Major Project - MVP2\Major Project - MVP\story_engine"
-UPLOADS_DIR = r"c:\Major Project - MVP2\Major Project - MVP\eduvision_ui\uploads"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPO_ROOT = os.path.join(BASE_DIR, "Actual repo (EDUVISION)", "AnimatedDrawings")
+STORY_ENGINE = os.path.join(BASE_DIR, "story_engine")
+UPLOADS_DIR = os.path.join(BASE_DIR, "eduvision_ui", "uploads")
 ASSETS_DIR = os.path.join(REPO_ROOT, "assets", "Rahim's Story")
 OUTPUT_DIR = os.path.join(STORY_ENGINE, "output")
 

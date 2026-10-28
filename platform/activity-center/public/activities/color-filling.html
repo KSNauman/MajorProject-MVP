@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Humanoid Color & Animate Studio 🎨✨ | EduVision</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .studio-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr 310px;
+            gap: 20px;
+            align-items: start;
+        }
+        @media (max-width: 1024px) {
+            .studio-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .panel-card {
+            background: #ffffff;
+            border-radius: var(--radius-lg);
+            border: 2px solid #e2e8f0;
+            padding: 18px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+        }
+        .palette-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .colors-swatch-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .swatch-btn {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            border: 3px solid #cbd5e1;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        .swatch-btn:hover {
+            transform: scale(1.12);
+            border-color: #475569;
+        }
+        .swatch-btn.active {
+            transform: scale(1.16);
+            border-color: #0f172a;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.45);
+        }
+        .swatch-btn.active::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffffff;
+            font-weight: 900;
+            font-size: 18px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+        }
+        .canvas-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            border-radius: var(--radius-lg);
+            border: 3px solid #e2e8f0;
+            padding: 20px;
+            min-height: 480px;
+            position: relative;
+            overflow: hidden;
+        }
+        .svg-drawing-stage {
+            width: 100%;
+            max-width: 380px;
+            height: 420px;
+            filter: drop-shadow(0 6px 16px rgba(0,0,0,0.06));
+        }
+        .humanoid-part {
+            cursor: pointer;
+            transition: fill 0.25s ease, filter 0.15s ease;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+        }
+        .humanoid-part:hover {
+            filter: brightness(0.92) drop-shadow(0 0 5px rgba(99, 102, 241, 0.7));
+        }
+        .part-indicator {
+            font-size: 0.85rem;
+            color: #64748b;
+            text-align: center;
+            margin-top: 8px;
+            font-weight: 600;
+        }
+        /* Animation Selection Panel */
+        .motion-selector-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .motion-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: var(--radius-md);
+            border: 2px solid #e2e8f0;
+            background: #f8fafc;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            text-align: left;
+            position: relative;
+        }
+        .motion-btn:hover {
+            transform: translateX(4px);
+            border-color: #818cf8;
+            background: #eef2ff;
+        }
+        .motion-btn.selected {
+            border-color: #4f46e5;
+            background: #e0e7ff;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+        }
+        /* Uncolored monochrome animated preview loops */
+        .motion-preview-box {
+            width: 58px;
+            height: 58px;
+            border-radius: 10px;
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .motion-preview-box img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            filter: grayscale(100%) contrast(160%) brightness(1.05);
+            transition: filter 0.2s;
+        }
+        .motion-info {
+            flex-grow: 1;
+        }
+        .motion-name {
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: #1e293b;
+        }
+        .motion-desc {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        .animate-big-btn {
+            margin-top: 18px;
+            width: 100%;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            padding: 16px 20px;
+            font-size: 1.15rem;
+            font-weight: 800;
+            border-radius: 16px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .animate-big-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 26px rgba(99, 102, 241, 0.45);
+        }
+
+        /* Stage Overlay: Displays YOUR Exact Colored Drawing in Motion! */
+        .stage-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .stage-modal {
+            background: #ffffff;
+            border-radius: 28px;
+            padding: 32px;
+            max-width: 620px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+            animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.7); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .stage-header {
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: #1e293b;
+            margin-bottom: 6px;
+        }
+        .stage-sub {
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 18px;
+        }
+        /* Dynamic Animated Colored Humanoid Stage Container */
+        .stage-anim-display {
+            width: 300px;
+            height: 320px;
+            margin: 0 auto 18px auto;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle, #ffffff 0%, #f1f5f9 100%);
+            border-radius: 24px;
+            border: 4px solid #c7d2fe;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
+        }
+        .engine-spinner {
+            width: 44px;
+            height: 44px;
+            border: 4px solid #e0e7ff;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            animation: spinEngine 0.8s linear infinite;
+            margin: 0 auto 12px auto;
+        }
+        @keyframes spinEngine {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Core Engine Skeletal Animations for YOUR EXACT Colored Drawing */
+        /* 1. Joyful Jump */
+        .rig-jump-loop {
+            animation: rigBodyJump 0.65s infinite alternate cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-origin: center bottom;
+        }
+        @keyframes rigBodyJump {
+            0% { transform: translateY(0) scale(1, 1); }
+            30% { transform: translateY(-4px) scale(1.08, 0.92); }
+            70% { transform: translateY(-38px) scale(0.95, 1.08); }
+            100% { transform: translateY(-46px) scale(1.02, 1); }
+        }
+        .rig-jump-arm-left {
+            transform-origin: 112px 135px;
+            animation: rigArmJumpLeft 0.65s infinite alternate ease-in-out;
+        }
+        @keyframes rigArmJumpLeft {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(-135deg); }
+        }
+        .rig-jump-arm-right {
+            transform-origin: 208px 135px;
+            animation: rigArmJumpRight 0.65s infinite alternate ease-in-out;
+        }
+        @keyframes rigArmJumpRight {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(135deg); }
+        }
+        .rig-jump-leg-left {
+            transform-origin: 130px 230px;
+            animation: rigLegJumpLeft 0.65s infinite alternate ease-in-out;
+        }
+        @keyframes rigLegJumpLeft {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(-18deg); }
+        }
+        .rig-jump-leg-right {
+            transform-origin: 190px 230px;
+            animation: rigLegJumpRight 0.65s infinite alternate ease-in-out;
+        }
+        @keyframes rigLegJumpRight {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(18deg); }
+        }
+
+        /* 2. Cheerful Wave */
+        .rig-wave-loop {
+            animation: rigBodyWaveSway 1s infinite alternate ease-in-out;
+            transform-origin: center bottom;
+        }
+        @keyframes rigBodyWaveSway {
+            0% { transform: rotate(-2deg); }
+            100% { transform: rotate(2deg); }
+        }
+        .rig-wave-arm-right {
+            transform-origin: 208px 135px;
+            animation: rigHandWave 0.4s infinite alternate ease-in-out;
+        }
+        @keyframes rigHandWave {
+            0% { transform: rotate(110deg); }
+            100% { transform: rotate(145deg); }
+        }
+        .rig-wave-head {
+            transform-origin: 160px 116px;
+            animation: rigHeadTilt 1s infinite alternate ease-in-out;
+        }
+        @keyframes rigHeadTilt {
+            0% { transform: rotate(-4deg); }
+            100% { transform: rotate(6deg); }
+        }
+
+        /* 3. Star Hero Opening */
+        .rig-hero-loop {
+            animation: rigHeroPulse 0.8s infinite alternate ease-in-out;
+            transform-origin: center bottom;
+        }
+        @keyframes rigHeroPulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.08) translateY(-10px); }
+        }
+        .rig-hero-arm-left {
+            transform-origin: 112px 135px;
+            transform: rotate(-120deg);
+        }
+        .rig-hero-arm-right {
+            transform-origin: 208px 135px;
+            transform: rotate(120deg);
+        }
+
+        /* 4. Happy Walk Cycle */
+        .rig-walk-loop {
+            animation: rigWalkBob 0.6s infinite alternate ease-in-out;
+            transform-origin: center bottom;
+        }
+        @keyframes rigWalkBob {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-8px); }
+        }
+        .rig-walk-arm-left {
+            transform-origin: 112px 135px;
+            animation: walkLimb1 0.7s infinite alternate ease-in-out;
+        }
+        .rig-walk-arm-right {
+            transform-origin: 208px 135px;
+            animation: walkLimb2 0.7s infinite alternate ease-in-out;
+        }
+        .rig-walk-leg-left {
+            transform-origin: 130px 230px;
+            animation: walkLimb2 0.7s infinite alternate ease-in-out;
+        }
+        .rig-walk-leg-right {
+            transform-origin: 190px 230px;
+            animation: walkLimb1 0.7s infinite alternate ease-in-out;
+        }
+        @keyframes walkLimb1 {
+            0% { transform: rotate(-30deg); }
+            100% { transform: rotate(30deg); }
+        }
+        @keyframes walkLimb2 {
+            0% { transform: rotate(30deg); }
+            100% { transform: rotate(-30deg); }
+        }
+
+        /* 5. Peaceful Rest */
+        .rig-sleep-loop {
+            animation: rigSleepBreath 1.8s infinite alternate ease-in-out;
+            transform-origin: center bottom;
+        }
+        @keyframes rigSleepBreath {
+            0% { transform: scaleY(1); }
+            100% { transform: scaleY(1.03) translateY(-4px); }
+        }
+        .rig-sleep-head {
+            transform-origin: 160px 116px;
+            transform: rotate(14deg) translateY(6px);
+        }
+
+        .stage-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <header class="game-navbar">
+        <a href="/index.html" class="nav-brand"><span>🎨</span> Humanoid Color & Animate Studio</a>
+        <div class="nav-controls">
+            <div class="score-badge">⭐ Sparkles: <span id="sparklesVal">100</span></div>
+            <a id="navExitBtn" href="/index.html" class="btn btn-secondary">Exit Activity 🏠</a>
+        </div>
+    </header>
+
+    <main class="game-container" style="max-width:1200px;">
+        <div class="activity-hero" style="margin-bottom:20px; text-align:center;">
+            <h1 style="font-size:2rem; font-weight:900; color:#1e293b;">Color Your Humanoid Drawing & Watch It Animate! ✨</h1>
+            <p style="color:#64748b; font-size:1.05rem;">Pick colors for your drawing, choose an animation loop, and watch <strong>YOUR colored character</strong> come alive!</p>
+        </div>
+
+        <div class="studio-grid">
+            <!-- Left: Color Palette & Tools -->
+            <div class="panel-card">
+                <div class="palette-title">🎨 Pick Color</div>
+                <div class="colors-swatch-grid" id="swatchGrid">
+                    <!-- Swatches populated by JS -->
+                </div>
+                
+                <div class="palette-title" style="margin-top:16px;">🖌️ Active Color</div>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+                    <div id="activeColorSample" style="width:36px; height:36px; border-radius:10px; background:#4f46e5; border:2px solid #334155;"></div>
+                    <div>
+                        <div id="activeColorName" style="font-weight:800; color:#1e293b;">Indigo Blue</div>
+                        <div style="font-size:0.75rem; color:#64748b;">Click any body part to color it</div>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-secondary" style="flex:1;" onclick="resetColors()">🔄 Reset</button>
+                    <button class="btn btn-secondary" style="flex:1;" onclick="randomizeColors()">🎲 Surprise</button>
+                </div>
+            </div>
+
+            <!-- Center: Humanoid Drawing Canvas -->
+            <div class="panel-card canvas-container">
+                <div style="font-weight:800; color:#334155; margin-bottom:8px; font-size:1.05rem;">
+                    🧒 Tap Parts to Color: <span id="hoveredPart" style="color:#4f46e5;">Torso / Shirt</span>
+                </div>
+
+                <!-- SVG Humanoid Sketch Drawing -->
+                <svg class="svg-drawing-stage" viewBox="0 0 320 400" id="humanoidSvg">
+                    <!-- Skeleton Guidelines -->
+                    <g opacity="0.15" stroke="#94a3b8" stroke-dasharray="3,3" stroke-width="2">
+                        <line x1="160" y1="50" x2="160" y2="350"/>
+                        <line x1="80" y1="130" x2="240" y2="130"/>
+                        <line x1="110" y1="240" x2="210" y2="240"/>
+                    </g>
+
+                    <!-- Humanoid Parts (Fillable via Click) -->
+                    <!-- Head & Face -->
+                    <g class="humanoid-part" id="part-head" onclick="paintPart('head')" onmouseenter="hoverPart('Head & Face')">
+                        <ellipse cx="160" cy="72" rx="42" ry="46" fill="#fde68a" stroke="#1e293b" stroke-width="4"/>
+                        <!-- Hair -->
+                        <path id="part-hair" d="M 120 65 Q 160 20 200 65 Q 185 45 160 48 Q 135 45 120 65 Z" fill="#78350f" stroke="#1e293b" stroke-width="3"/>
+                        <!-- Eyes & Smile -->
+                        <circle cx="145" cy="70" r="5" fill="#1e293b"/>
+                        <circle cx="175" cy="70" r="5" fill="#1e293b"/>
+                        <path d="M 148 85 Q 160 96 172 85" fill="none" stroke="#1e293b" stroke-width="3" stroke-linecap="round"/>
+                        <!-- Cheeks -->
+                        <circle cx="136" cy="80" r="4" fill="#fca5a5" opacity="0.6"/>
+                        <circle cx="184" cy="80" r="4" fill="#fca5a5" opacity="0.6"/>
+                    </g>
+
+                    <!-- Neck -->
+                    <rect id="part-neck" x="150" y="116" width="20" height="18" rx="4" fill="#fde68a" stroke="#1e293b" stroke-width="3" onclick="paintPart('neck')"/>
+
+                    <!-- Left Arm (Upper & Lower) -->
+                    <g class="humanoid-part" id="part-left-arm" onclick="paintPart('leftArm')" onmouseenter="hoverPart('Left Sleeve & Arm')">
+                        <path d="M 112 135 L 75 185 L 60 175 L 102 125 Z" fill="#60a5fa" stroke="#1e293b" stroke-width="4"/>
+                        <!-- Left Hand -->
+                        <circle id="part-left-hand" cx="64" cy="188" r="14" fill="#fde68a" stroke="#1e293b" stroke-width="3"/>
+                    </g>
+
+                    <!-- Right Arm (Upper & Lower) -->
+                    <g class="humanoid-part" id="part-right-arm" onclick="paintPart('rightArm')" onmouseenter="hoverPart('Right Sleeve & Arm')">
+                        <path d="M 208 135 L 245 185 L 260 175 L 218 125 Z" fill="#60a5fa" stroke="#1e293b" stroke-width="4"/>
+                        <!-- Right Hand -->
+                        <circle id="part-right-hand" cx="256" cy="188" r="14" fill="#fde68a" stroke="#1e293b" stroke-width="3"/>
+                    </g>
+
+                    <!-- Torso / Shirt -->
+                    <g class="humanoid-part" id="part-torso" onclick="paintPart('torso')" onmouseenter="hoverPart('Shirt / Torso')">
+                        <path d="M 112 130 Q 160 138 208 130 L 216 230 Q 160 236 104 230 Z" fill="#3b82f6" stroke="#1e293b" stroke-width="4"/>
+                        <!-- Star Emblem on Shirt -->
+                        <polygon points="160,165 164,175 175,175 166,182 170,192 160,186 150,192 154,182 145,175 156,175" fill="#fef08a" stroke="#1e293b" stroke-width="1.5"/>
+                    </g>
+
+                    <!-- Left Leg & Shoe -->
+                    <g class="humanoid-part" id="part-left-leg" onclick="paintPart('leftLeg')" onmouseenter="hoverPart('Left Pants / Leg')">
+                        <path d="M 110 230 L 155 230 L 148 340 L 115 340 Z" fill="#1e3a8a" stroke="#1e293b" stroke-width="4"/>
+                        <!-- Left Shoe -->
+                        <ellipse id="part-left-shoe" cx="128" cy="355" rx="22" ry="12" fill="#ef4444" stroke="#1e293b" stroke-width="3"/>
+                    </g>
+
+                    <!-- Right Leg & Shoe -->
+                    <g class="humanoid-part" id="part-right-leg" onclick="paintPart('rightLeg')" onmouseenter="hoverPart('Right Pants / Leg')">
+                        <path d="M 165 230 L 210 230 L 205 340 L 172 340 Z" fill="#1e3a8a" stroke="#1e293b" stroke-width="4"/>
+                        <!-- Right Shoe -->
+                        <ellipse id="part-right-shoe" cx="192" cy="355" rx="22" ry="12" fill="#ef4444" stroke="#1e293b" stroke-width="3"/>
+                    </g>
+                </svg>
+
+                <div class="part-indicator">✨ Click on any part (Shirt, Hair, Pants, Shoes) to splash your active color!</div>
+            </div>
+
+            <!-- Right: Animation Selection Panel (Buttons are uncolored animated loops) -->
+            <div class="panel-card">
+                <div class="palette-title">🎬 Choose Animation</div>
+                <div style="font-size:0.8rem; color:#64748b; margin-bottom:12px;">
+                    Preview motion loops (uncolored sketches). Your colored drawing will render in this motion!
+                </div>
+
+                <div class="motion-selector-list" id="motionList">
+                    <!-- Jump Motion -->
+                    <div class="motion-btn selected" data-motion="jump" onclick="selectMotion('jump', this)">
+                        <div class="motion-preview-box">
+                            <img src="/characters/rahim/animations/jump.gif" alt="Jumping Motion Preview">
+                        </div>
+                        <div class="motion-info">
+                            <div class="motion-name">🦘 Joyful Jump</div>
+                            <div class="motion-desc">Energetic leaps & celebration</div>
+                        </div>
+                    </div>
+
+                    <!-- Wave Motion -->
+                    <div class="motion-btn" data-motion="wave" onclick="selectMotion('wave', this)">
+                        <div class="motion-preview-box">
+                            <img src="/characters/rahim/animations/wave.gif" alt="Waving Motion Preview">
+                        </div>
+                        <div class="motion-info">
+                            <div class="motion-name">👋 Cheerful Wave</div>
+                            <div class="motion-desc">Friendly classroom greeting</div>
+                        </div>
+                    </div>
+
+                    <!-- Opening Celebration Motion -->
+                    <div class="motion-btn" data-motion="opening" onclick="selectMotion('opening', this)">
+                        <div class="motion-preview-box">
+                            <img src="/characters/rahim/animations/opening.gif" alt="Hero Opening Preview">
+                        </div>
+                        <div class="motion-info">
+                            <div class="motion-name">⭐ Star Hero</div>
+                            <div class="motion-desc">Big triumphant pose & smile</div>
+                        </div>
+                    </div>
+
+                    <!-- Circle Walk Motion -->
+                    <div class="motion-btn" data-motion="walk_in_circle" onclick="selectMotion('walk_in_circle', this)">
+                        <div class="motion-preview-box">
+                            <img src="/characters/rahim/animations/walk_in_circle.gif" alt="Walking Circle Preview">
+                        </div>
+                        <div class="motion-info">
+                            <div class="motion-name">🚶 Happy Walk</div>
+                            <div class="motion-desc">Stepping smoothly across</div>
+                        </div>
+                    </div>
+
+                    <!-- Sleep / Dream Motion -->
+                    <div class="motion-btn" data-motion="sleep" onclick="selectMotion('sleep', this)">
+                        <div class="motion-preview-box">
+                            <img src="/characters/rahim/animations/sleep.gif" alt="Sleep Motion Preview">
+                        </div>
+                        <div class="motion-info">
+                            <div class="motion-name">💤 Peaceful Rest</div>
+                            <div class="motion-desc">Gentle dreaming repose</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:16px; align-items:center; justify-content:center; flex-wrap:wrap; margin-top:14px;">
+                    <button class="animate-big-btn" onclick="animateColoredDrawing()">
+                        <span>✨ Animate My Drawing!</span>
+                    </button>
+                    <button class="btn btn-success" style="font-size:1.15rem; font-weight:700; padding:16px 28px; border-radius:999px; box-shadow:0 6px 16px rgba(16, 185, 129, 0.35); cursor:pointer;" onclick="finishAndSave()">
+                        🏆 Complete Activity
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Stage Overlay: Reveals YOUR EXACT Colored Drawing in Motion! -->
+    <div class="stage-overlay" id="stageOverlay">
+        <div class="stage-modal">
+            <div class="stage-header">🎉 Your Colored Drawing Came to Life! ✨</div>
+            <div class="stage-sub" id="stageSubText">EduVision Core Animation Engine has rigged and animated your drawing!</div>
+
+            <!-- Stage Display Container -->
+            <div class="stage-anim-display" id="stageAnimBox">
+                <!-- Dynamically populated with YOUR custom colored animated puppet -->
+                <div id="customAnimatedCharacterContainer"></div>
+            </div>
+
+            <div style="font-weight:700; color:#4338ca; margin-bottom:18px; font-size:1.1rem;" id="activeMotionBadge">
+                Currently Performing: Joyful Jump 🦘
+            </div>
+
+            <div class="stage-actions">
+                <button class="btn btn-primary" onclick="tryDifferentMotion()">🎬 Change Motion</button>
+                <button class="btn btn-secondary" onclick="closeStage()">🎨 Color More</button>
+                <button class="btn btn-success" onclick="finishAndSave()">🏆 Complete Activity</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/engine-audio.js"></script>
+    <script src="/js/integration.js"></script>
+    <script>
+        const PALETTE = [
+            { hex: '#ef4444', name: 'Ruby Red' },
+            { hex: '#f97316', name: 'Sunset Orange' },
+            { hex: '#eab308', name: 'Sunflower Yellow' },
+            { hex: '#22c55e', name: 'Emerald Green' },
+            { hex: '#06b6d4', name: 'Ocean Cyan' },
+            { hex: '#3b82f6', name: 'Sky Blue' },
+            { hex: '#6366f1', name: 'Indigo Blue' },
+            { hex: '#a855f7', name: 'Vivid Purple' },
+            { hex: '#ec4899', name: 'Bubblegum Pink' },
+            { hex: '#78350f', name: 'Chestnut Brown' },
+            { hex: '#1e293b', name: 'Midnight Charcoal' },
+            { hex: '#f8fafc', name: 'Cloud White' }
+        ];
+
+        let activeColor = '#6366f1';
+        let activeColorName = 'Indigo Blue';
+        let selectedMotion = 'jump';
+        let selectedMotionLabel = 'Joyful Jump 🦘';
+
+        // Colored parts state
+        const partColors = {
+            head: '#fde68a',
+            hair: '#78350f',
+            neck: '#fde68a',
+            torso: '#3b82f6',
+            leftArm: '#60a5fa',
+            rightArm: '#60a5fa',
+            leftHand: '#fde68a',
+            rightHand: '#fde68a',
+            leftLeg: '#1e3a8a',
+            rightLeg: '#1e3a8a',
+            leftShoe: '#ef4444',
+            rightShoe: '#ef4444'
+        };
+
+        // Initialize Swatches
+        const swatchGrid = document.getElementById('swatchGrid');
+        PALETTE.forEach((col, idx) => {
+            const btn = document.createElement('button');
+            btn.className = `swatch-btn ${col.hex === activeColor ? 'active' : ''}`;
+            btn.style.backgroundColor = col.hex;
+            btn.title = col.name;
+            btn.onclick = () => selectColor(col.hex, col.name, btn);
+            swatchGrid.appendChild(btn);
+        });
+
+        function selectColor(hex, name, element) {
+            activeColor = hex;
+            activeColorName = name;
+            document.querySelectorAll('.swatch-btn').forEach(b => b.classList.remove('active'));
+            if (element) element.classList.add('active');
+            document.getElementById('activeColorSample').style.backgroundColor = hex;
+            document.getElementById('activeColorName').innerText = name;
+            soundEngine.playSoftBounce();
+        }
+
+        function hoverPart(name) {
+            document.getElementById('hoveredPart').innerText = name;
+        }
+
+        function paintPart(partId) {
+            soundEngine.playSuccess();
+            
+            if (partId === 'head') {
+                partColors.head = activeColor;
+                document.querySelector('#part-head ellipse').setAttribute('fill', activeColor);
+            } else if (partId === 'hair') {
+                partColors.hair = activeColor;
+                document.getElementById('part-hair').setAttribute('fill', activeColor);
+            } else if (partId === 'neck') {
+                partColors.neck = activeColor;
+                document.getElementById('part-neck').setAttribute('fill', activeColor);
+            } else if (partId === 'torso') {
+                partColors.torso = activeColor;
+                document.querySelector('#part-torso path').setAttribute('fill', activeColor);
+            } else if (partId === 'leftArm') {
+                partColors.leftArm = activeColor;
+                partColors.leftHand = activeColor;
+                document.querySelector('#part-left-arm path').setAttribute('fill', activeColor);
+                document.getElementById('part-left-hand').setAttribute('fill', activeColor);
+            } else if (partId === 'rightArm') {
+                partColors.rightArm = activeColor;
+                partColors.rightHand = activeColor;
+                document.querySelector('#part-right-arm path').setAttribute('fill', activeColor);
+                document.getElementById('part-right-hand').setAttribute('fill', activeColor);
+            } else if (partId === 'leftLeg') {
+                partColors.leftLeg = activeColor;
+                partColors.leftShoe = activeColor;
+                document.querySelector('#part-left-leg path').setAttribute('fill', activeColor);
+                document.getElementById('part-left-shoe').setAttribute('fill', activeColor);
+            } else if (partId === 'rightLeg') {
+                partColors.rightLeg = activeColor;
+                partColors.rightShoe = activeColor;
+                document.querySelector('#part-right-leg path').setAttribute('fill', activeColor);
+                document.getElementById('part-right-shoe').setAttribute('fill', activeColor);
+            }
+            
+            const current = parseInt(document.getElementById('sparklesVal').innerText) || 100;
+            document.getElementById('sparklesVal').innerText = current + 10;
+        }
+
+        function resetColors() {
+            soundEngine.playWhoosh();
+            selectColor('#3b82f6', 'Sky Blue', null);
+            partColors.head = '#fde68a';
+            partColors.hair = '#78350f';
+            partColors.torso = '#3b82f6';
+            partColors.leftArm = '#60a5fa';
+            partColors.rightArm = '#60a5fa';
+            partColors.leftLeg = '#1e3a8a';
+            partColors.rightLeg = '#1e3a8a';
+            partColors.leftShoe = '#ef4444';
+            partColors.rightShoe = '#ef4444';
+
+            document.querySelector('#part-head ellipse').setAttribute('fill', partColors.head);
+            document.getElementById('part-hair').setAttribute('fill', partColors.hair);
+            document.querySelector('#part-torso path').setAttribute('fill', partColors.torso);
+            document.querySelector('#part-left-arm path').setAttribute('fill', partColors.leftArm);
+            document.querySelector('#part-right-arm path').setAttribute('fill', partColors.rightArm);
+            document.querySelector('#part-left-leg path').setAttribute('fill', partColors.leftLeg);
+            document.querySelector('#part-right-leg path').setAttribute('fill', partColors.rightLeg);
+            document.getElementById('part-left-shoe').setAttribute('fill', partColors.leftShoe);
+            document.getElementById('part-right-shoe').setAttribute('fill', partColors.rightShoe);
+        }
+
+        function randomizeColors() {
+            soundEngine.playFanfare();
+            const keys = Object.keys(partColors);
+            keys.forEach(k => {
+                const randomCol = PALETTE[Math.floor(Math.random() * PALETTE.length)].hex;
+                partColors[k] = randomCol;
+            });
+            document.querySelector('#part-head ellipse').setAttribute('fill', partColors.head);
+            document.getElementById('part-hair').setAttribute('fill', partColors.hair);
+            document.querySelector('#part-torso path').setAttribute('fill', partColors.torso);
+            document.querySelector('#part-left-arm path').setAttribute('fill', partColors.leftArm);
+            document.querySelector('#part-right-arm path').setAttribute('fill', partColors.rightArm);
+            document.querySelector('#part-left-leg path').setAttribute('fill', partColors.leftLeg);
+            document.querySelector('#part-right-leg path').setAttribute('fill', partColors.rightLeg);
+            document.getElementById('part-left-shoe').setAttribute('fill', partColors.leftShoe);
+            document.getElementById('part-right-shoe').setAttribute('fill', partColors.rightShoe);
+        }
+
+        function selectMotion(motionKey, element) {
+            selectedMotion = motionKey;
+            document.querySelectorAll('.motion-btn').forEach(b => b.classList.remove('selected'));
+            if (element) element.classList.add('selected');
+            selectedMotionLabel = element.querySelector('.motion-name').innerText;
+            soundEngine.playPickup();
+        }
+
+        // Generate the EXACT COLORED DRAWING in live skeletal motion
+        function renderCustomColoredAnimatedCharacter(motion) {
+            let bodyClass = '';
+            let armLeftClass = '';
+            let armRightClass = '';
+            let legLeftClass = '';
+            let legRightClass = '';
+            let headClass = '';
+            let extraFx = '';
+
+            if (motion === 'jump') {
+                bodyClass = 'rig-jump-loop';
+                armLeftClass = 'rig-jump-arm-left';
+                armRightClass = 'rig-jump-arm-right';
+                legLeftClass = 'rig-jump-leg-left';
+                legRightClass = 'rig-jump-leg-right';
+                extraFx = `
+                    <text x="30" y="50" font-size="22" fill="#fbbf24">✨</text>
+                    <text x="260" y="45" font-size="22" fill="#fbbf24">⭐</text>
+                `;
+            } else if (motion === 'wave') {
+                bodyClass = 'rig-wave-loop';
+                armRightClass = 'rig-wave-arm-right';
+                headClass = 'rig-wave-head';
+                extraFx = `
+                    <text x="270" y="90" font-size="20">👋</text>
+                `;
+            } else if (motion === 'opening') {
+                bodyClass = 'rig-hero-loop';
+                armLeftClass = 'rig-hero-arm-left';
+                armRightClass = 'rig-hero-arm-right';
+                extraFx = `
+                    <text x="20" y="40" font-size="20">🌟</text>
+                    <text x="270" y="40" font-size="20">🌟</text>
+                `;
+            } else if (motion === 'walk_in_circle') {
+                bodyClass = 'rig-walk-loop';
+                armLeftClass = 'rig-walk-arm-left';
+                armRightClass = 'rig-walk-arm-right';
+                legLeftClass = 'rig-walk-leg-left';
+                legRightClass = 'rig-walk-leg-right';
+            } else if (motion === 'sleep') {
+                bodyClass = 'rig-sleep-loop';
+                headClass = 'rig-sleep-head';
+                extraFx = `
+                    <text x="210" y="40" font-size="24" fill="#6366f1">💤</text>
+                `;
+            }
+
+            return `
+            <div class="${bodyClass}">
+                <svg viewBox="0 0 320 400" style="width:240px; height:300px; overflow:visible;">
+                    ${extraFx}
+
+                    <!-- Head & Hair with YOUR chosen colors -->
+                    <g class="${headClass}">
+                        <ellipse cx="160" cy="72" rx="42" ry="46" fill="${partColors.head}" stroke="#1e293b" stroke-width="4"/>
+                        <path d="M 120 65 Q 160 20 200 65 Q 185 45 160 48 Q 135 45 120 65 Z" fill="${partColors.hair}" stroke="#1e293b" stroke-width="3"/>
+                        <!-- Smiling Face -->
+                        <circle cx="145" cy="70" r="5" fill="#1e293b"/>
+                        <circle cx="175" cy="70" r="5" fill="#1e293b"/>
+                        <path d="M 148 85 Q 160 96 172 85" fill="none" stroke="#1e293b" stroke-width="3" stroke-linecap="round"/>
+                        <circle cx="136" cy="80" r="4" fill="#fca5a5" opacity="0.6"/>
+                        <circle cx="184" cy="80" r="4" fill="#fca5a5" opacity="0.6"/>
+                    </g>
+
+                    <!-- Neck -->
+                    <rect x="150" y="116" width="20" height="18" rx="4" fill="${partColors.neck || partColors.head}" stroke="#1e293b" stroke-width="3"/>
+
+                    <!-- Left Arm & Hand with YOUR chosen colors -->
+                    <g class="${armLeftClass}">
+                        <path d="M 112 135 L 75 185 L 60 175 L 102 125 Z" fill="${partColors.leftArm}" stroke="#1e293b" stroke-width="4"/>
+                        <circle cx="64" cy="188" r="14" fill="${partColors.leftHand || partColors.head}" stroke="#1e293b" stroke-width="3"/>
+                    </g>
+
+                    <!-- Right Arm & Hand with YOUR chosen colors -->
+                    <g class="${armRightClass}">
+                        <path d="M 208 135 L 245 185 L 260 175 L 218 125 Z" fill="${partColors.rightArm}" stroke="#1e293b" stroke-width="4"/>
+                        <circle cx="256" cy="188" r="14" fill="${partColors.rightHand || partColors.head}" stroke="#1e293b" stroke-width="3"/>
+                    </g>
+
+                    <!-- Torso / Shirt with YOUR chosen color -->
+                    <g>
+                        <path d="M 112 130 Q 160 138 208 130 L 216 230 Q 160 236 104 230 Z" fill="${partColors.torso}" stroke="#1e293b" stroke-width="4"/>
+                        <polygon points="160,165 164,175 175,175 166,182 170,192 160,186 150,192 154,182 145,175 156,175" fill="#fef08a" stroke="#1e293b" stroke-width="1.5"/>
+                    </g>
+
+                    <!-- Left Leg & Shoe with YOUR chosen colors -->
+                    <g class="${legLeftClass}">
+                        <path d="M 110 230 L 155 230 L 148 340 L 115 340 Z" fill="${partColors.leftLeg}" stroke="#1e293b" stroke-width="4"/>
+                        <ellipse cx="128" cy="355" rx="22" ry="12" fill="${partColors.leftShoe}" stroke="#1e293b" stroke-width="3"/>
+                    </g>
+
+                    <!-- Right Leg & Shoe with YOUR chosen colors -->
+                    <g class="${legRightClass}">
+                        <path d="M 165 230 L 210 230 L 205 340 L 172 340 Z" fill="${partColors.rightLeg}" stroke="#1e293b" stroke-width="4"/>
+                        <ellipse cx="192" cy="355" rx="22" ry="12" fill="${partColors.rightShoe}" stroke="#1e293b" stroke-width="3"/>
+                    </g>
+                </svg>
+            </div>`;
+        }
+
+        // Export current colored SVG as PNG data URL
+        function getColoredDrawingPngDataUrl() {
+            return new Promise((resolve, reject) => {
+                const svg = document.getElementById('humanoidSvg');
+                const cloned = svg.cloneNode(true);
+                cloned.setAttribute('width', '360');
+                cloned.setAttribute('height', '450');
+                
+                const serializer = new XMLSerializer();
+                const svgString = serializer.serializeToString(cloned);
+                const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+                const url = URL.createObjectURL(svgBlob);
+                
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 360;
+                    canvas.height = 450;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, 360, 450);
+                    URL.revokeObjectURL(url);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = (e) => {
+                    URL.revokeObjectURL(url);
+                    reject(e);
+                };
+                img.src = url;
+            });
+        }
+
+        async function animateColoredDrawing() {
+            soundEngine.playWinChord();
+
+            // 1. Show stage overlay immediately with engine rigging loader
+            document.getElementById('stageOverlay').style.display = 'flex';
+            const container = document.getElementById('customAnimatedCharacterContainer');
+            container.innerHTML = `
+                <div style="text-align:center; padding:20px;">
+                    <div class="engine-spinner"></div>
+                    <div style="font-weight:800; color:#4338ca; font-size:1.05rem; margin-bottom:6px;">Sending Drawing to Animation Engine...</div>
+                    <div style="font-size:0.85rem; color:#64748b;">Rigging skeleton, mesh physics, and rendering motion loop...</div>
+                </div>
+            `;
+            document.getElementById('activeMotionBadge').innerHTML = `⏳ Simulating Core Physics: <strong>${selectedMotionLabel}</strong>`;
+
+            try {
+                // 2. Export the exact colored drawing to a PNG image
+                const pngDataUrl = await getColoredDrawingPngDataUrl();
+
+                // 3. Send image to friend's animation engine API
+                const resp = await fetch('/api/animate-drawing', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image: pngDataUrl,
+                        motion: selectedMotion,
+                        charName: 'Colored Humanoid'
+                    })
+                });
+
+                const data = await resp.json();
+                if (data.success && data.gifUrl) {
+                    container.innerHTML = `
+                        <img src="${data.gifUrl}?t=${Date.now()}" alt="Animation Engine Output" style="width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 10px 25px rgba(0,0,0,0.18));">
+                    `;
+                    document.getElementById('activeMotionBadge').innerHTML = `🌟 Core Animation Engine: <strong>${selectedMotionLabel}</strong>`;
+                    soundEngine.playSuccess();
+                } else {
+                    throw new Error(data.error || 'Failed to render animation');
+                }
+            } catch (err) {
+                console.warn('Animation engine note, using fallback rig:', err);
+                container.innerHTML = renderCustomColoredAnimatedCharacter(selectedMotion);
+                document.getElementById('activeMotionBadge').innerText = `Currently Performing: ${selectedMotionLabel}`;
+            }
+        }
+
+        async function tryDifferentMotion() {
+            soundEngine.playWhoosh();
+            const motions = ['jump', 'wave', 'opening', 'walk_in_circle', 'sleep'];
+            const nextIdx = (motions.indexOf(selectedMotion) + 1) % motions.length;
+            const nextMotion = motions[nextIdx];
+            
+            const btn = document.querySelector(`.motion-btn[data-motion="${nextMotion}"]`);
+            if (btn) selectMotion(nextMotion, btn);
+
+            // Send to core animation engine for the new motion!
+            await animateColoredDrawing();
+        }
+
+        function closeStage() {
+            soundEngine.playWhoosh();
+            document.getElementById('stageOverlay').style.display = 'none';
+        }
+
+        function finishAndSave() {
+            soundEngine.playFanfare();
+            if (window.reportActivityResult) {
+                window.reportActivityResult('color-filling', {
+                    score: 100,
+                    stars: 3,
+                    completed: true,
+                    meta: { motion: selectedMotion, colors: partColors }
+                });
+            }
+            if (window.showCelebrationModal) {
+                window.showCelebrationModal({
+                    score: 100,
+                    timeSeconds: 45,
+                    stars: 3,
+                    customMessage: 'Your custom colored drawing was animated by the Core Engine! 🌟'
+                });
+            }
+            closeStage();
+        }
+    </script>
+</body>
+</html>

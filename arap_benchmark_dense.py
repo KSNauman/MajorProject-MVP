@@ -1,6 +1,6 @@
-﻿import sys
+import sys
 from pathlib import Path
-REPO_ROOT = Path(r'c:\Major Project - MVP2\Major Project - MVP\Actual repo (EDUVISION)\AnimatedDrawings')
+REPO_ROOT = Path(__file__).resolve().parent / 'Actual repo (EDUVISION)' / 'AnimatedDrawings'
 sys.path.insert(0, str(REPO_ROOT))
 
 import time

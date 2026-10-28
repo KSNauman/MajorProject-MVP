@@ -27,7 +27,7 @@ This utility automatically:
 5. The Replica UI extracts this `finalVideoUrl` and instantly sends it alongside the integration token to `/api/integrations/results` in the Platform API to mark the assignment complete and save the story.
 
 ## Adding Another Educational Application
-To add a new app (like `math-blaster`):
+To add a new application:
 1. Build the app as a standard HTML/JS page.
 2. In the app, parse the `token` parameter from the URL querystring when the app boots: `new URLSearchParams(window.location.search).get('token')`.
 3. When the student completes the game, send a `POST` request to `http://localhost:4000/api/integrations/results` with `Authorization: Bearer <token>` and `{ score: 100 }` in the body.

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduVision Activities Hub 🎈</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .hub-hero {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border-radius: var(--radius-lg);
+            padding: 36px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-text h1 {
+            font-size: 2.4rem;
+            margin-bottom: 8px;
+        }
+        .hero-text p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+        }
+        .hero-character {
+            height: 160px;
+            filter: drop-shadow(0 8px 16px rgba(0,0,0,0.25));
+            animation: floatHero 3s ease-in-out infinite;
+        }
+        .category-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .filter-chip {
+            padding: 8px 18px;
+            border-radius: 999px;
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            color: #475569;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-chip.active, .filter-chip:hover {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+        }
+        @keyframes floatHero {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+    </style>
+</head>
+<body>
+    <header class="game-navbar">
+        <a href="/index.html" class="nav-brand">
+            <span>✨</span> EduVision Activities Hub
+        </a>
+        <div class="nav-controls">
+            <span id="playerBadge" class="stars-badge" style="display:none;">🎒 Student</span>
+            <a id="portalReturnBtn" href="http://localhost:5173/" class="btn btn-secondary">Back to Portal 🎒</a>
+        </div>
+    </header>
+
+    <main class="game-container">
+        <div id="funModeBanner" style="display:none; background: linear-gradient(135deg, #fdf4ff, #fae8ff); border: 2px dashed #d946ef; color: #86198f; border-radius: var(--radius-md); padding: 14px 20px; margin-bottom: 20px; font-weight: 700; font-size: 1.05rem; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div>🎡 <strong>Free Play Mode:</strong> Play any activity for fun! Scores will not be recorded. 🎈</div>
+            <a id="funBackToPortal" href="http://localhost:5173/" class="btn btn-secondary" style="background:white; color:#86198f; border-color:#d946ef; padding: 6px 16px;">Back to Portal 🎒</a>
+        </div>
+
+        <section class="hub-hero">
+            <div class="hero-text">
+                <h1>Humanoid Drawings Playground! 🎨✨</h1>
+                <p>Color humanoid sketches, match characters with wiggle physics, spot detective friends, and watch drawings come to life!</p>
+            </div>
+            <img src="/characters/rahim/animations/wave.gif" alt="Rahim Waving" class="hero-character" onerror="this.style.display='none'">
+        </section>
+
+        <div class="category-filters" id="categoryFilters">
+            <button class="filter-chip active" data-category="ALL">All Activities (7) 🌟</button>
+            <button class="filter-chip" data-category="Creative Arts">Animation Studio 🎨</button>
+            <button class="filter-chip" data-category="Colors & Physics">Color Matching 🧒</button>
+            <button class="filter-chip" data-category="Vision & Reasoning">Spotter Detective 🔍</button>
+            <button class="filter-chip" data-category="Math">Math & Counting 🔢</button>
+            <button class="filter-chip" data-category="Spatial">Jigsaw Puzzle 🧩</button>
+        </div>
+
+        <section class="activities-grid" id="activitiesGrid">
+            <!-- Dynamic activities loaded from /api/activities -->
+        </section>
+    </main>
+
+    <script src="/js/integration.js"></script>
+    <script>
+        const query = window.location.search;
+        const queryParams = new URLSearchParams(query);
+        const mode = queryParams.get('mode');
+        const returnUrl = queryParams.get('returnUrl') || 'http://localhost:5173/';
+        
+        const portalReturnBtn = document.getElementById('portalReturnBtn');
+        if (portalReturnBtn) {
+            portalReturnBtn.href = returnUrl;
+        }
+
+        if (mode === 'fun') {
+            const banner = document.getElementById('funModeBanner');
+            if (banner) {
+                banner.style.display = 'flex';
+                const funBack = document.getElementById('funBackToPortal');
+                if (funBack) funBack.href = returnUrl;
+            }
+        }
+
+        async function loadActivities() {
+            try {
+                const res = await fetch('/api/activities');
+                const activities = await res.json();
+                renderActivities(activities, 'ALL');
+                setupFilters(activities);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderActivities(list, category) {
+            const grid = document.getElementById('activitiesGrid');
+            grid.innerHTML = '';
+
+            const filtered = category === 'ALL' ? list : list.filter(a => {
+                if (category === 'Geometry & Logic') {
+                    return a.category.includes('Logic') || a.category.includes('Geometry') || a.category.includes('Spatial');
+                }
+                return a.category.includes(category);
+            });
+
+            filtered.forEach(act => {
+                const card = document.createElement('a');
+                card.className = 'activity-card';
+                card.style.setProperty('--card-color', act.color);
+                const sep = act.path.includes('?') ? '&' : '?';
+                const queryString = query && query.startsWith('?') ? query.slice(1) : query;
+                card.href = queryString ? `${act.path}${sep}${queryString}` : act.path;
+
+                card.innerHTML = `
+                    <div>
+                        <div class="activity-card-icon">${act.icon}</div>
+                        <div class="activity-card-category">${act.category}</div>
+                        <h3 class="activity-card-title">${act.name}</h3>
+                        <p class="activity-card-desc">${act.description}</p>
+                    </div>
+                    <button class="btn btn-primary" style="background: ${act.color};">
+                        Play Activity ▶️
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function setupFilters(activities) {
+            const chips = document.querySelectorAll('.filter-chip');
+            chips.forEach(chip => {
+                chip.onclick = () => {
+                    chips.forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    renderActivities(activities, chip.dataset.category);
+                };
+            });
+        }
+
+        loadActivities();
+    </script>
+</body>
+</html>

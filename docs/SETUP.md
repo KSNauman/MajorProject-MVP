@@ -15,7 +15,6 @@ C:\Major Project - MVP2\Major Project - MVP\
 │   ├── api/                # Express API (Port 4000)
 │   ├── portal/             # React/Vite UI (Port 5173)
 │   ├── student-story-studio/ # Replica Story Engine App (Port 3001)
-│   └── sample-app/         # Sample Math Blaster app
 ├── eduvision_ui/           # Original Story Studio UI & Engine Wrapper (Port 3000)
 ├── story_engine/           # Python Engine scripts
 └── Actual repo (EDUVISION)/# Core machine learning resources

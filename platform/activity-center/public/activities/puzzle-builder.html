@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Humanoid Jigsaw Puzzle 🧩✨ | EduVision</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .puzzle-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+        @media (max-width: 950px) {
+            .puzzle-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        .board-card {
+            background: #ffffff;
+            border-radius: var(--radius-xl);
+            border: 3px solid #e2e8f0;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-md);
+        }
+        .tray-card {
+            background: #ffffff;
+            border-radius: var(--radius-xl);
+            border: 3px solid #e2e8f0;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-md);
+        }
+        .preset-bar {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            align-items: center;
+        }
+        .preset-chip {
+            padding: 7px 14px;
+            border-radius: var(--radius-full);
+            background: #f1f5f9;
+            border: 2px solid #cbd5e1;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #334155;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .preset-chip.active {
+            background: #6366f1;
+            color: white;
+            border-color: #6366f1;
+            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+        }
+        .preset-chip.cam-btn {
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white;
+            border-color: #059669;
+        }
+        .preset-chip.cam-btn:hover {
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+            transform: translateY(-2px);
+        }
+        .grid-toggles {
+            display: flex;
+            gap: 8px;
+        }
+        .grid-toggle-btn {
+            padding: 7px 14px;
+            border-radius: var(--radius-md);
+            border: 2px solid #cbd5e1;
+            background: #ffffff;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #475569;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .grid-toggle-btn.active {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+        /* Puzzle Frame */
+        .puzzle-board {
+            width: 360px;
+            height: 360px;
+            margin: 0 auto;
+            position: relative;
+            background: #f8fafc;
+            border: 4px solid #94a3b8;
+            border-radius: 24px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+        .puzzle-board.completed {
+            border-color: #22c55e;
+            box-shadow: 0 0 35px rgba(34, 197, 94, 0.4);
+        }
+        .puzzle-ghost {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: 360px 360px;
+            background-position: center;
+            opacity: 0.12;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .board-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            pointer-events: none;
+        }
+        .board-slot {
+            border: 1.5px dashed rgba(100, 116, 139, 0.35);
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+        .puzzle-board.completed .board-slot {
+            border: none;
+        }
+        /* Live Animated Character Overlay in Completed Puzzle Frame */
+        .puzzle-live-anim {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: none;
+            z-index: 50;
+            animation: zoomInAnim 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            background: radial-gradient(circle, #f0fdf4 0%, #e0e7ff 100%);
+        }
+        @keyframes zoomInAnim {
+            0% { transform: scale(0.6); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        /* Piece Tray */
+        .puzzle-tray {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            min-height: 240px;
+            align-content: flex-start;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: var(--radius-lg);
+            border: 2px dashed #cbd5e1;
+            justify-content: center;
+        }
+        .piece {
+            background-repeat: no-repeat;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+            cursor: grab;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+            border: 2px solid white;
+            user-select: none;
+            touch-action: none;
+        }
+        .piece:hover {
+            transform: scale(1.08) rotate(2deg);
+            box-shadow: 0 8px 18px rgba(99, 102, 241, 0.3);
+            border-color: #6366f1;
+        }
+        .piece.selected {
+            border-color: #f59e0b;
+            transform: scale(1.12);
+            box-shadow: 0 0 0 3px #f59e0b;
+            z-index: 20;
+        }
+        .piece.placed {
+            cursor: default;
+            box-shadow: none;
+            border: none;
+            border-radius: 0;
+            transition: all 0.3s;
+        }
+        /* Camera Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .camera-dialog {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            max-width: 480px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        .video-wrapper {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            margin: 16px auto;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 4px solid #10b981;
+            background: black;
+        }
+        #cameraVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+    </style>
+</head>
+<body>
+    <header class="game-navbar">
+        <a href="/index.html" class="nav-brand"><span>🧩</span> Humanoid Jigsaw Puzzle</a>
+        <div class="nav-controls">
+            <div class="score-badge">⭐ Score: <span id="scoreVal">0</span></div>
+            <div class="stars-badge">Pieces: <span id="placedCount">0/4</span></div>
+            <a id="navExitBtn" href="/index.html" class="btn btn-secondary">Exit Activity 🏠</a>
+        </div>
+    </header>
+
+    <main class="game-container" style="max-width:1150px;">
+        <!-- Top Toolbar: Humanoid Presets & Grid Size -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+            <div class="preset-bar">
+                <span style="font-weight: 800; color: #64748b; font-size: 0.9rem;">Humanoid Drawings:</span>
+                <button class="preset-chip active" id="chip-rahim" onclick="setPreset('rahim')">🧒 Rahim Hero</button>
+                <button class="preset-chip" id="chip-sister" onclick="setPreset('sister')">👧 Sister Maya</button>
+                <button class="preset-chip" id="chip-mother" onclick="setPreset('mother')">👩 Mother Sarah</button>
+                <button class="preset-chip" id="chip-father" onclick="setPreset('father')">👨 Father John</button>
+                <button class="preset-chip" id="chip-grandpa" onclick="setPreset('grandpa')">👴 Grandpa Walter</button>
+                <button class="preset-chip" id="chip-grandma" onclick="setPreset('grandma')">👵 Grandma Elena</button>
+                <button class="preset-chip cam-btn" onclick="openCameraModal()">📸 Snap Photo</button>
+                <button class="preset-chip" onclick="document.getElementById('puzzleFileInput').click()">📁 Upload</button>
+                <input type="file" id="puzzleFileInput" accept="image/*" style="display:none" onchange="handleFileUpload(event)">
+            </div>
+
+            <div class="grid-toggles">
+                <button class="grid-toggle-btn active" id="btn2x2" onclick="setGridSize(2)">Easy (2×2)</button>
+                <button class="grid-toggle-btn" id="btn3x3" onclick="setGridSize(3)">Medium (3×3)</button>
+            </div>
+        </div>
+
+        <div class="puzzle-layout">
+            <!-- Left: Puzzle Board -->
+            <div class="board-card">
+                <h3 style="font-size: 1.25rem; color: #1e293b; margin-bottom: 8px;" id="boardHeading">Target Humanoid Board:</h3>
+                <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 16px;">
+                    Solve the puzzle to watch this drawing <strong>animate right there inside the frame!</strong>
+                </p>
+
+                <div class="puzzle-board" id="puzzleBoard">
+                    <div class="puzzle-ghost" id="puzzleGhost"></div>
+                    <div class="board-grid" id="boardGrid"></div>
+                    <!-- Live Core Engine Animation rendered inside the puzzle board itself on completion -->
+                    <img id="puzzleLiveAnim" class="puzzle-live-anim" src="/characters/rahim/animations/jump.gif" alt="Animated Humanoid">
+                </div>
+
+                <div style="margin-top: 16px; text-align: center;">
+                    <button class="btn btn-secondary" onclick="resetPuzzle()" style="font-size: 0.9rem; padding: 6px 16px;">
+                        🔄 Reset Pieces
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right: Piece Tray -->
+            <div class="tray-card">
+                <h3 style="font-size: 1.25rem; color: #1e293b; margin-bottom: 8px;">Puzzle Piece Tray:</h3>
+                <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 16px;">Pick and snap all pieces into place:</p>
+
+                <div class="puzzle-tray" id="puzzleTray">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <div id="statusAlert" style="margin-top: 14px; min-height: 28px; text-align: center; font-weight: 700; font-size: 1.05rem;"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Camera Capture Modal -->
+    <div class="modal-overlay" id="cameraModal">
+        <div class="camera-dialog">
+            <h3 style="font-size: 1.4rem; color: #1e293b; margin-bottom: 4px;">Hold Up Your Drawing or Smile! 📸</h3>
+            <p style="font-size: 0.92rem; color: #64748b;">Center your paper drawing or face and click Capture!</p>
+            
+            <div class="video-wrapper">
+                <video id="cameraVideo" autoplay playsinline></video>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn btn-primary" onclick="capturePhoto()" style="background: #10b981;">
+                    Capture! 📸
+                </button>
+                <button class="btn btn-secondary" onclick="closeCameraModal()">
+                    Cancel ✕
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/engine-audio.js"></script>
+    <script src="/js/integration.js"></script>
+    <script>
+        // 100% Core Engine Humanoid Character Drawings
+        const HUMANOID_SCENES = {
+            rahim: {
+                name: "Rahim the Hero",
+                imgUrl: "/characters/rahim/texture.png",
+                animUrl: "/characters/rahim/animations/jump.gif"
+            },
+            sister: {
+                name: "Sister Maya",
+                imgUrl: "/characters/sister/texture.png",
+                animUrl: "/characters/sister/animations/jump.gif"
+            },
+            mother: {
+                name: "Mother Sarah",
+                imgUrl: "/characters/mother/texture.png",
+                animUrl: "/characters/mother/animations/opening.gif"
+            },
+            father: {
+                name: "Father John",
+                imgUrl: "/characters/father/texture.png",
+                animUrl: "/characters/father/animations/opening.gif"
+            },
+            grandpa: {
+                name: "Grandpa Walter",
+                imgUrl: "/characters/grandpa/texture.png",
+                animUrl: "/characters/grandpa/animations/jump.gif"
+            },
+            grandma: {
+                name: "Grandma Elena",
+                imgUrl: "/characters/grandma/texture.png",
+                animUrl: "/characters/grandma/animations/jump.gif"
+            }
+        };
+
+        let currentSceneKey = 'rahim';
+        let customImageDataUrl = null;
+        let currentGridSize = 2; // 2x2 = 4 pieces
+        let selectedPieceEl = null;
+        let placedPieces = 0;
+        let totalPieces = 4;
+        let score = 0;
+        let mistakes = 0;
+        let isGameFinished = false;
+        let mediaStream = null;
+
+        function setGridSize(size) {
+            currentGridSize = size;
+            totalPieces = size * size;
+            document.getElementById('btn2x2').classList.toggle('active', size === 2);
+            document.getElementById('btn3x3').classList.toggle('active', size === 3);
+            buildPuzzle();
+        }
+
+        function setPreset(key) {
+            currentSceneKey = key;
+            customImageDataUrl = null;
+            document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+            const chip = document.getElementById(`chip-${key}`);
+            if (chip) chip.classList.add('active');
+            buildPuzzle();
+        }
+
+        async function openCameraModal() {
+            const modal = document.getElementById('cameraModal');
+            modal.style.display = 'flex';
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 640 }, height: { ideal: 640 }, facingMode: 'user' },
+                    audio: false
+                });
+                document.getElementById('cameraVideo').srcObject = mediaStream;
+            } catch (err) {
+                alert("Camera access denied or unavailable: " + err.message);
+                closeCameraModal();
+            }
+        }
+
+        function closeCameraModal() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            document.getElementById('cameraModal').style.display = 'none';
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('cameraVideo');
+            const canvas = document.createElement('canvas');
+            canvas.width = 360;
+            canvas.height = 360;
+            const ctx = canvas.getContext('2d');
+
+            const minDim = Math.min(video.videoWidth, video.videoHeight);
+            const sx = (video.videoWidth - minDim) / 2;
+            const sy = (video.videoHeight - minDim) / 2;
+
+            ctx.save();
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, sx, sy, minDim, minDim, -360, 0, 360, 360);
+            ctx.restore();
+
+            customImageDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            closeCameraModal();
+
+            document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+            buildPuzzle();
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 360;
+                    canvas.height = 360;
+                    const ctx = canvas.getContext('2d');
+                    
+                    const minDim = Math.min(img.width, img.height);
+                    const sx = (img.width - minDim) / 2;
+                    const sy = (img.height - minDim) / 2;
+                    ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, 360, 360);
+
+                    customImageDataUrl = canvas.toDataURL('image/png');
+                    document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+                    buildPuzzle();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function buildPuzzle() {
+            placedPieces = 0;
+            totalPieces = currentGridSize * currentGridSize;
+            isGameFinished = false;
+            selectedPieceEl = null;
+
+            document.getElementById('placedCount').innerText = `0/${totalPieces}`;
+            document.getElementById('statusAlert').innerText = '';
+            
+            const board = document.getElementById('puzzleBoard');
+            board.classList.remove('completed');
+            
+            // Hide live animation overlay
+            const liveAnim = document.getElementById('puzzleLiveAnim');
+            liveAnim.style.display = 'none';
+
+            // Remove placed pieces
+            board.querySelectorAll('.piece.placed').forEach(p => p.remove());
+
+            // Setup Board Grid
+            const gridEl = document.getElementById('boardGrid');
+            gridEl.innerHTML = '';
+            gridEl.style.gridTemplateColumns = `repeat(${currentGridSize}, 1fr)`;
+            gridEl.style.gridTemplateRows = `repeat(${currentGridSize}, 1fr)`;
+
+            for (let r = 0; r < currentGridSize; r++) {
+                for (let c = 0; c < currentGridSize; c++) {
+                    const slot = document.createElement('div');
+                    slot.className = 'board-slot';
+                    slot.dataset.row = r;
+                    slot.dataset.col = c;
+                    slot.onclick = () => onSlotClicked(r, c);
+                    gridEl.appendChild(slot);
+                }
+            }
+
+            // Prepare Humanoid Image
+            prepareSceneImage((dataUrl) => {
+                const ghost = document.getElementById('puzzleGhost');
+                ghost.style.backgroundImage = `url('${dataUrl}')`;
+
+                const tray = document.getElementById('puzzleTray');
+                tray.innerHTML = '';
+                createPieces(dataUrl);
+            });
+        }
+
+        function prepareSceneImage(callback) {
+            if (customImageDataUrl) {
+                callback(customImageDataUrl);
+                return;
+            }
+
+            const scene = HUMANOID_SCENES[currentSceneKey] || HUMANOID_SCENES.rahim;
+            const canvas = document.createElement('canvas');
+            canvas.width = 360;
+            canvas.height = 360;
+            const ctx = canvas.getContext('2d');
+
+            // Soft friendly backdrop behind transparent humanoid texture
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(0, 0, 360, 360);
+
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                ctx.drawImage(img, 30, 20, 300, 320);
+                callback(canvas.toDataURL());
+            };
+            img.src = scene.imgUrl;
+        }
+
+        function createPieces(dataUrl) {
+            const tray = document.getElementById('puzzleTray');
+            const pieceSize = 360 / currentGridSize;
+            const pieces = [];
+
+            for (let r = 0; r < currentGridSize; r++) {
+                for (let c = 0; c < currentGridSize; c++) {
+                    const piece = document.createElement('div');
+                    piece.className = 'piece';
+                    piece.style.width = `${pieceSize}px`;
+                    piece.style.height = `${pieceSize}px`;
+                    piece.style.backgroundImage = `url('${dataUrl}')`;
+                    piece.style.backgroundPosition = `-${c * pieceSize}px -${r * pieceSize}px`;
+                    piece.style.backgroundSize = `360px 360px`;
+                    piece.dataset.row = r;
+                    piece.dataset.col = c;
+
+                    piece.onclick = () => onPieceSelected(piece);
+
+                    piece.draggable = true;
+                    piece.ondragstart = (e) => {
+                        e.dataTransfer.setData('text/plain', JSON.stringify({ r, c }));
+                        piece.classList.add('selected');
+                        selectedPieceEl = piece;
+                    };
+                    piece.ondragend = () => {
+                        piece.classList.remove('selected');
+                    };
+
+                    pieces.push(piece);
+                }
+            }
+
+            pieces.sort(() => Math.random() - 0.5);
+            pieces.forEach(p => tray.appendChild(p));
+
+            const board = document.getElementById('puzzleBoard');
+            board.ondragover = (e) => e.preventDefault();
+            board.ondrop = (e) => {
+                e.preventDefault();
+                const raw = e.dataTransfer.getData('text/plain');
+                if (!raw) return;
+                const { r, c } = JSON.parse(raw);
+
+                const rect = board.getBoundingClientRect();
+                const dropX = e.clientX - rect.left;
+                const dropY = e.clientY - rect.top;
+
+                const targetCol = Math.floor(dropX / pieceSize);
+                const targetRow = Math.floor(dropY / pieceSize);
+
+                attemptPlacement(r, c, targetRow, targetCol);
+            };
+        }
+
+        function onPieceSelected(piece) {
+            if (piece.classList.contains('placed')) return;
+            soundEngine.playPickup();
+
+            if (selectedPieceEl === piece) {
+                piece.classList.remove('selected');
+                selectedPieceEl = null;
+                return;
+            }
+
+            document.querySelectorAll('.piece').forEach(p => p.classList.remove('selected'));
+            piece.classList.add('selected');
+            selectedPieceEl = piece;
+
+            document.getElementById('statusAlert').style.color = '#6366f1';
+            document.getElementById('statusAlert').innerText = `Piece selected! Now tap where it belongs on the board!`;
+        }
+
+        function onSlotClicked(row, col) {
+            if (!selectedPieceEl) {
+                document.getElementById('statusAlert').style.color = '#f59e0b';
+                document.getElementById('statusAlert').innerText = `Tap a piece from the tray first!`;
+                return;
+            }
+            const srcRow = parseInt(selectedPieceEl.dataset.row);
+            const srcCol = parseInt(selectedPieceEl.dataset.col);
+            attemptPlacement(srcRow, srcCol, row, col);
+        }
+
+        function attemptPlacement(srcRow, srcCol, targetRow, targetCol) {
+            const alert = document.getElementById('statusAlert');
+            const pieceSize = 360 / currentGridSize;
+
+            if (srcRow === targetRow && srcCol === targetCol) {
+                soundEngine.playSuccess();
+                alert.style.color = '#10b981';
+                alert.innerText = `★ Perfect fit! Piece snapped in! ★`;
+
+                const tray = document.getElementById('puzzleTray');
+                const piece = Array.from(tray.children).find(p => 
+                    parseInt(p.dataset.row) === srcRow && parseInt(p.dataset.col) === srcCol
+                ) || selectedPieceEl;
+
+                if (piece) {
+                    piece.classList.remove('selected');
+                    piece.classList.add('placed');
+                    piece.draggable = false;
+                    piece.style.position = 'absolute';
+                    piece.style.left = `${srcCol * pieceSize}px`;
+                    piece.style.top = `${srcRow * pieceSize}px`;
+                    piece.style.zIndex = 10;
+                    document.getElementById('puzzleBoard').appendChild(piece);
+                }
+
+                selectedPieceEl = null;
+                placedPieces++;
+                score += 25;
+                document.getElementById('scoreVal').innerText = score;
+                document.getElementById('placedCount').innerText = `${placedPieces}/${totalPieces}`;
+
+                // Guaranteed completion condition
+                const remainingInTray = tray.querySelectorAll('.piece:not(.placed)').length;
+                if (placedPieces >= totalPieces || remainingInTray === 0) {
+                    isGameFinished = true;
+                    document.getElementById('puzzleBoard').classList.add('completed');
+                    
+                    // User specification: The humanoid drawing animates RIGHT THERE inside the puzzle frame itself!
+                    triggerLivePuzzleAnimation();
+                }
+            } else {
+                soundEngine.playSoftBounce();
+                mistakes++;
+                score = Math.max(0, score - 2);
+                document.getElementById('scoreVal').innerText = score;
+                alert.style.color = '#ef4444';
+                alert.innerText = `Oops! That piece fits in a different slot. Try again!`;
+                if (selectedPieceEl) {
+                    selectedPieceEl.classList.remove('selected');
+                    selectedPieceEl = null;
+                }
+            }
+        }
+
+        async function triggerLivePuzzleAnimation() {
+            soundEngine.playWinChord();
+
+            const alert = document.getElementById('statusAlert');
+            const liveAnim = document.getElementById('puzzleLiveAnim');
+
+            if (customImageDataUrl) {
+                // User solved puzzle using custom Snap Photo or Upload!
+                // Send photo to the friend's animation engine!
+                alert.style.color = '#6366f1';
+                alert.innerHTML = `✨ <strong>Sending photo to Animation Engine...</strong> Bringing it to life! ✨`;
+                
+                try {
+                    const resp = await fetch('/api/animate-drawing', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            image: customImageDataUrl,
+                            motion: 'jump',
+                            charName: 'Custom Photo Puzzle'
+                        })
+                    });
+                    const data = await resp.json();
+                    if (data.success && data.gifUrl) {
+                        liveAnim.src = data.gifUrl;
+                        liveAnim.style.display = 'block';
+                        alert.style.color = '#10b981';
+                        alert.innerHTML = `🎉 <strong>Hooray! Your photo was animated by the Core Engine right on your puzzle!</strong> 🎉`;
+                        soundEngine.playSuccess();
+                        setTimeout(() => onGameWin('Your Custom Drawing/Photo'), 2500);
+                        return;
+                    }
+                } catch(e) {
+                    console.error('Animation Engine error:', e);
+                }
+            }
+
+            // Standard Preset Character (e.g. Rahim, Sister, Father, etc.)
+            const scene = HUMANOID_SCENES[currentSceneKey] || HUMANOID_SCENES.rahim;
+            liveAnim.src = scene.animUrl;
+            liveAnim.style.display = 'block';
+
+            alert.style.color = '#10b981';
+            alert.innerHTML = `✨ <strong>Hooray! ${scene.name} is now moving right on your puzzle!</strong> ✨`;
+
+            setTimeout(() => onGameWin(scene.name), 2200);
+        }
+
+        function resetPuzzle() {
+            buildPuzzle();
+        }
+
+        function onGameWin(charName) {
+            soundEngine.playWinChord();
+            const accuracy = Math.round((totalPieces / (totalPieces + mistakes)) * 100);
+            const stars = accuracy >= 80 ? 3 : accuracy >= 60 ? 2 : 1;
+            const displayName = charName || (HUMANOID_SCENES[currentSceneKey] ? HUMANOID_SCENES[currentSceneKey].name : 'Your Friend');
+
+            if (window.reportActivityResult) {
+                window.reportActivityResult('puzzle-builder', {
+                    score,
+                    stars,
+                    completed: true
+                });
+            }
+            if (window.showCelebrationModal) {
+                window.showCelebrationModal({
+                    score,
+                    timeSeconds: 40,
+                    stars,
+                    customMessage: `Puzzle Master! You brought ${displayName} to life right inside the frame! 🌟`
+                });
+            }
+        }
+
+        window.onload = () => {
+            buildPuzzle();
+        };
+    </script>
+</body>
+</html>

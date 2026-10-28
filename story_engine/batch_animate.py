@@ -23,8 +23,8 @@ import time
 from progress_logger import ProgressLogger
 from pathlib import Path
 
-# Add AnimatedDrawings to path
-REPO_ROOT = Path(r"c:\Major Project - MVP2\Major Project - MVP\Actual repo (EDUVISION)\AnimatedDrawings")
+BASE_DIR = Path(__file__).resolve().parent.parent
+REPO_ROOT = BASE_DIR / "Actual repo (EDUVISION)" / "AnimatedDrawings"
 sys.path.insert(0, str(REPO_ROOT))
 
 import animated_drawings.render

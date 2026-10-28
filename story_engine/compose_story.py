@@ -19,10 +19,11 @@ from progress_logger import ProgressLogger
 from pathlib import Path
 from PIL import Image, ImageSequence
 
-REPO_ROOT = Path(r"c:\Major Project - MVP2\Major Project - MVP\Actual repo (EDUVISION)\AnimatedDrawings")
-CHARACTERS_DIR = Path(r"c:\Major Project - MVP2\Major Project - MVP\characters")
+BASE_DIR = Path(__file__).resolve().parent.parent
+REPO_ROOT = BASE_DIR / "Actual repo (EDUVISION)" / "AnimatedDrawings"
+CHARACTERS_DIR = BASE_DIR / "characters"
 ASSETS_DIR = REPO_ROOT / "assets" / "Rahim's Story"
-OUTPUT_DIR = Path(r"c:\Major Project - MVP2\Major Project - MVP\story_engine\output")
+OUTPUT_DIR = BASE_DIR / "story_engine" / "output"
 
 # 9-Scene Storyboard
 SCENES = [
@@ -101,7 +102,7 @@ def resolve_character_dir(slot: str, char_id: str) -> Path:
     custom_path = CHARACTERS_DIR / char_id
     if custom_path.exists():
         return custom_path
-    uploads_path = Path(r"c:\Major Project - MVP2\Major Project - MVP\eduvision_ui\uploads") / char_id
+    uploads_path = (BASE_DIR / "eduvision_ui" / "uploads") / char_id
     if uploads_path.exists():
         return uploads_path
     return CHARACTERS_DIR / slot

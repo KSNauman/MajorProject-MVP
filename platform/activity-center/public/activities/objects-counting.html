@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Humanoid Count & Play Playground 🧒🎈 | EduVision</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .counting-layout {
+            display: grid;
+            grid-template-columns: 1.25fr 1fr;
+            gap: 24px;
+            align-items: stretch;
+        }
+        @media (max-width: 900px) {
+            .counting-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        .scatter-card {
+            background: #ffffff;
+            border-radius: var(--radius-xl);
+            border: 3px solid #e2e8f0;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-md);
+            position: relative;
+        }
+        .scatter-area {
+            position: relative;
+            background: radial-gradient(circle at 50% 50%, #f0fdf4 0%, #e0f2fe 100%);
+            border: 2px dashed #93c5fd;
+            border-radius: var(--radius-lg);
+            height: 400px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+        /* Hand-drawn Humanoid Scatter Item */
+        .scatter-item {
+            position: absolute;
+            width: 80px;
+            height: 95px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+            border: 3px solid #e0e7ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s;
+            overflow: visible;
+        }
+        .scatter-item:hover {
+            transform: scale(1.15) rotate(4deg);
+            box-shadow: 0 10px 22px rgba(99, 102, 241, 0.25);
+            border-color: #6366f1;
+        }
+        .scatter-item.counted {
+            border-color: #10b981;
+            background: #ecfdf5;
+            box-shadow: 0 0 0 3px #10b981;
+            transform: scale(1.06);
+        }
+        .humanoid-scatter-img {
+            width: 70px;
+            height: 85px;
+            object-fit: contain;
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+        /* Happy Celebration Animation on Correct Count */
+        .scatter-item.celebrating {
+            border-color: #22c55e;
+            background: #dcfce7;
+            transform: scale(1.22);
+            box-shadow: 0 0 25px rgba(34, 197, 94, 0.5);
+            z-index: 20;
+        }
+        .scatter-badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #10b981;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 0.95rem;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+            border: 2px solid white;
+            animation: popBadge 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 10;
+        }
+        @keyframes popBadge {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+        .drawing-card {
+            background: #ffffff;
+            border-radius: var(--radius-xl);
+            border: 3px solid #e2e8f0;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-md);
+        }
+        .canvas-container {
+            position: relative;
+            background: #ffffff;
+            border: 3px solid #cbd5e1;
+            border-radius: var(--radius-lg);
+            height: 200px;
+            margin-bottom: 14px;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.06);
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+            cursor: crosshair;
+        }
+        .canvas-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #94a3b8;
+            font-weight: 700;
+            font-size: 1.05rem;
+            pointer-events: none;
+            text-align: center;
+        }
+        .actions-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .keypad-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .num-btn {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: var(--radius-md);
+            padding: 10px 0;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .num-btn:hover {
+            background: #eef2ff;
+            border-color: #6366f1;
+            color: #4f46e5;
+            transform: scale(1.08);
+        }
+        .num-btn.correct {
+            background: #10b981;
+            color: white;
+            border-color: #059669;
+            transform: scale(1.12);
+        }
+        .num-btn.wrong {
+            background: #ef4444;
+            color: white;
+            border-color: #dc2626;
+            animation: shakeBtn 0.3s;
+        }
+        @keyframes shakeBtn {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+        .counter-badge-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: var(--radius-md);
+            padding: 10px 16px;
+            margin-bottom: 12px;
+            font-weight: 800;
+        }
+    </style>
+</head>
+<body>
+    <header class="game-navbar">
+        <a href="/index.html" class="nav-brand"><span>🧒</span> Humanoid Count & Play</a>
+        <div class="nav-controls">
+            <div class="score-badge">⭐ Score: <span id="scoreVal">0</span></div>
+            <div class="stars-badge">Round: <span id="roundVal">1/5</span></div>
+            <a id="navExitBtn" href="/index.html" class="btn btn-secondary">Exit Activity 🏠</a>
+        </div>
+    </header>
+
+    <main class="game-container" style="max-width:1150px;">
+        <div class="activity-hero" style="text-align:center; margin-bottom:16px;">
+            <h1 style="font-size:1.85rem; font-weight:900; color:#1e293b;">Count the Humanoid Drawings in the Playground! 🎈</h1>
+            <p style="color:#64748b; font-size:1rem;">Tap each friend to count them out loud. Write or select the number to see everyone jump and celebrate!</p>
+        </div>
+
+        <div class="counting-layout">
+            <!-- Left: Humanoid Drawing Scatter Area -->
+            <div class="scatter-card">
+                <div class="counter-badge-bar">
+                    <span style="color:#64748b;">Counted: <strong id="tappedCount" style="color:#4f46e5; font-size:1.25rem;">0</strong></span>
+                    <span style="color:#64748b;">Spelling: <strong id="spellingWord" style="color:#10b981; font-size:1.15rem;">-</strong></span>
+                    <button class="btn btn-secondary" style="padding:6px 14px; font-size:0.85rem;" onclick="scatterAgain()">🎲 Rescatter</button>
+                </div>
+
+                <div class="scatter-area" id="scatterArea">
+                    <!-- Humanoid drawings populated by JS -->
+                </div>
+
+                <div style="font-size:0.85rem; color:#64748b; text-align:center;">
+                    💡 Tap drawings one by one to count them! Correct count makes everyone dance!
+                </div>
+            </div>
+
+            <!-- Right: ML Handwriting Slate + Keypad -->
+            <div class="drawing-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h3 style="color:#1e293b; margin:0; font-size:1.15rem;">✍️ Write or Tap Count</h3>
+                    <span style="font-size:0.75rem; background:#e0e7ff; color:#4338ca; padding:4px 8px; border-radius:8px; font-weight:800;">ML AI Slate</span>
+                </div>
+                
+                <div class="canvas-container">
+                    <canvas id="drawingCanvas" width="400" height="200"></canvas>
+                    <div class="canvas-hint" id="canvasHint">Write digit here with mouse/finger ✍️</div>
+                </div>
+
+                <div class="actions-row">
+                    <button class="btn btn-primary" id="btnCheckSlate" onclick="checkDrawnDigit()">Check Drawing ✔</button>
+                    <button class="btn btn-secondary" onclick="clearCanvas()">Clear ✕</button>
+                </div>
+
+                <div style="margin-top: 14px; text-align: center;">
+                    <span style="font-size: 0.85rem; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Or Tap Number Directly</span>
+                    <div class="keypad-grid" id="keypadGrid">
+                        <button class="num-btn" id="num-1" onclick="submitAnswer(1)">1</button>
+                        <button class="num-btn" id="num-2" onclick="submitAnswer(2)">2</button>
+                        <button class="num-btn" id="num-3" onclick="submitAnswer(3)">3</button>
+                        <button class="num-btn" id="num-4" onclick="submitAnswer(4)">4</button>
+                        <button class="num-btn" id="num-5" onclick="submitAnswer(5)">5</button>
+                        <button class="num-btn" id="num-6" onclick="submitAnswer(6)">6</button>
+                        <button class="num-btn" id="num-7" onclick="submitAnswer(7)">7</button>
+                        <button class="num-btn" id="num-8" onclick="submitAnswer(8)">8</button>
+                        <button class="num-btn" id="num-9" onclick="submitAnswer(9)">9</button>
+                        <button class="num-btn" id="num-10" onclick="submitAnswer(10)">10</button>
+                    </div>
+                </div>
+
+                <div id="statusAlert" style="margin-top: 14px; min-height: 28px; text-align: center; font-weight: 700; font-size: 1.05rem;"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/engine-audio.js"></script>
+    <script src="/js/integration.js"></script>
+    <script src="/js/ml-digit-recognizer.js"></script>
+    <script>
+        // Core Engine Humanoid Characters
+        const HUMANOID_CHARACTERS = [
+            { id: 'rahim', name: 'Rahim' },
+            { id: 'sister', name: 'Sister' },
+            { id: 'mother', name: 'Mother' },
+            { id: 'father', name: 'Father' },
+            { id: 'grandpa', name: 'Grandpa' },
+            { id: 'grandma', name: 'Grandma' }
+        ];
+
+        const NUMBER_WORDS = [
+            "Zero", "One", "Two", "Three", "Four", "Five",
+            "Six", "Seven", "Eight", "Nine", "Ten"
+        ];
+        
+        let currentRound = 1;
+        const totalRounds = 5;
+        let targetCount = 0;
+        let score = 0;
+        let mistakes = 0;
+        let tappedCount = 0;
+        let isRoundSolved = false;
+        let currentHumanoids = [];
+
+        // Canvas Drawing Setup
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let hasDrawn = false;
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            clearCanvas();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function startStroke(e) {
+            if (isRoundSolved) return;
+            isDrawing = true;
+            hasDrawn = true;
+            document.getElementById('canvasHint').style.display = 'none';
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const x = clientX - rect.x;
+            const y = clientY - rect.y;
+
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineWidth = 14;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = '#2563eb';
+        }
+
+        function drawStroke(e) {
+            if (!isDrawing || isRoundSolved) return;
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const x = clientX - rect.x;
+            const y = clientY - rect.y;
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            e.preventDefault();
+        }
+
+        function endStroke() {
+            isDrawing = false;
+        }
+
+        canvas.addEventListener('mousedown', startStroke);
+        canvas.addEventListener('mousemove', drawStroke);
+        window.addEventListener('mouseup', endStroke);
+
+        canvas.addEventListener('touchstart', startStroke, {passive: false});
+        canvas.addEventListener('touchmove', drawStroke, {passive: false});
+        window.addEventListener('touchend', endStroke);
+
+        function clearCanvas() {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            hasDrawn = false;
+            document.getElementById('canvasHint').style.display = 'block';
+            document.getElementById('statusAlert').innerText = '';
+        }
+
+        function initRound() {
+            if (currentRound > totalRounds) {
+                onGameWin();
+                return;
+            }
+
+            isRoundSolved = false;
+            document.getElementById('roundVal').innerText = `${currentRound}/${totalRounds}`;
+            document.getElementById('scoreVal').innerText = score;
+            document.getElementById('statusAlert').innerText = '';
+            
+            document.querySelectorAll('.num-btn').forEach(btn => {
+                btn.classList.remove('correct', 'wrong');
+            });
+
+            tappedCount = 0;
+            document.getElementById('tappedCount').innerText = '0';
+            document.getElementById('spellingWord').innerText = '-';
+            clearCanvas();
+
+            // Pick 2 to 9 humanoid drawings to scatter
+            targetCount = Math.floor(Math.random() * 7) + 2;
+
+            renderScatterArea();
+        }
+
+        function renderScatterArea() {
+            const area = document.getElementById('scatterArea');
+            area.innerHTML = '';
+            const w = area.clientWidth || 480;
+            const h = area.clientHeight || 400;
+            const placed = [];
+            currentHumanoids = [];
+
+            for (let i = 0; i < targetCount; i++) {
+                let x, y, tries = 0;
+                let overlap = true;
+
+                while (overlap && tries < 60) {
+                    x = Math.floor(Math.random() * (w - 100)) + 15;
+                    y = Math.floor(Math.random() * (h - 110)) + 15;
+                    overlap = placed.some(p => Math.hypot(p.x - x, p.y - y) < 80);
+                    tries++;
+                }
+                placed.push({x, y});
+
+                // Pick a random humanoid character from core engine
+                const charObj = HUMANOID_CHARACTERS[Math.floor(Math.random() * HUMANOID_CHARACTERS.length)];
+                currentHumanoids.push(charObj);
+
+                const item = document.createElement('div');
+                item.className = 'scatter-item';
+                item.style.left = `${x}px`;
+                item.style.top = `${y}px`;
+                item.id = `scatter-humanoid-${i}`;
+
+                item.innerHTML = `
+                    <img class="humanoid-scatter-img" src="/characters/${charObj.id}/animations/idel.gif" alt="${charObj.name}">
+                `;
+
+                item.onclick = () => onItemTapped(item);
+                area.appendChild(item);
+            }
+        }
+
+        function onItemTapped(item) {
+            if (isRoundSolved) return;
+
+            if (!item.classList.contains('counted')) {
+                tappedCount++;
+                item.classList.add('counted');
+                item.dataset.index = tappedCount;
+
+                const badge = document.createElement('div');
+                badge.className = 'scatter-badge';
+                badge.innerText = tappedCount;
+                item.appendChild(badge);
+
+                document.getElementById('tappedCount').innerText = tappedCount;
+                const word = NUMBER_WORDS[tappedCount] || String(tappedCount);
+                document.getElementById('spellingWord').innerText = word;
+
+                soundEngine.playSuccess();
+                speakNumber(word);
+            } else {
+                item.classList.remove('counted');
+                const badge = item.querySelector('.scatter-badge');
+                if (badge) badge.remove();
+
+                tappedCount = Math.max(0, tappedCount - 1);
+                document.getElementById('tappedCount').innerText = tappedCount;
+                const word = tappedCount > 0 ? (NUMBER_WORDS[tappedCount] || String(tappedCount)) : '-';
+                document.getElementById('spellingWord').innerText = word;
+
+                soundEngine.playSoftBounce();
+            }
+        }
+
+        function speakNumber(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utter = new SpeechSynthesisUtterance(text);
+                utter.rate = 1.05;
+                utter.pitch = 1.1;
+                window.speechSynthesis.speak(utter);
+            }
+        }
+
+        function scatterAgain() {
+            soundEngine.playWhoosh();
+            tappedCount = 0;
+            document.getElementById('tappedCount').innerText = '0';
+            document.getElementById('spellingWord').innerText = '-';
+            renderScatterArea();
+        }
+
+        async function checkDrawnDigit() {
+            if (isRoundSolved) return;
+            const alert = document.getElementById('statusAlert');
+
+            if (!hasDrawn) {
+                alert.style.color = '#f59e0b';
+                alert.innerText = "Please write a number on the slate first, or tap a number below! ✏️";
+                return;
+            }
+
+            alert.style.color = '#6366f1';
+            alert.innerText = "Analyzing handwritten digit with ML model... 🤖";
+
+            try {
+                const result = await window.mlDigitRecognizer.recognizeFromCanvas(canvas);
+                if (!result || result.digit === null) {
+                    alert.style.color = '#f59e0b';
+                    alert.innerText = "Could not clearly identify a number. Please write clearly and bold!";
+                    return;
+                }
+
+                submitAnswer(result.digit, true, result.confidence);
+            } catch (err) {
+                console.error(err);
+                alert.style.color = '#ef4444';
+                alert.innerText = "ML recognition notice: " + (err.message || 'Please retry');
+                isRoundSolved = false;
+            }
+        }
+
+        function submitAnswer(guessedNumber, isFromML = false, confidence = 0) {
+            if (isRoundSolved) return;
+            const alert = document.getElementById('statusAlert');
+            const num = Number(guessedNumber);
+            const targetBtn = document.getElementById(`num-${num}`);
+
+            if (num === targetCount) {
+                isRoundSolved = true;
+                soundEngine.playSuccess();
+
+                if (targetBtn) targetBtn.classList.add('correct');
+
+                alert.style.color = '#10b981';
+                const sourceMsg = isFromML ? `AI saw '${num}' (${confidence}%)!` : `You selected ${num}!`;
+                alert.innerText = `★ Awesome! ${sourceMsg} Exactly ${targetCount} humanoid friends! ★`;
+
+                score += 20;
+                document.getElementById('scoreVal').innerText = score;
+
+                // User specification: ALL scattered humanoid drawings burst into happy animations from the core engine!
+                triggerAllHumanoidsHappyAnimation();
+
+                setTimeout(() => {
+                    currentRound++;
+                    initRound();
+                }, 2000);
+            } else {
+                soundEngine.playSoftBounce();
+                mistakes++;
+                score = Math.max(0, score - 2);
+                document.getElementById('scoreVal').innerText = score;
+
+                if (targetBtn) {
+                    targetBtn.classList.add('wrong');
+                    setTimeout(() => targetBtn.classList.remove('wrong'), 700);
+                }
+
+                alert.style.color = '#ef4444';
+                const guessStr = isFromML ? `AI saw '${num}'` : `You picked ${num}`;
+                alert.innerText = `${guessStr}, but that is not the right count. Count again and retry!`;
+            }
+        }
+
+        function triggerAllHumanoidsHappyAnimation() {
+            soundEngine.playFanfare();
+            const items = document.querySelectorAll('.scatter-item');
+            items.forEach((item, idx) => {
+                const charObj = currentHumanoids[idx] || HUMANOID_CHARACTERS[0];
+                item.classList.add('celebrating');
+                const img = item.querySelector('.humanoid-scatter-img');
+                if (img) {
+                    // Burst into live jumping or celebration animation from core engine!
+                    img.src = `/characters/${charObj.id}/animations/jump.gif`;
+                }
+            });
+        }
+
+        function onGameWin() {
+            soundEngine.playWinChord();
+            const accuracy = Math.round((totalRounds / (totalRounds + mistakes)) * 100);
+            const stars = accuracy >= 80 ? 3 : accuracy >= 60 ? 2 : 1;
+
+            if (window.reportActivityResult) {
+                window.reportActivityResult('objects-counting', {
+                    score,
+                    stars,
+                    completed: true
+                });
+            }
+            if (window.showCelebrationModal) {
+                window.showCelebrationModal({
+                    score,
+                    timeSeconds: 40,
+                    stars,
+                    customMessage: `Super Counter! You counted all humanoid friends and made the entire classroom dance! 🌟`
+                });
+            }
+        }
+
+        window.onload = () => {
+            resizeCanvas();
+            initRound();
+        };
+    </script>
+</body>
+</html>

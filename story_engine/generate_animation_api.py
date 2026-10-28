@@ -13,7 +13,8 @@ def main():
     img_path = sys.argv[1]
     motion = sys.argv[2] if len(sys.argv) > 2 else "dance"
     
-    repo_root = r'c:\Major Project - MVP2\Major Project - MVP\Actual repo (EDUVISION)\AnimatedDrawings'
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    repo_root = os.path.join(base_dir, 'Actual repo (EDUVISION)', 'AnimatedDrawings')
     upload_dir = os.path.dirname(img_path)
     
     # Create a unique output directory for this character

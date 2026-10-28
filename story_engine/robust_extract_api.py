@@ -8,8 +8,9 @@ import shutil
 import time
 
 def extract(img_path):
-    repo_root = r'c:\Major Project - MVP2\Major Project - MVP\Actual repo (EDUVISION)\AnimatedDrawings'
-    public_uploads = r'c:\Major Project - MVP2\Major Project - MVP\eduvision_ui\public\uploads'
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    repo_root = os.path.join(base_dir, 'Actual repo (EDUVISION)', 'AnimatedDrawings')
+    public_uploads = os.path.join(base_dir, 'eduvision_ui', 'public', 'uploads')
     os.makedirs(public_uploads, exist_ok=True)
     
     # Strip quotes if present
@@ -106,7 +107,10 @@ def extract(img_path):
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        res = extract(sys.argv[1])
-        print(json.dumps(res))
+        try:
+            res = extract(sys.argv[1])
+            print(json.dumps(res))
+        except Exception as e:
+            print(json.dumps({"error": str(e)}))
     else:
         print(json.dumps({"error": "No image path provided."}))

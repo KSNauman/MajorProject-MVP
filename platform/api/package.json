@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "start": "node server.js",
+    "test": "jest",
+    "seed": "node seed.js",
+    "clean-data": "node clean_project_data.js"
   },
   "keywords": [],
   "author": "",

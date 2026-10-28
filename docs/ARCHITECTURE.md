@@ -58,7 +58,7 @@ sequenceDiagram
 ```
 
 ## Application Integration Contract
-EduVision allows seamless integration of third-party educational apps (like `math-blaster-sample`).
+EduVision allows seamless integration of educational applications and interactive activities.
 1. **Registry**: The app is registered in the PostgreSQL `Application` table with a `launchUrl`.
 2. **Context Passing**: When a student clicks "Launch", the platform generates a signed JWT containing the `studentId`, `assignmentId`, and `appId`. This token is appended to the `launchUrl`.
 3. **Data Return**: When the child finishes the activity, the app sends a `POST` request to the platform's `/api/integrations/results` endpoint containing the token and the result data. The platform inherently trusts the data context because the token is signed and verified.

@@ -228,6 +228,7 @@ app.post('/api/story/prepare', upload.any(), (req, res) => {
                             }
                         });
                         
+                        py.stderr.on('data', d => console.error(`[PREPARE ERR]: ${d.toString()}`));
                         py.on('close', code => {
                             if (code === 0 && outCharDir) resolve(outCharDir);
                             else reject('Extraction failed');
@@ -249,6 +250,7 @@ app.post('/api/story/prepare', upload.any(), (req, res) => {
                         batchArgs.push('--motions', SLOT_MOTIONS[slot], '--slot', slot);
                     }
                     const batch = spawn(PYTHON_BIN, batchArgs, { cwd: storyScriptDir });
+                    batch.stderr.on('data', d => console.error(`[BATCH ERR]: ${d.toString()}`));
                     batch.stdout.on('data', d => {
                         const lines = d.toString().split('\n');
                         for (const line of lines) {
@@ -311,10 +313,22 @@ app.post('/api/story/prepare', upload.any(), (req, res) => {
 app.post('/api/story/generate', (req, res) => {
     console.log("Generating story...");
     const storyScriptDir = path.resolve(__dirname, '../story_engine');
-    const pyProcess = spawn(PYTHON_BIN, ['run_all.py'], {
+    const payload = JSON.stringify(req.body || {});
+    
+    const jobId = 'job_story_' + Date.now();
+    jobs[jobId] = { 
+        id: jobId, 
+        status: 'RUNNING', 
+        stage: 'QUEUED', 
+        message: 'Starting story generation...', 
+        logs: [] 
+    };
+    res.json({ success: true, jobId: jobId });
+
+    const pyProcess = spawn(PYTHON_BIN, ['compose_story.py', payload, jobId], {
         cwd: storyScriptDir,
-          env: getSpawnEnv(req)
-      });
+        env: getSpawnEnv(req)
+    });
 
     pyProcess.stdout.on('data', data => parseLogs(jobId, data));
     pyProcess.stderr.on('data', data => console.error("STORY ERR:", data.toString()));
@@ -369,7 +383,12 @@ app.post('/api/fixer/extract', upload.single('image'), (req, res) => {
     pyProcess.stdout.on('data', data => output += data.toString());
     pyProcess.on('close', code => {
         try {
-            const jsonStr = output.substring(output.indexOf('{'), output.lastIndexOf('}') + 1);
+            const startIdx = output.indexOf('{');
+            const endIdx = output.lastIndexOf('}');
+            if (startIdx === -1 || endIdx === -1 || startIdx > endIdx) {
+                return res.status(500).json({ error: "Failed to parse Python output.", output });
+            }
+            const jsonStr = output.substring(startIdx, endIdx + 1);
             const result = JSON.parse(jsonStr);
             if (code !== 0) return res.status(500).json(result);
             res.json(result);
@@ -625,6 +644,14 @@ app.use((req, res, next) => {
 app.listen(PORT, () => {
     console.log(`EduVision Minimal UI running on http://localhost:${PORT}`);
     // startTorchServe();
+});
+
+process.on('uncaughtException', (err) => {
+    console.error(`Uncaught Exception: ${err.message}`, err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error(`Unhandled Rejection: ${reason}`, reason);
 });
 
 
