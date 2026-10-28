@@ -9,7 +9,26 @@ router.post('/login', async (req, res, next) => {
     if (!username || !password) return res.status(400).json({ error: 'Missing credentials' });
 
     try {
-        const user = await prisma.user.findUnique({ where: { username } });
+        const cleanInput = username.trim();
+
+        // 1. Try finding by exact username
+        let user = await prisma.user.findUnique({ where: { username: cleanInput } });
+
+        // 2. If not found, try finding by case-insensitive username, displayName, or parent_ prefix
+        if (!user) {
+            const stripped = cleanInput.toLowerCase().replace(/[^a-z0-9_]/g, '');
+            user = await prisma.user.findFirst({
+                where: {
+                    OR: [
+                        { username: { equals: cleanInput, mode: 'insensitive' } },
+                        { displayName: { equals: cleanInput, mode: 'insensitive' } },
+                        { username: { equals: stripped, mode: 'insensitive' } },
+                        { username: { equals: `parent_${stripped}`, mode: 'insensitive' } }
+                    ]
+                }
+            });
+        }
+
         if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 
         const isMatch = await bcrypt.compare(password, user.passwordHash);
@@ -17,11 +36,20 @@ router.post('/login', async (req, res, next) => {
 
         const token = jwt.sign(
             { id: user.id, username: user.username, role: user.role },
-            process.env.JWT_SECRET,
+            process.env.JWT_SECRET || 'secret',
             { expiresIn: '1d' }
         );
 
-        res.json({ token, user: { id: user.id, username: user.username, role: user.role } });
+        res.json({
+            token,
+            user: {
+                id: user.id,
+                username: user.username,
+                displayName: user.displayName,
+                avatar: user.avatar,
+                role: user.role
+            }
+        });
     } catch (err) {
         next(err);
     }
@@ -49,7 +77,16 @@ router.post('/student-login', async (req, res, next) => {
             { expiresIn: '1d' }
         );
 
-        res.json({ token, user: { id: user.id, username: user.username, displayName: user.displayName, avatar: user.avatar, role: user.role } });
+        res.json({
+            token,
+            user: {
+                id: user.id,
+                username: user.username,
+                displayName: user.displayName,
+                avatar: user.avatar,
+                role: user.role
+            }
+        });
     } catch (err) {
         next(err);
     }

@@ -56,15 +56,42 @@ function App() {
   if (token && user) {
     return (
       <div className="dashboard-container">
-        <header className="portal-header">
-          <h1>EduVision ✨</h1>
-          <div className="user-badge">
+<header className="portal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+            <h1>EduVision ✨</h1>
+            {user.role === 'STUDENT' && (
+              <a
+                id="headerPlayForFunBtn"
+                href={`http://localhost:5000/index.html?mode=fun&returnUrl=${encodeURIComponent(window.location.href)}`}
+                className="btn"
+                style={{
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #ec4899 50%, #8b5cf6 100%)',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '0.95rem',
+                  padding: '8px 20px',
+                  borderRadius: '30px',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 14px rgba(236, 72, 153, 0.35)',
+                  cursor: 'pointer',
+                  border: '2px solid #ffffff'
+                }}
+              >
+                <span>🎡</span> Play for Fun! 🎈
+              </a>
+            )}
+          </div>
+          <div className="user-badge" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {user.avatar && <img src={user.avatar} alt="avatar" />}
             <span>Hi, <strong>{user.displayName || user.username}</strong></span>
             <button onClick={logout} className="btn btn-danger">Exit</button>
           </div>
         </header>
-        {['TEACHER', 'ADMIN'].includes(user.role) ? <TeacherDashboard token={token} /> : 
+        {user.role === 'ADMIN' ? <AdminDashboard token={token} /> :
+         user.role === 'TEACHER' ? <TeacherDashboard token={token} /> : 
          user.role === 'PARENT' ? <ParentDashboard token={token} /> : 
          <StudentDashboard token={token} />}
       </div>
@@ -199,34 +226,70 @@ function TeacherDashboard({ token }) {
   useEffect(() => { loadData(); }, []);
 
   const createClass = async () => {
-    if (!newClassName) return;
-    await apiFetch(`${API_URL}/portal/classes`, { method: 'POST', headers: { ...fetchHeaders, 'Content-Type': 'application/json'}, body: JSON.stringify({ name: newClassName }) }).catch(e => alert(e.message));
+    if (!newClassName.trim()) return;
+    await apiFetch(`${API_URL}/portal/classes`, { 
+      method: 'POST', 
+      headers: { ...fetchHeaders, 'Content-Type': 'application/json'}, 
+      body: JSON.stringify({ name: newClassName.trim() }) 
+    }).catch(e => alert(e.message));
     setNewClassName('');
     loadData();
+  };
+
+  const deleteClass = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete class "${name}"? All assignments inside it will also be deleted.`)) return;
+    try {
+      await apiFetch(`${API_URL}/portal/classes/${id}`, { method: 'DELETE', headers: fetchHeaders });
+      loadData();
+    } catch(e) { alert(e.message); }
   };
   
   const createAssignment = async () => {
     if (!newAssignment.title || !newAssignment.classId || !newAssignment.appId) return;
-    await apiFetch(`${API_URL}/portal/assignments`, { method: 'POST', headers: { ...fetchHeaders, 'Content-Type': 'application/json'}, body: JSON.stringify(newAssignment) }).catch(e => alert(e.message));
+    await apiFetch(`${API_URL}/portal/assignments`, { 
+      method: 'POST', 
+      headers: { ...fetchHeaders, 'Content-Type': 'application/json'}, 
+      body: JSON.stringify(newAssignment) 
+    }).catch(e => alert(e.message));
     setNewAssignment({ title: '', classId: '', appId: '' });
     loadData();
+  };
+
+  const deleteAssignment = async (id, title) => {
+    if (!window.confirm(`Are you sure you want to delete assignment "${title}"?`)) return;
+    try {
+      await apiFetch(`${API_URL}/portal/assignments/${id}`, { method: 'DELETE', headers: fetchHeaders });
+      loadData();
+    } catch(e) { alert(e.message); }
   };
 
   if (loading) return <div className="text-center page-title" style={{marginTop: '40px'}}>Loading dashboard...</div>;
 
   return (
     <div>
-      <h2 className="page-title text-center">Teacher Dashboard</h2>
+      <h2 className="page-title text-center">Teacher Dashboard 👩‍🏫</h2>
       
       <div className="grid-2">
         <section className="panel">
-          <h3 className="section-title">Create Class</h3>
+          <h3 className="section-title">My Classes</h3>
           <div className="flex-row">
-            <input className="input-field" placeholder="Class Name" value={newClassName} onChange={e => setNewClassName(e.target.value)} />
+            <input className="input-field" placeholder="New Class Name (e.g. Grade 1A)" value={newClassName} onChange={e => setNewClassName(e.target.value)} />
             <button onClick={createClass} className="btn btn-primary">Create</button>
           </div>
           <ul className="list-group" style={{ marginTop: '20px' }}>
-            {classes.length === 0 ? <li className="list-item" style={{color: 'var(--text-muted)'}}>No classes yet</li> : classes.map(c => <li key={c.id} className="list-item">{c.name}</li>)}
+            {classes.length === 0 ? <li className="list-item" style={{color: 'var(--text-muted)'}}>No classes created yet.</li> : classes.map(c => (
+              <li key={c.id} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: 600 }}>🏫 {c.name}</span>
+                <button 
+                  onClick={() => deleteClass(c.id, c.name)} 
+                  className="btn btn-danger" 
+                  style={{ padding: '3px 8px', fontSize: '0.8rem' }}
+                  title="Delete Class"
+                >
+                  🗑️ Delete
+                </button>
+              </li>
+            ))}
           </ul>
         </section>
 
@@ -237,16 +300,16 @@ function TeacherDashboard({ token }) {
         <section className="panel">
           <h3 className="section-title">Assign Activity</h3>
           <div className="form-group">
-            <input className="input-field" placeholder="Assignment Title" value={newAssignment.title} onChange={e => setNewAssignment({...newAssignment, title: e.target.value})} />
+            <input className="input-field" placeholder="Assignment Title (e.g. Chapter 1 Story)" value={newAssignment.title} onChange={e => setNewAssignment({...newAssignment, title: e.target.value})} />
             <select className="input-field" value={newAssignment.classId} onChange={e => setNewAssignment({...newAssignment, classId: e.target.value})}>
               <option value="">-- Select Class --</option>
               {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <select className="input-field" value={newAssignment.appId} onChange={e => setNewAssignment({...newAssignment, appId: e.target.value})}>
-              <option value="">-- Select Application --</option>
-              {apps.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+              <option value="">-- Select Learning Activity --</option>
+              {apps.filter(a => a.id !== 'activity-center').map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
-            <button onClick={createAssignment} className="btn btn-success" style={{ marginTop: '10px' }}>Create Assignment</button>
+            <button onClick={createAssignment} className="btn btn-success" style={{ marginTop: '10px' }}>Create Assignment ✨</button>
           </div>
         </section>
       </div>
@@ -257,12 +320,25 @@ function TeacherDashboard({ token }) {
           <ul className="list-group">
             {assignments.map(a => (
               <li key={a.id} className="list-item" style={{ paddingBottom: '16px', marginBottom: '8px' }}>
-                <div style={{ fontSize: '1.2rem', marginBottom: '8px' }}>
-                  <strong>{a.title}</strong> — <span style={{color: 'var(--text-muted)'}}>{a.application.name}</span> <em>({a.class.name})</em>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '1.15rem' }}>
+                    <strong>{a.title}</strong> — <span style={{color: 'var(--text-muted)'}}>{a.application.name}</span> <em>({a.class.name})</em>
+                  </div>
+                  <button 
+                    onClick={() => deleteAssignment(a.id, a.title)} 
+                    className="btn btn-danger" 
+                    style={{ padding: '3px 8px', fontSize: '0.8rem' }}
+                    title="Delete Assignment"
+                  >
+                    🗑️ Delete Assignment
+                  </button>
                 </div>
                 <ul style={{ paddingLeft: '20px', listStyleType: 'circle', color: 'var(--text-muted)' }}>
                   {a.results.length === 0 ? <li>No results yet</li> : a.results.map(r => (
-                    <li key={r.id}><strong>{r.user.username}</strong>: {r.status} (Score: {r.score})</li>
+                    <li key={r.id}>
+                      <strong>{r.user.displayName || r.user.username}</strong>: {r.status} (Score: {r.score})
+                      {r.details && r.details.storyTitle && <span> — Story: "<em>{r.details.storyTitle}</em>"</span>}
+                    </li>
                   ))}
                 </ul>
               </li>
@@ -314,7 +390,6 @@ function TeacherRosterPanel({ classes, token }) {
     }
   }, [selectedClass]);
 
-  // If classes load and we have a stored class, ensure it's still valid
   useEffect(() => {
     if (classes.length > 0 && selectedClass) {
       const exists = classes.some(c => c.id === selectedClass);
@@ -350,38 +425,71 @@ function TeacherRosterPanel({ classes, token }) {
     } catch (e) { alert(e.message); }
   };
 
+  // Only filter out students who are ALREADY in this specific class
+  const availableStudents = allStudents.filter(s => !roster.some(r => r.id === s.id));
+
   return (
     <section className="panel">
-      <h3 className="section-title">Class Roster</h3>
-      <select className="input-field" value={selectedClass} onChange={e => setSelectedClass(e.target.value)} style={{ marginBottom: '10px' }}>
+      <h3 className="section-title">Class Roster & Student Assignment</h3>
+      <select className="input-field" value={selectedClass} onChange={e => setSelectedClass(e.target.value)} style={{ marginBottom: '14px' }}>
         <option value="">-- Select Class to Manage --</option>
         {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
       </select>
 
       {selectedClass && (
-        <div style={{ marginTop: '10px' }}>
-          <div className="flex-row" style={{ marginBottom: '16px' }}>
-            <select className="input-field" value={studentToEnroll} onChange={e => setStudentToEnroll(e.target.value)}>
-              <option value="">-- Select Student to Add --</option>
-              {allStudents.filter(s => !roster.find(r => r.id === s.id)).map(s => (
-                <option key={s.id} value={s.id}>
-                  {s.displayName ? `${s.displayName} (${s.username})` : s.username}
+        <div>
+          <div style={{ marginBottom: '14px' }}>
+            <div className="flex-row" style={{ gap: '8px' }}>
+              <select className="input-field" value={studentToEnroll} onChange={e => setStudentToEnroll(e.target.value)}>
+                <option value="">
+                  {availableStudents.length === 0 ? '-- All School Students Are in This Class --' : `-- Select Student to Add (${availableStudents.length} available) --`}
                 </option>
-              ))}
-            </select>
-            <button onClick={enrollStudent} className="btn btn-success" disabled={!studentToEnroll}>
-              Add to Class
-            </button>
+                {availableStudents.map(s => (
+                  <option key={s.id} value={s.id}>
+                    {s.displayName ? `${s.displayName} (${s.username})` : s.username}
+                  </option>
+                ))}
+              </select>
+              <button onClick={enrollStudent} className="btn btn-success" disabled={!studentToEnroll}>
+                Add to Class ➕
+              </button>
+            </div>
+            <div style={{ fontSize: '0.82rem', color: '#64748b', marginTop: '6px' }}>
+              💡 All students and parents are registered centrally by the Admin. Select registered students above to add to your class.
+            </div>
           </div>
 
+          <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '12px 0 8px 0', color: '#334155' }}>
+            Enrolled Students in this Class ({roster.length}):
+          </h4>
+
           <ul className="list-group">
-            {roster.length === 0 ? <p style={{color: 'var(--text-muted)'}}>No students enrolled in this class yet.</p> : roster.map(s => (
+            {roster.length === 0 ? (
+              <p style={{color: 'var(--text-muted)'}}>No students enrolled in this class yet. Select a student above to add them.</p>
+            ) : roster.map(s => (
               <li key={s.id} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  {s.avatar && <img src={s.avatar} alt="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />}
-                  <span><strong>{s.displayName || s.username}</strong> <span style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>({s.username})</span></span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {s.avatar ? (
+                    <img src={s.avatar} alt="avatar" style={{ width: '36px', height: '36px', borderRadius: '50%' }} />
+                  ) : (
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#cbd5e1' }} />
+                  )}
+                  <div>
+                    <div><strong>{s.displayName || s.username}</strong> <span style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>({s.username})</span></div>
+                    {s.parents && s.parents.length > 0 ? (
+                      <div style={{ fontSize: '0.82rem', color: '#4f46e5', marginTop: '2px' }}>
+                        👨‍👩‍👧 Parent: <strong>{s.parents[0].displayName || s.parents[0].username}</strong> <span style={{ opacity: 0.8 }}>({s.parents[0].username})</span>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '2px' }}>
+                        ⚠️ No parent linked yet
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <button onClick={() => removeStudent(s.id)} className="btn btn-danger" style={{ padding: '4px 8px', minHeight: '30px', fontSize: '0.9rem' }}>Remove</button>
+                <button onClick={() => removeStudent(s.id)} className="btn btn-danger" style={{ padding: '4px 8px', minHeight: '30px', fontSize: '0.85rem' }} title="Remove from class">
+                  Remove
+                </button>
               </li>
             ))}
           </ul>
@@ -390,6 +498,465 @@ function TeacherRosterPanel({ classes, token }) {
     </section>
   );
 }
+
+
+function AdminDashboard({ token }) {
+  const [tab, setTab] = useState('BULK'); // 'BULK', 'STUDENTS', 'PARENTS', 'CLASSES'
+  const [stats, setStats] = useState({ studentCount: 0, parentCount: 0, teacherCount: 0, classCount: 0 });
+  const [students, setStudents] = useState([]);
+  const [parents, setParents] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Bulk state
+  const [bulkText, setBulkText] = useState('Maya Sharma, Sunita Sharma\nAarav Patel, Rajesh Patel\nLiam Davis, Robert Davis');
+  const [bulkClassId, setBulkClassId] = useState('');
+  const [bulkResults, setBulkResults] = useState(null);
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
+
+  // Search filters
+  const [studentSearch, setStudentSearch] = useState('');
+  const [parentSearch, setParentSearch] = useState('');
+
+  const fetchHeaders = { 'Authorization': `Bearer ${token}` };
+
+  const loadAll = async () => {
+    setLoading(true);
+    try {
+      const [overviewRes, studentsRes, parentsRes, classesRes] = await Promise.all([
+        apiFetch(`${API_URL}/admin/overview`, { headers: fetchHeaders }),
+        apiFetch(`${API_URL}/admin/students`, { headers: fetchHeaders }),
+        apiFetch(`${API_URL}/admin/parents`, { headers: fetchHeaders }),
+        apiFetch(`${API_URL}/admin/classes`, { headers: fetchHeaders })
+      ]);
+      setStats(await overviewRes.json());
+      setStudents(await studentsRes.json() || []);
+      setParents(await parentsRes.json() || []);
+      setClasses(await classesRes.json() || []);
+    } catch(e) { console.error('Admin load error', e); }
+    setLoading(false);
+  };
+
+  useEffect(() => { loadAll(); }, []);
+
+  const handleBulkEnroll = async () => {
+    const lines = bulkText.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) {
+      alert('Please enter at least one student name');
+      return;
+    }
+
+    const rows = lines.map(line => {
+      const parts = line.split(',').map(p => p.trim());
+      return {
+        studentName: parts[0],
+        parentName: parts[1] || '',
+        classId: bulkClassId || undefined
+      };
+    });
+
+    setBulkSubmitting(true);
+    try {
+      const res = await apiFetch(`${API_URL}/admin/bulk-enroll`, {
+        method: 'POST',
+        headers: { ...fetchHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows })
+      });
+      const data = await res.json();
+      setBulkResults(data.records);
+      loadAll();
+      alert(`🎉 Successfully enrolled ${data.enrolledCount} students with parents linked!`);
+    } catch(e) {
+      alert(e.message);
+    } finally {
+      setBulkSubmitting(false);
+    }
+  };
+
+  const deleteStudent = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to permanently delete student "${name}"? This removes their account, stories, and class memberships.`)) return;
+    try {
+      await apiFetch(`${API_URL}/admin/students/${id}`, { method: 'DELETE', headers: fetchHeaders });
+      loadAll();
+    } catch(e) { alert(e.message); }
+  };
+
+  const deleteParent = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to permanently delete parent "${name}"?`)) return;
+    try {
+      await apiFetch(`${API_URL}/admin/parents/${id}`, { method: 'DELETE', headers: fetchHeaders });
+      loadAll();
+    } catch(e) { alert(e.message); }
+  };
+
+  const deleteClass = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to permanently delete class "${name}" across the school?`)) return;
+    try {
+      await apiFetch(`${API_URL}/admin/classes/${id}`, { method: 'DELETE', headers: fetchHeaders });
+      loadAll();
+    } catch(e) { alert(e.message); }
+  };
+
+  const unlinkParent = async (parentId, childId) => {
+    try {
+      await apiFetch(`${API_URL}/admin/unlink-parent-child/${parentId}/${childId}`, { method: 'DELETE', headers: fetchHeaders });
+      loadAll();
+    } catch(e) { alert(e.message); }
+  };
+
+  if (loading) return <div className="text-center page-title" style={{marginTop: '40px'}}>Loading School Admin Portal...</div>;
+
+  const filteredStudents = students.filter(s => 
+    (s.displayName || '').toLowerCase().includes(studentSearch.toLowerCase()) ||
+    (s.username || '').toLowerCase().includes(studentSearch.toLowerCase())
+  );
+
+  const filteredParents = parents.filter(p => 
+    (p.displayName || '').toLowerCase().includes(parentSearch.toLowerCase()) ||
+    (p.username || '').toLowerCase().includes(parentSearch.toLowerCase())
+  );
+
+  return (
+    <div>
+      <h2 className="page-title text-center">School Administration Console 👑</h2>
+
+      {/* Overview Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <div className="panel" style={{ textAlign: 'center', background: '#eef2ff', borderColor: '#c7d2fe' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#4f46e5' }}>{stats.studentCount}</div>
+          <div style={{ fontWeight: 600, color: '#4338ca' }}>🎒 Total Students</div>
+        </div>
+        <div className="panel" style={{ textAlign: 'center', background: '#fdf4ff', borderColor: '#f5d0fe' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#c026d3' }}>{stats.parentCount}</div>
+          <div style={{ fontWeight: 600, color: '#a21caf' }}>👨‍👩‍👧 Total Parents</div>
+        </div>
+        <div className="panel" style={{ textAlign: 'center', background: '#f0fdf4', borderColor: '#bbf7d0' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#16a34a' }}>{stats.classCount}</div>
+          <div style={{ fontWeight: 600, color: '#15803d' }}>🏫 Active Classes</div>
+        </div>
+        <div className="panel" style={{ textAlign: 'center', background: '#fffbeb', borderColor: '#fde68a' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#d97706' }}>{stats.teacherCount}</div>
+          <div style={{ fontWeight: 600, color: '#b45309' }}>👩‍🏫 Teachers</div>
+        </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px', flexWrap: 'wrap' }}>
+        <button 
+          onClick={() => setTab('BULK')} 
+          className={`btn ${tab === 'BULK' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ fontWeight: 700 }}
+        >
+          🚀 Fast Bulk Onboarding
+        </button>
+        <button 
+          onClick={() => setTab('STUDENTS')} 
+          className={`btn ${tab === 'STUDENTS' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ fontWeight: 700 }}
+        >
+          🎒 Students Directory ({students.length})
+        </button>
+        <button 
+          onClick={() => setTab('PARENTS')} 
+          className={`btn ${tab === 'PARENTS' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ fontWeight: 700 }}
+        >
+          👨‍👩‍👧 Parents Directory ({parents.length})
+        </button>
+        <button 
+          onClick={() => setTab('CLASSES')} 
+          className={`btn ${tab === 'CLASSES' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ fontWeight: 700 }}
+        >
+          🏫 All Classes ({classes.length})
+        </button>
+      </div>
+
+      {/* TAB 1: BULK ONBOARDING */}
+      {tab === 'BULK' && (
+        <section className="panel">
+          <h3 className="section-title">🚀 Fast Zero-Burden Student & Parent Admission</h3>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '14px' }}>
+            Paste as many students and parents as you want below (one per line, format: <code>Student Name, Parent Name</code>). 
+            The system automatically creates student logins with avatars, creates parent accounts with <code>password123</code>, and links them instantly!
+          </p>
+
+          <div style={{ marginBottom: '14px' }}>
+            <label style={{ fontWeight: 700, display: 'block', marginBottom: '6px' }}>Student & Parent List (Paste below):</label>
+            <textarea
+              className="input-field"
+              rows={6}
+              value={bulkText}
+              onChange={e => setBulkText(e.target.value)}
+              placeholder="Maya Sharma, Sunita Sharma&#10;Aarav Patel, Rajesh Patel&#10;Liam Davis, Robert Davis"
+              style={{ fontFamily: 'monospace', fontSize: '0.95rem', width: '100%', padding: '12px' }}
+            />
+          </div>
+
+          <div className="flex-row" style={{ gap: '14px', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: '220px' }}>
+              <label style={{ fontWeight: 700, fontSize: '0.9rem', display: 'block', marginBottom: '4px' }}>Initial Class (Optional):</label>
+              <select className="input-field" value={bulkClassId} onChange={e => setBulkClassId(e.target.value)}>
+                <option value="">-- No Class (Teachers Will Add Later) --</option>
+                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div style={{ paddingTop: '22px' }}>
+              <button 
+                onClick={handleBulkEnroll} 
+                className="btn btn-success" 
+                style={{ fontSize: '1.05rem', padding: '10px 24px' }}
+                disabled={bulkSubmitting}
+              >
+                {bulkSubmitting ? 'Enrolling...' : '✨ Run Bulk Admission'}
+              </button>
+            </div>
+          </div>
+
+          {bulkResults && (
+            <div style={{ marginTop: '24px', background: '#f8fafc', border: '2px solid #10b981', borderRadius: '12px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <h4 style={{ margin: 0, color: '#065f46', fontSize: '1.1rem' }}>
+                  🎉 Enrolled {bulkResults.length} Students & Generated Logins:
+                </h4>
+                <button 
+                  onClick={() => {
+                    const text = bulkResults.map(r => `Student: ${r.studentName} (User: ${r.studentUsername}) | Parent: ${r.parentName} (User: ${r.parentUsername}, Pass: ${r.parentPassword})`).join('\n');
+                    navigator.clipboard.writeText(text);
+                    alert('Copied all credentials to clipboard!');
+                  }}
+                  className="btn btn-secondary"
+                  style={{ fontSize: '0.85rem' }}
+                >
+                  📋 Copy All Credentials
+                </button>
+              </div>
+
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+                  <thead>
+                    <tr style={{ background: '#e2e8f0', borderBottom: '2px solid #cbd5e1' }}>
+                      <th style={{ padding: '8px 12px' }}>Student</th>
+                      <th style={{ padding: '8px 12px' }}>Student Username</th>
+                      <th style={{ padding: '8px 12px' }}>Parent</th>
+                      <th style={{ padding: '8px 12px' }}>Parent Username</th>
+                      <th style={{ padding: '8px 12px' }}>Default Password</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bulkResults.map((r, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', background: i % 2 === 0 ? 'white' : '#f8fafc' }}>
+                        <td style={{ padding: '8px 12px', fontWeight: 600 }}>{r.studentName}</td>
+                        <td style={{ padding: '8px 12px' }}><code>{r.studentUsername}</code></td>
+                        <td style={{ padding: '8px 12px' }}>{r.parentName}</td>
+                        <td style={{ padding: '8px 12px' }}><code>{r.parentUsername}</code></td>
+                        <td style={{ padding: '8px 12px' }}><code>{r.parentPassword}</code></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* TAB 2: STUDENTS DIRECTORY */}
+      {tab === 'STUDENTS' && (
+        <section className="panel">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+            <h3 className="section-title" style={{ margin: 0 }}>🎒 School Students Directory</h3>
+            <input 
+              className="input-field" 
+              placeholder="🔍 Search students..." 
+              value={studentSearch} 
+              onChange={e => setStudentSearch(e.target.value)}
+              style={{ maxWidth: '280px' }}
+            />
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.92rem' }}>
+              <thead>
+                <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
+                  <th style={{ padding: '10px 12px' }}>Avatar</th>
+                  <th style={{ padding: '10px 12px' }}>Student Name</th>
+                  <th style={{ padding: '10px 12px' }}>Username</th>
+                  <th style={{ padding: '10px 12px' }}>Linked Parent(s)</th>
+                  <th style={{ padding: '10px 12px' }}>Enrolled Classes</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredStudents.length === 0 ? (
+                  <tr><td colSpan={6} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>No students found.</td></tr>
+                ) : filteredStudents.map(s => (
+                  <tr key={s.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '10px 12px' }}>
+                      {s.avatar ? (
+                        <img src={s.avatar} alt="avatar" style={{ width: '36px', height: '36px', borderRadius: '50%' }} />
+                      ) : (
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#cbd5e1' }} />
+                      )}
+                    </td>
+                    <td style={{ padding: '10px 12px', fontWeight: 600 }}>{s.displayName || 'Unnamed'}</td>
+                    <td style={{ padding: '10px 12px' }}><code>{s.username}</code></td>
+                    <td style={{ padding: '10px 12px' }}>
+                      {s.parents && s.parents.length > 0 ? (
+                        s.parents.map(p => (
+                          <div key={p.id} style={{ fontSize: '0.85rem', color: '#4f46e5' }}>
+                            👨‍👩‍👧 {p.displayName || p.username} (<code>{p.username}</code>)
+                          </div>
+                        ))
+                      ) : (
+                        <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>No parent linked</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '10px 12px' }}>
+                      {s.classes && s.classes.length > 0 ? (
+                        s.classes.map(c => (
+                          <span key={c.id} style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem', marginRight: '4px' }}>
+                            {c.name}
+                          </span>
+                        ))
+                      ) : (
+                        <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Not in any class</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                      <button 
+                        onClick={() => deleteStudent(s.id, s.displayName || s.username)} 
+                        className="btn btn-danger" 
+                        style={{ padding: '4px 8px', fontSize: '0.82rem' }}
+                        title="Delete Student"
+                      >
+                        🗑️ Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* TAB 3: PARENTS DIRECTORY */}
+      {tab === 'PARENTS' && (
+        <section className="panel">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+            <h3 className="section-title" style={{ margin: 0 }}>👨‍👩‍👧 Parents Directory</h3>
+            <input 
+              className="input-field" 
+              placeholder="🔍 Search parents..." 
+              value={parentSearch} 
+              onChange={e => setParentSearch(e.target.value)}
+              style={{ maxWidth: '280px' }}
+            />
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.92rem' }}>
+              <thead>
+                <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
+                  <th style={{ padding: '10px 12px' }}>Parent Name</th>
+                  <th style={{ padding: '10px 12px' }}>Username</th>
+                  <th style={{ padding: '10px 12px' }}>Linked Children</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredParents.length === 0 ? (
+                  <tr><td colSpan={4} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>No parents found.</td></tr>
+                ) : filteredParents.map(p => (
+                  <tr key={p.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '10px 12px', fontWeight: 600 }}>{p.displayName || 'Unnamed'}</td>
+                    <td style={{ padding: '10px 12px' }}><code>{p.username}</code></td>
+                    <td style={{ padding: '10px 12px' }}>
+                      {p.children && p.children.length > 0 ? (
+                        p.children.map(c => (
+                          <div key={c.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#fdf4ff', border: '1px solid #f0abfc', borderRadius: '14px', padding: '2px 8px', margin: '2px 4px', fontSize: '0.85rem' }}>
+                            <span>🎒 {c.displayName || c.username}</span>
+                            <button 
+                              onClick={() => unlinkParent(p.id, c.id)} 
+                              style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 0, fontWeight: 700 }}
+                              title="Unlink child"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>No children linked</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                      <button 
+                        onClick={() => deleteParent(p.id, p.displayName || p.username)} 
+                        className="btn btn-danger" 
+                        style={{ padding: '4px 8px', fontSize: '0.82rem' }}
+                        title="Delete Parent"
+                      >
+                        🗑️ Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* TAB 4: CLASSES DIRECTORY */}
+      {tab === 'CLASSES' && (
+        <section className="panel">
+          <h3 className="section-title">🏫 All School Classes</h3>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.92rem' }}>
+              <thead>
+                <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
+                  <th style={{ padding: '10px 12px' }}>Class Name</th>
+                  <th style={{ padding: '10px 12px' }}>Assigned Teachers</th>
+                  <th style={{ padding: '10px 12px' }}>Enrolled Students</th>
+                  <th style={{ padding: '10px 12px' }}>Active Assignments</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {classes.length === 0 ? (
+                  <tr><td colSpan={5} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>No classes in the school yet.</td></tr>
+                ) : classes.map(c => (
+                  <tr key={c.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '10px 12px', fontWeight: 600 }}>{c.name}</td>
+                    <td style={{ padding: '10px 12px' }}>
+                      {c.teachers && c.teachers.length > 0 ? (
+                        c.teachers.map(t => <span key={t.id} style={{ marginRight: '6px' }}>👩‍🏫 {t.displayName || t.username}</span>)
+                      ) : <span style={{ color: '#94a3b8' }}>None</span>}
+                    </td>
+                    <td style={{ padding: '10px 12px' }}>{c.studentCount} students</td>
+                    <td style={{ padding: '10px 12px' }}>{c.assignmentCount} assignments</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                      <button 
+                        onClick={() => deleteClass(c.id, c.name)} 
+                        className="btn btn-danger" 
+                        style={{ padding: '4px 8px', fontSize: '0.82rem' }}
+                        title="Delete Class"
+                      >
+                        🗑️ Delete Class
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
 
 function StudentDashboard({ token }) {
   const [assignments, setAssignments] = useState([]);
@@ -429,6 +996,8 @@ function StudentDashboard({ token }) {
 
   return (
     <div>
+      
+
       <h2 className="page-title text-center">Let's play and learn! 🚀</h2>
       
       <section className="panel" style={{ marginTop: '20px' }}>
@@ -440,8 +1009,7 @@ function StudentDashboard({ token }) {
         ) : (
           <div className="flex-row flex-wrap justify-center" style={{ gap: '24px' }}>
             {assignments.map(a => {
-              const result = a.results[0]; // Assuming one result per user per assignment
-              const isCompleted = result && result.status === 'COMPLETED';
+              const isCompleted = a.results && a.results.some(r => r.status === 'COMPLETED');
               return (
                 <div key={a.id} className={`activity-card ${isCompleted ? 'completed' : ''}`}>
                   <div className="activity-card-title">{a.title}</div>
@@ -539,13 +1107,7 @@ function ParentDashboard({ token }) {
         )}
       </div>
 
-      <ParentChildManager token={token} onChildLinked={(child) => {
-        setChildren(prev => {
-          if (prev.some(c => c.id === child.id)) return prev;
-          return [...prev, child];
-        });
-        handleSelectChild(child.id);
-      }} />
+      
 
       {childData && (
         <div className="grid-2">
@@ -703,181 +1265,6 @@ function SavedStoryCard({ story, token }) {
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9em' }}>No video URL recorded.</p>
       )}
     </li>
-  );
-}
-
-function ParentChildManager({ token, onChildLinked }) {
-  const [tab, setTab] = useState('CREATE'); // 'CREATE' or 'LINK'
-  
-  // Create child state
-  const [name, setName] = useState('');
-  const [selectedAvatar, setSelectedAvatar] = useState('https://api.dicebear.com/7.x/bottts/svg?seed=Buddy');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Link existing student state
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-
-  const avatarPresets = [
-    'https://api.dicebear.com/7.x/bottts/svg?seed=Buddy',
-    'https://api.dicebear.com/7.x/bottts/svg?seed=Sparky',
-    'https://api.dicebear.com/7.x/bottts/svg?seed=Star',
-    'https://api.dicebear.com/7.x/bottts/svg?seed=Luna',
-    'https://api.dicebear.com/7.x/bottts/svg?seed=Sunny',
-  ];
-
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    setIsSubmitting(true);
-    try {
-      const res = await apiFetch(`${API_URL}/portal/parent/create-child`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ displayName: name.trim(), avatar: selectedAvatar })
-      });
-      const data = await res.json();
-      onChildLinked(data.child);
-      setName('');
-      alert(`🎉 Added ${data.child.displayName} to your family!`);
-    } catch (e) {
-      alert(e.message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleLink = async (e) => {
-    e.preventDefault();
-    if (!username || !password) return;
-    setIsSubmitting(true);
-    try {
-      const res = await apiFetch(`${API_URL}/portal/parent/link-child`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ username, password })
-      });
-      const data = await res.json();
-      onChildLinked(data.child);
-      setUsername('');
-      setPassword('');
-      alert(`🎉 Successfully linked ${data.child.displayName || data.child.username}!`);
-    } catch (e) {
-      alert(e.message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="panel" style={{ maxWidth: '540px', margin: '0 auto 30px' }}>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '20px' }}>
-        <button 
-          type="button"
-          onClick={() => setTab('CREATE')} 
-          className={`btn ${tab === 'CREATE' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ flex: 1, padding: '10px' }}
-        >
-          ✨ Add Child
-        </button>
-        <button 
-          type="button"
-          onClick={() => setTab('LINK')} 
-          className={`btn ${tab === 'LINK' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ flex: 1, padding: '10px' }}
-        >
-          🔗 Link School Account
-        </button>
-      </div>
-
-      {tab === 'CREATE' ? (
-        <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-            Enter your child's name and choose an avatar. No passwords to remember!
-          </p>
-
-          <div>
-            <label style={{ display: 'block', fontWeight: 700, marginBottom: '6px' }}>Child's Name</label>
-            <input 
-              className="input-field" 
-              placeholder="e.g. Maya or Charlie" 
-              value={name} 
-              onChange={e => setName(e.target.value)} 
-              required
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontWeight: 700, marginBottom: '8px' }}>Choose Avatar</label>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-              {avatarPresets.map((av, idx) => (
-                <img 
-                  key={idx} 
-                  src={av} 
-                  alt={`preset-${idx}`}
-                  onClick={() => setSelectedAvatar(av)}
-                  style={{ 
-                    width: '52px', 
-                    height: '52px', 
-                    borderRadius: '50%', 
-                    cursor: 'pointer',
-                    border: selectedAvatar === av ? '4px solid var(--color-primary)' : '2px solid var(--border)',
-                    transform: selectedAvatar === av ? 'scale(1.1)' : 'scale(1)',
-                    transition: 'all 0.2s',
-                    padding: '2px',
-                    background: 'var(--color-sky-blue)'
-                  }} 
-                />
-              ))}
-            </div>
-          </div>
-
-          <button 
-            type="submit" 
-            className="btn btn-success" 
-            style={{ width: '100%', marginTop: '8px' }}
-            disabled={!name.trim() || isSubmitting}
-          >
-            {isSubmitting ? 'Adding...' : 'Add Child to Family ✨'}
-          </button>
-        </form>
-      ) : (
-        <form onSubmit={handleLink} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-            Provide your child's school credentials to link an existing school-created student profile.
-          </p>
-          <div>
-            <label style={{ display: 'block', fontWeight: 700, marginBottom: '6px' }}>Student Username</label>
-            <input 
-              className="input-field" 
-              placeholder="e.g. student1" 
-              value={username} 
-              onChange={e => setUsername(e.target.value)} 
-              required
-            />
-          </div>
-          <div>
-            <label style={{ display: 'block', fontWeight: 700, marginBottom: '6px' }}>Password</label>
-            <input 
-              className="input-field" 
-              type="password" 
-              placeholder="School password" 
-              value={password} 
-              onChange={e => setPassword(e.target.value)} 
-              required
-            />
-          </div>
-          <button 
-            type="submit" 
-            className="btn btn-primary" 
-            style={{ width: '100%', marginTop: '8px' }}
-            disabled={!username || !password || isSubmitting}
-          >
-            {isSubmitting ? 'Linking...' : 'Link School Account 🔗'}
-          </button>
-        </form>
-      )}
-    </div>
   );
 }
 

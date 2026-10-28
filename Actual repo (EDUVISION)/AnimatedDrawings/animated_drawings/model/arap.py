@@ -1,4 +1,4 @@
-﻿# Copyright (c) Meta Platforms, Inc. and affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
@@ -291,7 +291,7 @@ class ARAP():
                     continue
 
             # grab the id of first triangle the point is in or on
-            t_idx = int(containing_t_idxs[0])
+            t_idx = int(np.asarray(containing_t_idxs).flatten()[0])
 
             vertex_ids = triangles[t_idx]                               # get ids of verts in triangle
             a_xy, b_xy, c_xy = vertices[vertex_ids]                     # get xy coords of verts

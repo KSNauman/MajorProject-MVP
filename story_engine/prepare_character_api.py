@@ -24,7 +24,8 @@ def main():
     char_dir = os.path.join(upload_dir, f'char_data_{char_id}')
     os.makedirs(char_dir, exist_ok=True)
     
-    repo_root = r'c:\Major Project - MVP2\Major Project - MVP\Actual repo (EDUVISION)\AnimatedDrawings'
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    repo_root = os.path.join(base_dir, 'Actual repo (EDUVISION)', 'AnimatedDrawings')
     script_path = os.path.join(repo_root, 'examples', 'image_to_annotations.py')
     
     cmd = [sys.executable, script_path, img_path, char_dir]

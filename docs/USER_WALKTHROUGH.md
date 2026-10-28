@@ -20,7 +20,7 @@ This document outlines the actual user journey currently supported by the EduVis
 
 ## 3. Viewing and Launching Apps
 1. On the Student Dashboard, you will see a list of your assigned activities.
-2. Applications that are flagged `isReady: false` in the database (like Math Blaster Sample) will show a disabled **"Coming Soon 🚧"** button. You cannot launch these.
+2. Applications that are flagged `isReady: false` in the database will show a disabled **"Coming Soon 🚧"** button. You cannot launch these.
 3. For ready applications like **Story Studio**, click **Start ▶️**.
 4. The platform securely redirects you to the app, passing your identity and assignment data in the background.
 

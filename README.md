@@ -43,5 +43,4 @@ EduVision is a unified, student-centric educational platform designed for young 
 
 ## Known Limitations
 - The React/Vite portal UI currently utilizes raw HTML without a styling framework (like Tailwind or Bootstrap), prioritizing functional verification over visual design.
-- The `math-blaster-sample` integration is heavily mocked and intentionally disabled ("Coming Soon") to prevent incomplete user experiences.
 - Full "Parent Dashboard" cross-referencing capabilities exist in the database but lack dedicated UI views.

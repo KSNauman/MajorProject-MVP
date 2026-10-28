@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Train Builder 🔢 | EduVision</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .train-track {
+            background: #e2e8f0;
+            border-radius: var(--radius-md);
+            padding: 24px;
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            margin-bottom: 28px;
+            border: 3px dashed #cbd5e1;
+            min-height: 120px;
+            align-items: center;
+        }
+        .train-slot {
+            width: 72px;
+            height: 72px;
+            border-radius: var(--radius-md);
+            background: #ffffff;
+            border: 3px dashed #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #94a3b8;
+            flex-shrink: 0;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .train-slot.hovered {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            transform: scale(1.05);
+        }
+        .train-slot.filled {
+            border-style: solid;
+            border-color: var(--success);
+            background: #ecfdf5;
+            color: var(--success);
+        }
+        .tile-tray {
+            background: #f1f5f9;
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            justify-content: center;
+            border: 2px solid #e2e8f0;
+            min-height: 140px;
+        }
+        .number-tile {
+            width: 68px;
+            height: 68px;
+            border-radius: var(--radius-md);
+            background: linear-gradient(135deg, var(--tile-color, #0284c7), #0ea5e9);
+            color: white;
+            font-size: 1.9rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            transition: transform 0.15s, box-shadow 0.15s;
+            user-select: none;
+        }
+        .number-tile:hover {
+            transform: translateY(-4px) scale(1.04);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        .number-tile:active {
+            cursor: grabbing;
+        }
+        .number-tile.placed {
+            display: none;
+        }
+        .controls-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header class="game-navbar">
+        <a href="/index.html" class="nav-brand"><span>🔢</span> Number Train Builder</a>
+        <div class="nav-controls">
+            <div class="score-badge">⭐ Score: <span id="scoreVal">0</span></div>
+            <div class="stars-badge">🎯 Progress: <span id="progressVal">0/10</span></div>
+            <a id="navExitBtn" href="/index.html" class="btn btn-secondary">Exit Activity 🏠</a>
+        </div>
+    </header>
+
+    <main class="game-container">
+        <div class="controls-bar">
+            <div>
+                <label style="font-weight:700; margin-right:8px;">Challenge Mode:</label>
+                <select id="modeSelect" class="btn btn-secondary" style="padding:6px 14px;">
+                    <option value="1-10">Numbers 1 to 10 🎈</option>
+                    <option value="11-20">Numbers 11 to 20 🚀</option>
+                    <option value="skip-2">Skip Count by 2s (2, 4, 6...20) ⚡</option>
+                    <option value="skip-5">Skip Count by 5s (5, 10...50) 🌟</option>
+                </select>
+            </div>
+            <div>
+                <button id="scatterBtn" class="btn btn-warning">Shuffle 🎲</button>
+                <button id="resetBtn" class="btn btn-danger">Reset 🔄</button>
+            </div>
+        </div>
+
+        <div class="play-board">
+            <h3 style="margin-bottom: 12px; color:#334155;">🚂 Build the Number Sequence in Ascending Order:</h3>
+            <div class="train-track" id="trainTrack"></div>
+
+            <h3 style="margin-bottom: 12px; color:#334155;">📦 Number Blocks (Drag or Click to Place):</h3>
+            <div class="tile-tray" id="tileTray"></div>
+        </div>
+    </main>
+
+    <script src="/js/engine-audio.js"></script>
+    <script src="/js/integration.js"></script>
+    <script>
+        const COLORS = ['#0284c7', '#059669', '#d97706', '#dc2626', '#7c3aed', '#c026d3', '#ea580c', '#16a34a'];
+        let numbers = [];
+        let placedCount = 0;
+        let score = 0;
+        let mistakes = 0;
+        let streak = 0;
+        let draggedTile = null;
+
+        function generateNumbers(mode) {
+            if (mode === '1-10') return Array.from({length: 10}, (_, i) => i + 1);
+            if (mode === '11-20') return Array.from({length: 10}, (_, i) => i + 11);
+            if (mode === 'skip-2') return Array.from({length: 10}, (_, i) => (i + 1) * 2);
+            if (mode === 'skip-5') return Array.from({length: 10}, (_, i) => (i + 1) * 5);
+            return [1,2,3,4,5,6,7,8,9,10];
+        }
+
+        function initGame() {
+            const mode = document.getElementById('modeSelect').value;
+            numbers = generateNumbers(mode);
+            placedCount = 0;
+            score = 0;
+            mistakes = 0;
+            streak = 0;
+            updateStats();
+            renderSlots();
+            renderTiles();
+        }
+
+        function updateStats() {
+            document.getElementById('scoreVal').innerText = score;
+            document.getElementById('progressVal').innerText = `${placedCount}/${numbers.length}`;
+        }
+
+        function renderSlots() {
+            const track = document.getElementById('trainTrack');
+            track.innerHTML = '';
+            
+            // Conductor Rahim Engine
+            const engineEl = document.createElement('div');
+            engineEl.style.cssText = 'display:flex; flex-direction:column; align-items:center; min-width:90px; flex-shrink:0;';
+            engineEl.innerHTML = `
+                <img src="/characters/rahim/animations/wave.gif" style="width:60px; height:60px; object-fit:contain;" alt="Conductor Rahim">
+                <span style="font-size:1.8rem;">🚂</span>
+            `;
+            track.appendChild(engineEl);
+
+            numbers.forEach((num, idx) => {
+                const slot = document.createElement('div');
+                slot.className = 'train-slot';
+                slot.dataset.number = num;
+                slot.dataset.index = idx;
+                slot.innerHTML = `<span style="font-size:0.9rem; position:absolute; top:4px; left:6px; opacity:0.6;">Car ${idx+1}</span>`;
+
+                slot.ondragover = (e) => {
+                    e.preventDefault();
+                    slot.classList.add('hovered');
+                };
+                slot.ondragleave = () => slot.classList.remove('hovered');
+                slot.ondrop = (e) => {
+                    e.preventDefault();
+                    slot.classList.remove('hovered');
+                    if (draggedTile) tryPlaceNumber(draggedTile, slot);
+                };
+
+                track.appendChild(slot);
+            });
+        }
+
+        function renderTiles() {
+            const tray = document.getElementById('tileTray');
+            tray.innerHTML = '';
+
+            const shuffled = [...numbers].sort(() => Math.random() - 0.5);
+            shuffled.forEach((num, idx) => {
+                const tile = document.createElement('div');
+                tile.className = 'number-tile';
+                tile.innerText = num;
+                tile.draggable = true;
+                tile.dataset.number = num;
+                tile.style.setProperty('--tile-color', COLORS[idx % COLORS.length]);
+
+                tile.ondragstart = (e) => {
+                    draggedTile = tile;
+                    soundEngine.playPickup();
+                    e.dataTransfer.setData('text/plain', num.toString());
+                };
+
+                tile.onclick = () => {
+                    soundEngine.playPickup();
+                    const nextSlot = document.querySelector(`.train-slot:not(.filled)`);
+                    if (nextSlot) tryPlaceNumber(tile, nextSlot);
+                };
+
+                tray.appendChild(tile);
+            });
+        }
+
+        function tryPlaceNumber(tile, slot) {
+            const num = parseInt(tile.dataset.number, 10);
+            const targetNum = parseInt(slot.dataset.number, 10);
+
+            if (num === targetNum) {
+                soundEngine.playSnap();
+                slot.classList.add('filled');
+                slot.innerHTML = `<span>${num}</span>`;
+                tile.classList.add('placed');
+
+                streak++;
+                score += 10 + (streak > 2 ? 5 : 0);
+                placedCount++;
+                updateStats();
+
+                if (placedCount === numbers.length) {
+                    onGameWin();
+                }
+            } else {
+                soundEngine.playSoftBounce();
+                mistakes++;
+                streak = 0;
+                score = Math.max(0, score - 2);
+                updateStats();
+
+                slot.style.borderColor = '#ef4444';
+                setTimeout(() => {
+                    if (!slot.classList.contains('filled')) {
+                        slot.style.borderColor = '#94a3b8';
+                    }
+                }, 400);
+            }
+        }
+
+        function onGameWin() {
+            const accuracy = Math.round((numbers.length / (numbers.length + mistakes)) * 100);
+            const stars = accuracy >= 90 ? 3 : accuracy >= 70 ? 2 : 1;
+
+            eduvisionClient.showCelebration({
+                score,
+                stars,
+                title: 'Math Master on the Rails! 🚂⭐',
+                message: `You successfully assembled all ${numbers.length} numbers in order!`,
+                details: { totalNumbers: numbers.length, mistakes, accuracy, stars },
+                onRestart: initGame
+            });
+        }
+
+        document.getElementById('modeSelect').onchange = initGame;
+        document.getElementById('scatterBtn').onclick = () => {
+            soundEngine.playWhoosh();
+            renderTiles();
+        };
+        document.getElementById('resetBtn').onclick = initGame;
+
+        initGame();
+    </script>
+</body>
+</html>

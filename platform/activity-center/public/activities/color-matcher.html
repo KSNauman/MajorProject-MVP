@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Humanoid Color Matcher 🎨✨ | EduVision</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .matching-board {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+            background: #ffffff;
+            border-radius: var(--radius-lg);
+            border: 3px solid #e2e8f0;
+            padding: 32px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+            min-height: 520px;
+            position: relative;
+        }
+        @media (max-width: 800px) {
+            .matching-board {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+        }
+        .column-header {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #1e293b;
+            text-align: center;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .humanoid-rack, .placeholder-rack {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+        /* Draggable Solid Color Humanoid Card */
+        .humanoid-item {
+            background: #f8fafc;
+            border: 3px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+            position: relative;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, opacity 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            min-height: 150px;
+        }
+        .humanoid-item:active {
+            cursor: grabbing;
+        }
+        /* Wiggle Animation when Held or Dragged */
+        .humanoid-item.holding {
+            animation: humanoidWiggle 0.28s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 16px 36px rgba(0,0,0,0.2);
+            border-color: #4f46e5;
+            z-index: 50;
+        }
+        @keyframes humanoidWiggle {
+            0% { transform: scale(1.12) rotate(-9deg); }
+            100% { transform: scale(1.15) rotate(9deg); }
+        }
+        .humanoid-shape-svg {
+            width: 85px;
+            height: 100px;
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+        .humanoid-item.solved {
+            opacity: 0.25;
+            pointer-events: none;
+            transform: scale(0.9);
+            border-style: dashed;
+        }
+        /* Target Placeholders */
+        .placeholder-slot {
+            background: #ffffff;
+            border: 3px dashed #cbd5e1;
+            border-radius: 20px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 150px;
+            transition: all 0.25s;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .placeholder-slot.drag-over {
+            transform: scale(1.05);
+            border-color: #4f46e5;
+            background: #f5f3ff;
+            box-shadow: 0 8px 24px rgba(79, 70, 229, 0.2);
+        }
+        .placeholder-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.05rem;
+            font-weight: 800;
+            padding: 6px 14px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            color: #1e293b;
+        }
+        .slot-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 110px;
+            width: 100%;
+        }
+
+        /* 1. Solid Color Humanoid WINNING JUMP Animation (The Dragged Diagram Itself!) */
+        .anim-winning-humanoid {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: jumpFullBody 0.6s infinite alternate cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-origin: center bottom;
+        }
+        @keyframes jumpFullBody {
+            0% { transform: translateY(0) scale(1, 1); }
+            30% { transform: translateY(-4px) scale(1.06, 0.94); }
+            70% { transform: translateY(-28px) scale(0.96, 1.06); }
+            100% { transform: translateY(-34px) scale(1.02, 1); }
+        }
+        .anim-arm-left-victory {
+            transform-origin: 34px 44px;
+            animation: armWaveLeft 0.6s infinite alternate ease-in-out;
+        }
+        @keyframes armWaveLeft {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(-135deg); }
+        }
+        .anim-arm-right-victory {
+            transform-origin: 66px 44px;
+            animation: armWaveRight 0.6s infinite alternate ease-in-out;
+        }
+        @keyframes armWaveRight {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(135deg); }
+        }
+        .anim-leg-left-kick {
+            transform-origin: 40px 80px;
+            animation: legKickLeft 0.6s infinite alternate ease-in-out;
+        }
+        @keyframes legKickLeft {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(-22deg); }
+        }
+        .anim-leg-right-kick {
+            transform-origin: 60px 80px;
+            animation: legKickRight 0.6s infinite alternate ease-in-out;
+        }
+        @keyframes legKickRight {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(22deg); }
+        }
+
+        /* 2. Solid Color Humanoid SAD WALK Animation (The Dragged Diagram Itself!) */
+        .anim-sad-humanoid {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: sadPaceWalk 1.4s forwards ease-in-out;
+            transform-origin: center bottom;
+        }
+        @keyframes sadPaceWalk {
+            0% { transform: translateX(0); opacity: 1; }
+            25% { transform: translateX(-16px) rotate(-6deg); }
+            50% { transform: translateX(16px) rotate(6deg); opacity: 0.9; }
+            75% { transform: translateX(-8px) rotate(-4deg); opacity: 0.5; }
+            100% { transform: translateX(0) scale(0.8); opacity: 0; }
+        }
+        .anim-head-droop {
+            transform-origin: 50px 38px;
+            animation: headDroopAnim 1.4s infinite alternate ease-in-out;
+        }
+        @keyframes headDroopAnim {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(14deg) translateY(4px); }
+        }
+    </style>
+</head>
+<body>
+    <header class="game-navbar">
+        <a href="/index.html" class="nav-brand"><span>🎨</span> Humanoid Color Matcher</a>
+        <div class="nav-controls">
+            <div class="score-badge">⭐ Score: <span id="scoreVal">0</span></div>
+            <div class="stars-badge">🎯 Matched: <span id="matchVal">0/6</span></div>
+            <a id="navExitBtn" href="/index.html" class="btn btn-secondary">Exit Activity 🏠</a>
+        </div>
+    </header>
+
+    <main class="game-container" style="max-width:1150px;">
+        <div class="activity-hero" style="text-align:center; margin-bottom:20px;">
+            <h1 style="font-size:2rem; font-weight:900; color:#1e293b;">Match Each Solid Color Humanoid to Its Placeholder! ✨</h1>
+            <p style="color:#64748b; font-size:1.05rem;">
+                Hold the humanoid to watch it <strong>wiggle</strong>! Place it in the right slot to see <strong>THAT DRAWING jump with joy</strong>, or make a <strong>sad walk</strong> if it's wrong!
+            </p>
+        </div>
+
+        <div class="matching-board">
+            <!-- Left: Solid Color Humanoid Drawings -->
+            <div>
+                <div class="column-header">
+                    <span>🧒 Solid Color Humanoids</span>
+                </div>
+                <div class="humanoid-rack" id="humanoidRack">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Right: Color Placeholders with Names -->
+            <div>
+                <div class="column-header">
+                    <span>🎯 Color Placeholders</span>
+                </div>
+                <div class="placeholder-rack" id="placeholderRack">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/engine-audio.js"></script>
+    <script src="/js/integration.js"></script>
+    <script>
+        const COLOR_SET = [
+            { id: 'red', name: 'Ruby Red', hex: '#ef4444', emoji: '🔴' },
+            { id: 'blue', name: 'Royal Blue', hex: '#3b82f6', emoji: '🔵' },
+            { id: 'green', name: 'Forest Green', hex: '#22c55e', emoji: '🟢' },
+            { id: 'yellow', name: 'Sun Yellow', hex: '#eab308', emoji: '🟡' },
+            { id: 'purple', name: 'Vivid Purple', hex: '#a855f7', emoji: '🟣' },
+            { id: 'orange', name: 'Sunset Orange', hex: '#f97316', emoji: '🟠' }
+        ];
+
+        let matchedCount = 0;
+        let score = 0;
+        let activeDraggedId = null;
+
+        function shuffle(arr) {
+            return [...arr].sort(() => Math.random() - 0.5);
+        }
+
+        // 1. Static Idle Humanoid Drawing
+        function createHumanoidSvg(colorHex) {
+            return `
+            <svg class="humanoid-shape-svg" viewBox="0 0 100 120">
+                <circle cx="50" cy="24" r="16" fill="${colorHex}" stroke="#1e293b" stroke-width="3"/>
+                <circle cx="44" cy="22" r="2.5" fill="#ffffff"/>
+                <circle cx="56" cy="22" r="2.5" fill="#ffffff"/>
+                <path d="M 45 30 Q 50 35 55 30" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                <path d="M 34 42 L 66 42 L 62 80 L 38 80 Z" fill="${colorHex}" stroke="#1e293b" stroke-width="3"/>
+                <path d="M 34 44 L 16 64 L 22 68 L 36 52" fill="${colorHex}" stroke="#1e293b" stroke-width="2.5"/>
+                <path d="M 66 44 L 84 64 L 78 68 L 64 52" fill="${colorHex}" stroke="#1e293b" stroke-width="2.5"/>
+                <path d="M 40 80 L 36 110 L 44 110 L 46 80" fill="${colorHex}" stroke="#1e293b" stroke-width="2.5"/>
+                <path d="M 54 80 L 56 110 L 64 110 L 60 80" fill="${colorHex}" stroke="#1e293b" stroke-width="2.5"/>
+            </svg>`;
+        }
+
+        // 2. Exact Dragged Diagram Animated by Friend's Core Animation Engine (Winning Jump)
+        function getEngineWinningGif(colorId) {
+            return `
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%;">
+                <img src="/uploads/solid_humanoids/${colorId}/animations/jump.gif" alt="${colorId} winning jump" style="width:115px; height:125px; object-fit:contain; filter:drop-shadow(0 6px 14px rgba(0,0,0,0.12));">
+            </div>`;
+        }
+
+        // 3. Exact Dragged Diagram Animated by Friend's Core Animation Engine (Sad Walk)
+        function getEngineSadGif(colorId) {
+            return `
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%;">
+                <img src="/uploads/solid_humanoids/${colorId}/animations/walk_in_circle.gif" alt="${colorId} sad walk" style="width:110px; height:120px; object-fit:contain; filter:drop-shadow(0 6px 12px rgba(0,0,0,0.12));">
+            </div>`;
+        }
+
+        function initGame() {
+            const humanoids = shuffle(COLOR_SET);
+            const placeholders = shuffle(COLOR_SET);
+
+            const hRack = document.getElementById('humanoidRack');
+            const pRack = document.getElementById('placeholderRack');
+            hRack.innerHTML = '';
+            pRack.innerHTML = '';
+
+            humanoids.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'humanoid-item';
+                card.id = `humanoid-${item.id}`;
+                card.draggable = true;
+                card.innerHTML = createHumanoidSvg(item.hex);
+                
+                card.addEventListener('dragstart', (e) => {
+                    activeDraggedId = item.id;
+                    card.classList.add('holding');
+                    e.dataTransfer.setData('text/plain', item.id);
+                    soundEngine.playPickup();
+                });
+                card.addEventListener('dragend', () => {
+                    card.classList.remove('holding');
+                });
+
+                card.addEventListener('pointerdown', () => {
+                    card.classList.add('holding');
+                    soundEngine.playPickup();
+                });
+                card.addEventListener('pointerup', () => {
+                    card.classList.remove('holding');
+                });
+
+                card.addEventListener('click', () => {
+                    if (card.classList.contains('solved')) return;
+                    if (activeDraggedId === item.id) {
+                        activeDraggedId = null;
+                        card.classList.remove('holding');
+                    } else {
+                        document.querySelectorAll('.humanoid-item').forEach(c => c.classList.remove('holding'));
+                        activeDraggedId = item.id;
+                        card.classList.add('holding');
+                        soundEngine.playPickup();
+                    }
+                });
+
+                hRack.appendChild(card);
+            });
+
+            placeholders.forEach(slot => {
+                const box = document.createElement('div');
+                box.className = 'placeholder-slot';
+                box.id = `slot-${slot.id}`;
+                box.style.borderColor = slot.hex;
+                
+                box.innerHTML = `
+                    <div class="placeholder-badge" style="background:${slot.hex}18; color:${slot.hex};">
+                        <span>${slot.emoji}</span> <span>${slot.name}</span>
+                    </div>
+                    <div class="slot-content">
+                        ${createHumanoidSvg('#94a3b8')}
+                    </div>
+                `;
+
+                box.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    box.classList.add('drag-over');
+                });
+                box.addEventListener('dragleave', () => {
+                    box.classList.remove('drag-over');
+                });
+                box.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    box.classList.remove('drag-over');
+                    const droppedId = e.dataTransfer.getData('text/plain') || activeDraggedId;
+                    handleDrop(droppedId, slot.id, box);
+                    activeDraggedId = null;
+                });
+
+                box.addEventListener('click', () => {
+                    if (activeDraggedId) {
+                        handleDrop(activeDraggedId, slot.id, box);
+                        activeDraggedId = null;
+                    }
+                });
+
+                pRack.appendChild(box);
+            });
+        }
+
+        function handleDrop(humanoidId, slotId, slotElement) {
+            const humanoidCard = document.getElementById(`humanoid-${humanoidId}`);
+            if (!humanoidCard || humanoidCard.classList.contains('solved')) return;
+
+            const draggedColorObj = COLOR_SET.find(c => c.id === humanoidId) || { hex: '#ef4444', name: 'Humanoid' };
+            const isCorrect = (humanoidId === slotId);
+
+            if (isCorrect) {
+                // Correct Match: WINNING ANIMATION OF THAT EXACT DRAGGED DIAGRAM!
+                soundEngine.playSuccess();
+                humanoidCard.classList.add('solved');
+                
+                // Render the dragged diagram actively jumping inside the placeholder using Core Animation Engine GIF!
+                const contentBox = slotElement.querySelector('.slot-content');
+                contentBox.innerHTML = getEngineWinningGif(humanoidId);
+                
+                slotElement.style.background = '#f0fdf4';
+                slotElement.style.borderStyle = 'solid';
+                slotElement.style.borderColor = draggedColorObj.hex;
+
+                score += 100;
+                matchedCount++;
+                document.getElementById('scoreVal').innerText = score;
+                document.getElementById('matchVal').innerText = `${matchedCount}/6`;
+
+                if (matchedCount === 6) {
+                    setTimeout(handleGameWin, 800);
+                }
+            } else {
+                // Wrong Match: SAD WALK ANIMATION OF THAT EXACT DRAGGED DIAGRAM BY CORE ANIMATION ENGINE!
+                soundEngine.playSoftBounce();
+                
+                const contentBox = slotElement.querySelector('.slot-content');
+                const origHtml = contentBox.innerHTML;
+
+                // Dragged diagram appears inside the placeholder performing core engine sad walk
+                contentBox.innerHTML = getEngineSadGif(humanoidId);
+                slotElement.style.background = '#fef2f2';
+
+                humanoidCard.style.opacity = '0.3';
+                humanoidCard.style.pointerEvents = 'none';
+
+                setTimeout(() => {
+                    contentBox.innerHTML = origHtml;
+                    slotElement.style.background = '#ffffff';
+                    humanoidCard.style.opacity = '1';
+                    humanoidCard.style.pointerEvents = 'all';
+                    soundEngine.playWhoosh();
+                }, 1400);
+            }
+        }
+
+        function handleGameWin() {
+            soundEngine.playWinChord();
+            if (window.reportActivityResult) {
+                window.reportActivityResult('color-matcher', {
+                    score: score,
+                    stars: 3,
+                    completed: true
+                });
+            }
+            if (window.showCelebrationModal) {
+                window.showCelebrationModal({
+                    score: score,
+                    timeSeconds: 35,
+                    stars: 3,
+                    customMessage: 'Super Matcher! Every solid-color humanoid drawing is joyously jumping! 🌟'
+                });
+            }
+        }
+
+        initGame();
+    </script>
+</body>
+</html>

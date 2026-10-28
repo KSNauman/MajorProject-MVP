@@ -22,10 +22,11 @@ import shutil
 import json
 from pathlib import Path
 
-REPO_ROOT = Path(r"c:\Major Project - MVP2\Major Project - MVP\Actual repo (EDUVISION)\AnimatedDrawings")
-CHARACTERS_DIR = Path(r"c:\Major Project - MVP2\Major Project - MVP\characters")
+BASE_DIR = Path(__file__).resolve().parent.parent
+REPO_ROOT = BASE_DIR / "Actual repo (EDUVISION)" / "AnimatedDrawings"
+CHARACTERS_DIR = BASE_DIR / "characters"
 ASSETS_DIR = REPO_ROOT / "assets" / "Rahim's Story"
-STORY_ENGINE_DIR = Path(r"c:\Major Project - MVP2\Major Project - MVP\story_engine")
+STORY_ENGINE_DIR = BASE_DIR / "story_engine"
 
 DEFAULTS = {
     'rahim':  'rahim_default .png',   # note the space — that's the actual filename

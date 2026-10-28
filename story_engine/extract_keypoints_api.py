@@ -8,8 +8,8 @@ import tempfile
 import shutil
 
 def extract(img_path):
-    # Absolute path to AnimatedDrawings
-    repo_root = r'c:\Major Project - MVP2\Major Project - MVP\Actual repo (EDUVISION)\AnimatedDrawings'
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    repo_root = os.path.join(base_dir, 'Actual repo (EDUVISION)', 'AnimatedDrawings')
     
     # We create a temporary directory for the output of image_to_annotations.py
     temp_dir = tempfile.mkdtemp()

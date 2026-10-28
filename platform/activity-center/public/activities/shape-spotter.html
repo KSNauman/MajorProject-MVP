@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Humanoid Spotter Detective 🔍✨ | EduVision</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .detective-panel {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: #ffffff;
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border: 2px solid #334155;
+        }
+        @media (max-width: 768px) {
+            .detective-panel {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+        }
+        .target-card-box {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+        .target-preview-frame {
+            width: 100px;
+            height: 100px;
+            background: #ffffff;
+            border-radius: 20px;
+            border: 4px solid #f59e0b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+            animation: pulseGlow 2s infinite alternate;
+        }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.3); }
+            100% { box-shadow: 0 0 28px rgba(245, 158, 11, 0.7); }
+        }
+        .target-preview-img {
+            width: 85px;
+            height: 85px;
+            object-fit: contain;
+        }
+        .target-info h2 {
+            font-size: 1.5rem;
+            font-weight: 900;
+            margin-bottom: 4px;
+            color: #fbbf24;
+        }
+        .target-info p {
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+        /* Playground Field */
+        .playground-field {
+            background: radial-gradient(circle at center, #f8fafc 0%, #e2e8f0 100%);
+            border: 3px solid #cbd5e1;
+            border-radius: var(--radius-lg);
+            min-height: 480px;
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 24px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+        }
+        @media (max-width: 900px) {
+            .playground-field {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 600px) {
+            .playground-field {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        /* Humanoid Character Item in Field */
+        .field-humanoid-card {
+            background: #ffffff;
+            border: 3px solid #e2e8f0;
+            border-radius: 24px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.04);
+            min-height: 180px;
+        }
+        .field-humanoid-card:hover {
+            transform: translateY(-6px) scale(1.05);
+            border-color: #f59e0b;
+            box-shadow: 0 12px 24px rgba(245, 158, 11, 0.2);
+        }
+        .field-humanoid-img {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            transition: all 0.3s;
+        }
+        .field-humanoid-name {
+            font-weight: 800;
+            color: #334155;
+            font-size: 0.95rem;
+            margin-top: 8px;
+        }
+        /* Sad Animation State on Wrong Pick */
+        .field-humanoid-card.wrong-pick {
+            border-color: #ef4444;
+            background: #fef2f2;
+            animation: shakeSad 0.6s ease-in-out;
+        }
+        @keyframes shakeSad {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+        /* Happy Animation State on Correct Pick */
+        .field-humanoid-card.correct-pick {
+            border-color: #22c55e;
+            background: #f0fdf4;
+            transform: scale(1.12);
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.4);
+            z-index: 10;
+        }
+        .streak-badge {
+            background: #f59e0b;
+            color: #ffffff;
+            font-weight: 800;
+            padding: 6px 14px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="game-navbar">
+        <a href="/index.html" class="nav-brand"><span>🔍</span> Humanoid Spotter Detective</a>
+        <div class="nav-controls">
+            <div class="score-badge">⭐ Score: <span id="scoreVal">0</span></div>
+            <div class="streak-badge">🔥 Streak: <span id="streakVal">0</span></div>
+            <div class="stars-badge">Round: <span id="roundVal">1/8</span></div>
+            <a id="navExitBtn" href="/index.html" class="btn btn-secondary">Exit Activity 🏠</a>
+        </div>
+    </header>
+
+    <main class="game-container" style="max-width:1150px;">
+        <!-- Detective Clue Banner -->
+        <div class="detective-panel">
+            <div class="target-card-box">
+                <div class="target-preview-frame">
+                    <img id="targetImg" class="target-preview-img" src="/characters/rahim/animations/idel.gif" alt="Target Character">
+                </div>
+                <div class="target-info">
+                    <div style="font-size:0.85rem; font-weight:700; color:#cbd5e1; text-transform:uppercase; letter-spacing:1px;">Mystery Mission</div>
+                    <h2>Spot <span id="targetName">Rahim the Explorer</span>!</h2>
+                    <p id="targetHint">Look for Rahim in the scattered group of friends!</p>
+                </div>
+            </div>
+
+            <div style="text-align:right;">
+                <div style="font-size:0.85rem; color:#94a3b8;">Find & tap the target friend</div>
+                <div style="font-weight:800; color:#38bdf8; font-size:1.1rem;" id="feedbackMsg">Carefully inspect the drawings!</div>
+            </div>
+        </div>
+
+        <!-- Scattered Field of Characters -->
+        <div class="playground-field" id="playgroundField">
+            <!-- Rendered by JS -->
+        </div>
+    </main>
+
+    <script src="/js/engine-audio.js"></script>
+    <script src="/js/integration.js"></script>
+    <script>
+        // Core Engine Humanoid Roster
+        const CHARACTERS = [
+            { id: 'rahim', name: 'Rahim the Boy', role: 'Explorer' },
+            { id: 'sister', name: 'Sister Maya', role: 'Joyful Sister' },
+            { id: 'mother', name: 'Mother Sarah', role: 'Caring Mother' },
+            { id: 'father', name: 'Father John', role: 'Kind Father' },
+            { id: 'grandpa', name: 'Grandpa Walter', role: 'Wise Grandpa' },
+            { id: 'grandma', name: 'Grandma Elena', role: 'Sweet Grandma' }
+        ];
+
+        let currentRound = 1;
+        const totalRounds = 8;
+        let score = 0;
+        let streak = 0;
+        let currentTarget = null;
+        let isProcessing = false;
+
+        function shuffle(arr) {
+            return [...arr].sort(() => Math.random() - 0.5);
+        }
+
+        function startRound() {
+            isProcessing = false;
+            document.getElementById('roundVal').innerText = `${currentRound}/${totalRounds}`;
+            document.getElementById('feedbackMsg').innerText = 'Carefully inspect the drawings!';
+            document.getElementById('feedbackMsg').style.color = '#38bdf8';
+
+            // Pick a random target
+            currentTarget = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
+            
+            // Set Target UI
+            document.getElementById('targetImg').src = `/characters/${currentTarget.id}/animations/idel.gif`;
+            document.getElementById('targetName').innerText = currentTarget.name;
+            document.getElementById('targetHint').innerText = `Can you spot ${currentTarget.name} among the scattered friends?`;
+
+            // Prepare scattered field showing ONLY UNIQUE options (each character appears exactly once, no duplicates!)
+            const shuffledField = shuffle([...CHARACTERS]);
+
+            // Render field
+            const field = document.getElementById('playgroundField');
+            field.innerHTML = '';
+
+            shuffledField.forEach((char, idx) => {
+                const card = document.createElement('div');
+                card.className = 'field-humanoid-card';
+                card.id = `field-char-${idx}`;
+                
+                card.innerHTML = `
+                    <img class="field-humanoid-img" src="/characters/${char.id}/animations/idel.gif" alt="${char.name}">
+                    <div class="field-humanoid-name">${char.name}</div>
+                `;
+
+                card.onclick = () => handleCharacterPick(char, card);
+                field.appendChild(card);
+            });
+        }
+
+        function handleCharacterPick(selectedChar, cardElement) {
+            if (isProcessing) return;
+
+            const isCorrect = (selectedChar.id === currentTarget.id);
+
+            if (isCorrect) {
+                isProcessing = true;
+                soundEngine.playSuccess();
+                cardElement.classList.add('correct-pick');
+
+                // Burst into happy animation from Core Engine!
+                const img = cardElement.querySelector('.field-humanoid-img');
+                img.src = `/characters/${selectedChar.id}/animations/jump.gif`;
+
+                score += 100 + (streak * 20);
+                streak++;
+                document.getElementById('scoreVal').innerText = score;
+                document.getElementById('streakVal').innerText = streak;
+                document.getElementById('feedbackMsg').innerText = `✨ You found ${currentTarget.name}! Happy Jump!`;
+                document.getElementById('feedbackMsg').style.color = '#4ade80';
+
+                setTimeout(() => {
+                    if (currentRound >= totalRounds) {
+                        handleGameWin();
+                    } else {
+                        currentRound++;
+                        startRound();
+                    }
+                }, 1600);
+
+            } else {
+                // Wrong pick: Animate sadly using Core Engine!
+                soundEngine.playSoftBounce();
+                cardElement.classList.add('wrong-pick');
+
+                // Sad sleep / idel animation
+                const img = cardElement.querySelector('.field-humanoid-img');
+                img.src = `/characters/${selectedChar.id}/animations/sleep.gif`;
+
+                streak = 0;
+                document.getElementById('streakVal').innerText = streak;
+                document.getElementById('feedbackMsg').innerText = `Oops! That is ${selectedChar.name}. Look for ${currentTarget.name}!`;
+                document.getElementById('feedbackMsg').style.color = '#f87171';
+
+                setTimeout(() => {
+                    cardElement.classList.remove('wrong-pick');
+                    img.src = `/characters/${selectedChar.id}/animations/idel.gif`;
+                }, 1400);
+            }
+        }
+
+        function handleGameWin() {
+            soundEngine.playWinChord();
+            if (window.reportActivityResult) {
+                window.reportActivityResult('shape-spotter', {
+                    score: score,
+                    stars: 3,
+                    completed: true
+                });
+            }
+            if (window.showCelebrationModal) {
+                window.showCelebrationModal({
+                    score: score,
+                    timeSeconds: 45,
+                    stars: 3,
+                    customMessage: 'Master Detective! You spotted every single friend and made them celebrate! 🌟'
+                });
+            }
+        }
+
+        startRound();
+    </script>
+</body>
+</html>

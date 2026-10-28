@@ -3,120 +3,113 @@ const prisma = new PrismaClient();
 const bcrypt = require('bcryptjs');
 
 async function main() {
-    // Write: Create Story Studio
-    const app = await prisma.application.upsert({
-        where: { id: 'story-studio' },
-        update: {},
-        create: {
+    console.log('--- Seeding EduVision Database (Clean Project Baseline) ---');
+
+    // 1. Applications Registry (Story Studio & Core Engine Humanoid apps)
+    const applications = [
+        {
             id: 'story-studio',
             name: 'Story Studio',
             version: '1.0.0',
-            launchUrl: 'http://localhost:3001/'
-        }
-    });
-    console.log('Created App:', app);
-
-    // Write: Create Math Blaster Sample
-    const mathApp = await prisma.application.upsert({
-        where: { id: 'math-blaster-sample' },
-        update: {},
-        create: {
-            id: 'math-blaster-sample',
-            name: 'Math Blaster Sample',
+            launchUrl: 'http://localhost:3001/',
+            isReady: true
+        },
+        {
+            id: 'color-filling',
+            name: 'Humanoid Color & Animate Studio',
             version: '1.0.0',
-            launchUrl: 'http://localhost:5000/index.html',
-            isReady: false
+            launchUrl: 'http://localhost:5000/activities/color-filling.html',
+            isReady: true
+        },
+        {
+            id: 'color-matcher',
+            name: 'Humanoid Color Matcher',
+            version: '1.0.0',
+            launchUrl: 'http://localhost:5000/activities/color-matcher.html',
+            isReady: true
+        },
+        {
+            id: 'shape-spotter',
+            name: 'Humanoid Spotter Detective',
+            version: '1.0.0',
+            launchUrl: 'http://localhost:5000/activities/shape-spotter.html',
+            isReady: true
+        },
+        {
+            id: 'objects-counting',
+            name: 'Humanoid Count & Play',
+            version: '1.0.0',
+            launchUrl: 'http://localhost:5000/activities/objects-counting.html',
+            isReady: true
+        },
+        {
+            id: 'puzzle-builder',
+            name: 'Humanoid Jigsaw Puzzle',
+            version: '1.0.0',
+            launchUrl: 'http://localhost:5000/activities/puzzle-builder.html',
+            isReady: true
+        },
+        {
+            id: 'number-sequencing',
+            name: 'Humanoid Train Builder',
+            version: '1.0.0',
+            launchUrl: 'http://localhost:5000/activities/number-sequencing.html',
+            isReady: true
         }
-    });
-    console.log('Created App:', mathApp);
+    ];
 
-    // Write: Create a user
-    const hash = await bcrypt.hash('password123', 10);
-    const user = await prisma.user.upsert({
+    for (const app of applications) {
+        await prisma.application.upsert({
+            where: { id: app.id },
+            update: {
+                name: app.name,
+                version: app.version,
+                launchUrl: app.launchUrl,
+                isReady: app.isReady
+            },
+            create: app
+        });
+    }
+    console.log(`Registered ${applications.length} applications.`);
+
+    // 2. Base Administrative / Teacher / Parent User Accounts
+    const defaultPasswordHash = await bcrypt.hash('password123', 10);
+    
+    await prisma.user.upsert({
         where: { username: 'admin' },
-        update: {},
+        update: { passwordHash: defaultPasswordHash, role: 'ADMIN', displayName: 'Teacher Admin' },
         create: {
             username: 'admin',
-            passwordHash: hash,
+            displayName: 'Teacher Admin',
+            passwordHash: defaultPasswordHash,
             role: 'ADMIN'
         }
     });
-    console.log('Created User:', user);
 
-    const student = await prisma.user.upsert({
-        where: { username: 'student1' },
-        update: {
-            displayName: 'Alice',
-            avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Alice'
-        },
+    await prisma.user.upsert({
+        where: { username: 'teacher1' },
+        update: { passwordHash: defaultPasswordHash, role: 'TEACHER', displayName: 'Teacher Sarah' },
         create: {
-            username: 'student1',
-            passwordHash: hash,
-            displayName: 'Alice',
-            avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Alice',
-            role: 'STUDENT'
-        }
-    });
-    console.log('Created Student:', student);
-
-    const student2 = await prisma.user.upsert({
-        where: { username: 'student2' },
-        update: {
-            displayName: 'Bobby',
-            avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Bobby'
-        },
-        create: {
-            username: 'student2',
-            passwordHash: hash,
-            displayName: 'Bobby',
-            avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Bobby',
-            role: 'STUDENT'
+            username: 'teacher1',
+            displayName: 'Teacher Sarah',
+            passwordHash: defaultPasswordHash,
+            role: 'TEACHER'
         }
     });
 
-    const testClass = await prisma.class.create({
-        data: {
-            name: 'Kindergarten Yellow'
-        }
-    });
-
-    await prisma.classMembership.createMany({
-        data: [
-            { userId: user.id, classId: testClass.id, role: 'TEACHER' },
-            { userId: student.id, classId: testClass.id, role: 'STUDENT' },
-            { userId: student2.id, classId: testClass.id, role: 'STUDENT' }
-        ]
-    });
-    console.log('Created Class and Memberships:', testClass);
-
-    // Write: Create Parent and link students
-    const parent = await prisma.user.upsert({
+    await prisma.user.upsert({
         where: { username: 'parent1' },
-        update: {},
+        update: { passwordHash: defaultPasswordHash, role: 'PARENT', displayName: 'Parent User' },
         create: {
             username: 'parent1',
-            passwordHash: hash,
-            displayName: 'Mr. Parent',
+            displayName: 'Parent User',
+            passwordHash: defaultPasswordHash,
             role: 'PARENT'
         }
     });
 
-    await prisma.parentChild.upsert({
-        where: { parentId_childId: { parentId: parent.id, childId: student.id } },
-        update: {},
-        create: { parentId: parent.id, childId: student.id }
-    });
-
-    await prisma.parentChild.upsert({
-        where: { parentId_childId: { parentId: parent.id, childId: student2.id } },
-        update: {},
-        create: { parentId: parent.id, childId: student2.id }
-    });
-    console.log('Created Parent and Linked Students:', parent);
-
-    // Read: Fetch all apps
-    const allApps = await prisma.application.findMany();
-    console.log('All Apps:', allApps);
+    console.log('Seeded standard accounts: admin, teacher1, parent1 (password: password123)');
+    console.log('Database initialized in clean state ready for classes and students!');
 }
 
 main()

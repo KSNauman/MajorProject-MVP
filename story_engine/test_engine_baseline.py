@@ -3,12 +3,13 @@ import subprocess
 import json
 import time
 
-STORY_ENGINE_DIR = r"c:\Major Project - MVP2\Major Project - MVP\story_engine"
-CHAR_DIR = r"c:\Major Project - MVP2\Major Project - MVP\characters\rahim"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+STORY_ENGINE_DIR = os.path.join(BASE_DIR, "story_engine")
+CHAR_DIR = os.path.join(BASE_DIR, "characters", "rahim")
 
 def run_prepare_character():
     print("Testing prepare_character_api.py...")
-    img_path = r"c:\Major Project - MVP2\Major Project - MVP\mask_test.png"
+    img_path = os.path.join(BASE_DIR, "mask_test.png")
     cmd = ["python", "prepare_character_api.py", img_path, "dummy", "none", "test_job_3"]
     t0 = time.time()
     res = subprocess.run(cmd, cwd=STORY_ENGINE_DIR, capture_output=True, text=True)

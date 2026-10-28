@@ -167,6 +167,25 @@ describe('Onboarding Simplification & Relationship Flow', () => {
 
         expect(rosterRes.status).toBe(200);
         expect(rosterRes.body.some(s => s.id === createdChildId)).toBe(true);
+
+        // Attempting to enroll student into a second class must be rejected (400)
+        const secondClass = await prisma.class.create({
+            data: {
+                name: 'Second Class Test',
+                memberships: { create: { userId: teacherUser.id, role: 'TEACHER' } }
+            }
+        });
+
+        const duplicateEnrollRes = await request(app)
+            .post(`/api/portal/classes/${secondClass.id}/members`)
+            .set('Authorization', `Bearer ${teacherToken}`)
+            .send({ studentId: createdChildId });
+
+        expect(duplicateEnrollRes.status).toBe(400);
+        expect(duplicateEnrollRes.body.error).toContain('already enrolled');
+
+        await prisma.classMembership.deleteMany({ where: { classId: secondClass.id } });
+        await prisma.class.delete({ where: { id: secondClass.id } });
     });
 
     test('6. Student logs in passwordlessly using class and avatar selection', async () => {

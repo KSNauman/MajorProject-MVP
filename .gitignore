@@ -140,3 +140,5 @@ hs_err_pid*.log
 # Temp scripts and Public Uploads
 scratch/
 eduvision_ui/public/uploads/
+platform/activity-center/public/uploads/custom_characters/*
+!platform/activity-center/public/uploads/custom_characters/.gitkeep
