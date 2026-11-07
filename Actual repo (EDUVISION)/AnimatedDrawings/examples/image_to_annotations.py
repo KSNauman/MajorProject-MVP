@@ -145,6 +145,10 @@ def _build_skeleton(kpts: np.ndarray) -> list:
 # SEGMENTATION  —  hybrid rembg + OpenCV (unchanged, proven approach)
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Below this share of the pen lines kept by rembg, a drawing is treated as thin line art.
+# Colored drawings measure 0.93 or more, so they are unaffected.
+THIN_DRAWING_PEN_KEPT = 0.9
+
 def segment(img: np.ndarray):
     """
     Hybrid segmentation mask for a cropped character image:
@@ -179,6 +183,20 @@ def segment(img: np.ndarray):
 
     # 4. Intersect AI silhouette with pen-line mask
     combined = cv2.bitwise_and(thresh, ai_mask)
+
+    # rembg often sees only the head of a thin line drawing. When it misses much of
+    # the pen work, keep every whole stroke it touched. The band around the crop is
+    # cleared first so the edge of the paper in a photo is not taken as a stroke.
+    pen_kept = (combined > 0).sum() / max((thresh > 0).sum(), 1)
+    if pen_kept < THIN_DRAWING_PEN_KEPT:
+        band = max(3, int(0.015 * max(thresh.shape)))
+        strokes = thresh.copy()
+        strokes[:band, :] = strokes[-band:, :] = 0
+        strokes[:, :band] = strokes[:, -band:] = 0
+        _, labels = cv2.connectedComponents(strokes)
+        touched = np.unique(labels[(combined > 0) & (strokes > 0)])
+        whole_strokes = np.isin(labels, touched[touched != 0]).astype(np.uint8) * 255
+        combined = cv2.bitwise_or(combined, whole_strokes)
 
     # 5. Flood-fill from all borders to kill stray disconnected blobs
     mask_ff = np.zeros([combined.shape[0] + 2, combined.shape[1] + 2], np.uint8)
@@ -224,6 +242,19 @@ def segment(img: np.ndarray):
 
 import json
 
+def _read_on_white(img_fn: str):
+    """Read an image, placing any transparent areas (such as Fixer erasures) on white."""
+    raw = cv2.imread(img_fn, cv2.IMREAD_UNCHANGED)
+    if raw is not None and raw.ndim == 3 and raw.shape[2] == 4 and raw.dtype == np.uint8:
+        alpha = raw[:, :, 3:].astype(np.float32) / 255.0
+        return (raw[:, :, :3] * alpha + 255 * (1 - alpha)).astype(np.uint8)
+    return cv2.imread(img_fn)
+
+
+def _manual_joint_xy(kp: dict) -> tuple:
+    return (kp['loc'][0], kp['loc'][1]) if 'loc' in kp else (kp.get('x', 0), kp.get('y', 0))
+
+
 def image_to_annotations(img_fn: str, out_dir: str, kpts_file: str = None) -> None:
     """
     Full Phase 1 pipeline: sketch image → annotation files for the ARAP engine.
@@ -236,7 +267,7 @@ def image_to_annotations(img_fn: str, out_dir: str, kpts_file: str = None) -> No
     outdir.mkdir(exist_ok=True, parents=True)
 
     # ── Read & resize ─────────────────────────────────────────────────────────
-    img = cv2.imread(img_fn)
+    img = _read_on_white(img_fn)
     if img is None:
         raise FileNotFoundError(f"Cannot open image: {img_fn}")
     if len(img.shape) != 3:
@@ -246,6 +277,7 @@ def image_to_annotations(img_fn: str, out_dir: str, kpts_file: str = None) -> No
 
     cv2.imwrite(str(outdir / "image.png"), img)
 
+    scale = 1.0
     if np.max(img.shape) > 1000:
         scale = 1000 / np.max(img.shape)
         img   = cv2.resize(img, (
@@ -278,6 +310,21 @@ def image_to_annotations(img_fn: str, out_dir: str, kpts_file: str = None) -> No
             f"Best: conf={conf:.3f}, bbox=[{l},{t},{r},{b}]"
         )
 
+    # Joints placed by hand in the Fixer take priority over the model's, and the
+    # crop grows to include them so a limb the model missed is not cut off.
+    manual_joints = None
+    if kpts_file and Path(kpts_file).exists():
+        logging.info(f"Using manual keypoints from: {kpts_file}")
+        with open(kpts_file, "r") as f:
+            manual_joints = json.load(f)
+        margin = 15
+        xs = [_manual_joint_xy(kp)[0] * scale for kp in manual_joints]
+        ys = [_manual_joint_xy(kp)[1] * scale for kp in manual_joints]
+        l = max(0,            min(l, round(min(xs)) - margin))
+        t = max(0,            min(t, round(min(ys)) - margin))
+        r = min(img.shape[1], max(r, round(max(xs)) + margin))
+        b = min(img.shape[0], max(b, round(max(ys)) + margin))
+
     with open(str(outdir / "bounding_box.yaml"), "w") as f:
         yaml.dump({"left": l, "top": t, "right": r, "bottom": b}, f)
 
@@ -289,26 +336,22 @@ def image_to_annotations(img_fn: str, out_dir: str, kpts_file: str = None) -> No
     # ── Phase 1-B: Segmentation ───────────────────────────────────────────────
     mask = segment(cropped)
 
-    # ── Phase 1-C: Keypoint Extraction on cropped image ──────────────────────
-    crop_results = model(cropped, verbose=False, device=device)
-    crop_result  = crop_results[0]
-
-    if (crop_result.keypoints is None
-            or len(crop_result.keypoints) == 0
-            or crop_result.keypoints.data is None
-            or len(crop_result.keypoints.data) == 0):
-        # Fallback: translate full-image keypoints into crop-space coordinates
-        logging.warning("No keypoints on crop — translating full-image keypoints to crop space.")
-        if result.keypoints is None or len(result.keypoints.data) == 0:
-            msg = "YOLOv8 produced no keypoints. Cannot build skeleton."
-            logging.critical(msg)
-            assert False, msg
-        kpts = result.keypoints.data[0].cpu().numpy().copy()
-        kpts[:, 0] -= l   # shift x into crop space
-        kpts[:, 1] -= t   # shift y into crop space
+    # ── Phase 1-C: Keypoint Extraction (Manual / Inferred) ──────────────────
+    if manual_joints:
+        skeleton = []
+        for kp in manual_joints:
+            kx, ky = _manual_joint_xy(kp)
+            skeleton.append({
+                'loc': [
+                    int(np.clip(round(kx * scale - l), 0, cropped.shape[1] - 1)),
+                    int(np.clip(round(ky * scale - t), 0, cropped.shape[0] - 1)),
+                ],
+                'name': kp['name'],
+                'parent': kp.get('parent'),
+            })
+        logging.info(f"Custom skeleton built with {len(skeleton)} joints.")
     else:
-        crop_results = model(cropped, verbose=False)
-        crop_result  = crop_results[0]
+        crop_result = model(cropped, verbose=False, device=device)[0]
 
         if (crop_result.keypoints is None
                 or len(crop_result.keypoints) == 0
@@ -337,7 +380,7 @@ def image_to_annotations(img_fn: str, out_dir: str, kpts_file: str = None) -> No
 
         logging.info(f"Keypoints extracted: {kpts.shape[0]} joints")
 
-        # ── Build AnimatedDrawings skeleton ───────────────────────────────────────
+        # ── Build AnimatedDrawings skeleton ───────────────────────────────────
         skeleton = _build_skeleton(kpts)
 
     # ── Save all Phase-2 inputs ───────────────────────────────────────────────

@@ -17,7 +17,7 @@ router.post('/login', async (req, res, next) => {
         // 2. If not found, try finding by case-insensitive username, displayName, or parent_ prefix
         if (!user) {
             const stripped = cleanInput.toLowerCase().replace(/[^a-z0-9_]/g, '');
-            user = await prisma.user.findFirst({
+            const matches = await prisma.user.findMany({
                 where: {
                     OR: [
                         { username: { equals: cleanInput, mode: 'insensitive' } },
@@ -25,8 +25,13 @@ router.post('/login', async (req, res, next) => {
                         { username: { equals: stripped, mode: 'insensitive' } },
                         { username: { equals: `parent_${stripped}`, mode: 'insensitive' } }
                     ]
-                }
+                },
+                take: 2
             });
+            if (matches.length > 1) {
+                return res.status(401).json({ error: 'More than one account has this name. Please log in with your username.' });
+            }
+            user = matches[0];
         }
 
         if (!user) return res.status(401).json({ error: 'Invalid credentials' });
@@ -36,7 +41,7 @@ router.post('/login', async (req, res, next) => {
 
         const token = jwt.sign(
             { id: user.id, username: user.username, role: user.role },
-            process.env.JWT_SECRET || 'secret',
+            process.env.JWT_SECRET,
             { expiresIn: '1d' }
         );
 
@@ -73,7 +78,7 @@ router.post('/student-login', async (req, res, next) => {
         const user = membership.user;
         const token = jwt.sign(
             { id: user.id, username: user.username, role: user.role, classId: classId },
-            process.env.JWT_SECRET || 'secret',
+            process.env.JWT_SECRET,
             { expiresIn: '1d' }
         );
 

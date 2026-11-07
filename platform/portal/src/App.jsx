@@ -8,9 +8,11 @@ function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || 'null'));
   const [view, setView] = useState('LANDING'); // LANDING, TEACHER_LOGIN, STUDENT_CLASS, STUDENT_SELECT
+  const [loginError, setLoginError] = useState('');
 
   const login = async (username, password) => {
     logger.newCorrelationId();
+    setLoginError('');
     try {
       const res = await apiFetch(`${API_URL}/auth/login`, {
         method: 'POST',
@@ -23,7 +25,7 @@ function App() {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
     } catch (err) {
-      alert(`${err.message} ${err.requestId ? `(ReqID: ${err.requestId})` : ''}`);
+      setLoginError(`${err.message} ${err.requestId ? `(ReqID: ${err.requestId})` : ''}`);
     }
   };
 
@@ -49,6 +51,7 @@ function App() {
     setToken(null);
     setUser(null);
     setView('LANDING');
+    setLoginError('');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
   };
@@ -56,69 +59,85 @@ function App() {
   if (token && user) {
     return (
       <div className="dashboard-container">
-<header className="portal-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+        <header className="portal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
             <h1>EduVision ✨</h1>
             {user.role === 'STUDENT' && (
               <a
                 id="headerPlayForFunBtn"
                 href={`http://localhost:5000/index.html?mode=fun&returnUrl=${encodeURIComponent(window.location.href)}`}
-                className="btn"
-                style={{
-                  background: 'linear-gradient(135deg, #f59e0b 0%, #ec4899 50%, #8b5cf6 100%)',
-                  color: '#ffffff',
-                  fontWeight: 700,
-                  fontSize: '0.95rem',
-                  padding: '8px 20px',
-                  borderRadius: '30px',
-                  textDecoration: 'none',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 14px rgba(236, 72, 153, 0.35)',
-                  cursor: 'pointer',
-                  border: '2px solid #ffffff'
-                }}
+                className="btn-fun"
               >
                 <span>🎡</span> Play for Fun! 🎈
               </a>
             )}
           </div>
-          <div className="user-badge" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="user-badge">
             {user.avatar && <img src={user.avatar} alt="avatar" />}
             <span>Hi, <strong>{user.displayName || user.username}</strong></span>
-            <button onClick={logout} className="btn btn-danger">Exit</button>
+            <button onClick={logout} className="btn btn-danger btn-sm">Exit</button>
           </div>
         </header>
         {user.role === 'ADMIN' ? <AdminDashboard token={token} /> :
          user.role === 'TEACHER' ? <TeacherDashboard token={token} /> : 
          user.role === 'PARENT' ? <ParentDashboard token={token} /> : 
-         <StudentDashboard token={token} />}
+         <StudentDashboard token={token} user={user} />}
       </div>
     );
   }
 
   return (
-    <div className="container text-center" style={{ marginTop: '8vh', marginBottom: '8vh' }}>
-      <h1 className="title-main" style={{ marginBottom: '40px' }}>EduVision ✨</h1>
-      
+    <div className="container text-center" style={{ marginTop: '5vh', marginBottom: '5vh' }}>
       {view === 'LANDING' && (
-        <div className="flex-row justify-center flex-wrap" style={{ flexDirection: 'column', gap: '20px' }}>
-          <button onClick={() => setView('STUDENT_CLASS')} className="btn-massive">
-            I'm a Student! 🎒
-          </button>
-          <button onClick={() => setView('TEACHER_LOGIN')} className="text-link">
-            Teacher / Parent Login
-          </button>
+        <div>
+          <h1 className="title-main">EduVision ✨</h1>
+          <p className="subtitle-main">Early Learning & Creative Story Studio</p>
+          
+          <div className="entry-card-grid">
+            <div className="entry-card">
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '2.8rem' }}>🎒</span>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>Student Playground</h3>
+                <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', margin: 0 }}>Interactive activities and learning games.</p>
+              </div>
+              <button onClick={() => setView('STUDENT_CLASS')} className="btn btn-primary btn-lg" style={{ width: '100%' }}>
+                Enter as Student 🚀
+              </button>
+            </div>
+
+            <div className="entry-card">
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '2.8rem' }}>🏫</span>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>Staff & Family Portal</h3>
+                <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', margin: 0 }}>Teacher, parent, and admin access.</p>
+              </div>
+              <button onClick={() => { setView('TEACHER_LOGIN'); setLoginError(''); }} className="btn btn-secondary btn-lg" style={{ width: '100%' }}>
+                Staff / Parent Login 🔑
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
       {view === 'TEACHER_LOGIN' && (
-        <div style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'left' }}>
-          <h2 className="section-title text-center">Login</h2>
+        <div style={{ maxWidth: '380px', margin: '0 auto', textAlign: 'left' }}>
+          <div className="text-center" style={{ marginBottom: '24px' }}>
+            <h1 className="page-title" style={{ fontSize: '1.65rem', marginBottom: '6px' }}>Staff & Family Login</h1>
+          </div>
+
+          {loginError && (
+            <div className="alert-banner alert-danger">
+              <span>⚠️</span>
+              <span>{loginError}</span>
+            </div>
+          )}
+
           <Login onLogin={login} />
+          
           <div className="text-center" style={{ marginTop: '20px' }}>
-            <button onClick={() => setView('LANDING')} className="text-link">Back</button>
+            <button onClick={() => { setView('LANDING'); setLoginError(''); }} className="btn btn-secondary btn-sm">
+              ⬅️ Back to Home
+            </button>
           </div>
         </div>
       )}
@@ -133,11 +152,31 @@ function App() {
 function Login({ onLogin }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+
   return (
     <div className="form-group">
-      <input className="input-field" placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
-      <input className="input-field" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
-      <button onClick={() => onLogin(username, password)} className="btn btn-primary" style={{ width: '100%', marginTop: '10px' }}>Log In</button>
+      <div>
+        <label className="input-label" style={{ fontWeight: 700, fontSize: '0.88rem', color: '#334155', marginBottom: '6px', display: 'block' }}>Username or Display Name</label>
+        <input 
+          type="text" 
+          value={username} 
+          onChange={e => setUsername(e.target.value)} 
+          className="input-field" 
+          placeholder="e.g. teacher1, Robert Davis, admin" 
+        />
+      </div>
+      <div>
+        <label className="input-label" style={{ fontWeight: 700, fontSize: '0.88rem', color: '#334155', marginBottom: '6px', display: 'block' }}>Password</label>
+        <input 
+          type="password" 
+          value={password} 
+          onChange={e => setPassword(e.target.value)} 
+          className="input-field" 
+          placeholder="••••••••" 
+          onKeyDown={e => { if (e.key === 'Enter') onLogin(username, password); }}
+        />
+      </div>
+      <button onClick={() => onLogin(username, password)} className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }}>Log In</button>
     </div>
   );
 }
@@ -151,14 +190,15 @@ function StudentClassSelect({ onClassSelect, onBack }) {
 
   return (
     <div>
-      <div style={{ textAlign: 'left', marginBottom: '20px' }}>
-        <button onClick={onBack} className="text-link">⬅️ Back</button>
+      <div style={{ textAlign: 'left', marginBottom: '16px' }}>
+        <button onClick={onBack} className="btn btn-secondary btn-sm">⬅️ Back to Home</button>
       </div>
-      <h2 className="page-title">Select Your Class</h2>
-      <div className="flex-row justify-center flex-wrap" style={{ marginTop: '30px', gap: '20px' }}>
+      <h2 className="page-title">Choose Your Class! 🏫</h2>
+      <div className="class-grid" style={{ marginTop: '24px' }}>
         {classes.map(c => (
           <button key={c.id} onClick={() => onClassSelect(c)} className="class-button">
-            {c.name}
+            <span style={{ fontSize: '2rem' }}>🏫</span>
+            <span>{c.name}</span>
           </button>
         ))}
       </div>
@@ -177,22 +217,26 @@ function StudentAvatarSelect({ classInfo, onStudentSelect, onBack }) {
 
   return (
     <div>
-      <div style={{ textAlign: 'left', marginBottom: '20px' }}>
-        <button onClick={onBack} className="text-link">⬅️ Back to Classes</button>
+      <div style={{ textAlign: 'left', marginBottom: '16px' }}>
+        <button onClick={onBack} className="btn btn-secondary btn-sm">⬅️ Back to Classes</button>
       </div>
-      <h2 className="page-title">Who are you?</h2>
-      <div className="flex-row justify-center flex-wrap" style={{ marginTop: '30px', gap: '24px' }}>
-        {students.map(s => (
-          <div key={s.id} onClick={() => onStudentSelect(s.id, classInfo.id)} className="avatar-card">
-            {s.avatar ? (
-              <img src={s.avatar} alt="avatar" className="avatar-img" />
-            ) : (
-              <div className="avatar-img"></div>
-            )}
-            <div className="avatar-name">{s.displayName || s.username}</div>
-          </div>
-        ))}
-      </div>
+      <h2 className="page-title">Who is learning today? 🌟</h2>
+      {students.length === 0 ? (
+        <p style={{ color: 'var(--text-muted)', marginTop: '24px' }}>No students enrolled in this class yet. Ask your teacher to add your avatar!</p>
+      ) : (
+        <div className="avatar-grid" style={{ marginTop: '24px' }}>
+          {students.map(s => (
+            <div key={s.id} onClick={() => onStudentSelect(s.id, classInfo.id)} className="avatar-card">
+              {s.avatar ? (
+                <img src={s.avatar} alt="avatar" className="avatar-img" />
+              ) : (
+                <div className="avatar-img" style={{ background: '#e0f2fe' }}></div>
+              )}
+              <div className="avatar-name">{s.displayName || s.username}</div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -271,19 +315,18 @@ function TeacherDashboard({ token }) {
       
       <div className="grid-2">
         <section className="panel">
-          <h3 className="section-title">My Classes</h3>
+          <h3 className="section-title"><span>🏫</span> My Classes</h3>
           <div className="flex-row">
             <input className="input-field" placeholder="New Class Name (e.g. Grade 1A)" value={newClassName} onChange={e => setNewClassName(e.target.value)} />
             <button onClick={createClass} className="btn btn-primary">Create</button>
           </div>
-          <ul className="list-group" style={{ marginTop: '20px' }}>
+          <ul className="list-group" style={{ marginTop: '16px' }}>
             {classes.length === 0 ? <li className="list-item" style={{color: 'var(--text-muted)'}}>No classes created yet.</li> : classes.map(c => (
               <li key={c.id} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontWeight: 600 }}>🏫 {c.name}</span>
                 <button 
                   onClick={() => deleteClass(c.id, c.name)} 
-                  className="btn btn-danger" 
-                  style={{ padding: '3px 8px', fontSize: '0.8rem' }}
+                  className="btn-ghost-danger" 
                   title="Delete Class"
                 >
                   🗑️ Delete
@@ -298,7 +341,7 @@ function TeacherDashboard({ token }) {
 
       <div className="grid-2" style={{ marginTop: '24px' }}>
         <section className="panel">
-          <h3 className="section-title">Assign Activity</h3>
+          <h3 className="section-title"><span>📝</span> Assign Activity</h3>
           <div className="form-group">
             <input className="input-field" placeholder="Assignment Title (e.g. Chapter 1 Story)" value={newAssignment.title} onChange={e => setNewAssignment({...newAssignment, title: e.target.value})} />
             <select className="input-field" value={newAssignment.classId} onChange={e => setNewAssignment({...newAssignment, classId: e.target.value})}>
@@ -309,41 +352,76 @@ function TeacherDashboard({ token }) {
               <option value="">-- Select Learning Activity --</option>
               {apps.filter(a => a.id !== 'activity-center').map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
-            <button onClick={createAssignment} className="btn btn-success" style={{ marginTop: '10px' }}>Create Assignment ✨</button>
+            <button onClick={createAssignment} className="btn btn-success" style={{ marginTop: '6px' }}>Create Assignment ✨</button>
+          </div>
+        </section>
+
+        <section className="panel">
+          <h3 className="section-title"><span>📊</span> Overview</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginTop: '8px' }}>
+            <div style={{ background: 'var(--surface-subtle)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px 12px', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--color-primary)' }}>{classes.length}</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700, marginTop: '2px' }}>Active Classes</div>
+            </div>
+            <div style={{ background: 'var(--surface-subtle)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px 12px', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--color-primary)' }}>{assignments.length}</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700, marginTop: '2px' }}>Assignments</div>
+            </div>
           </div>
         </section>
       </div>
 
       <section className="panel" style={{ marginTop: '24px' }}>
-        <h3 className="section-title">Results & Active Assignments</h3>
+        <h3 className="section-title"><span>📊</span> Results & Submissions</h3>
         {assignments.length === 0 ? <p style={{color: 'var(--text-muted)'}}>No assignments created.</p> : (
-          <ul className="list-group">
-            {assignments.map(a => (
-              <li key={a.id} className="list-item" style={{ paddingBottom: '16px', marginBottom: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <div style={{ fontSize: '1.15rem' }}>
-                    <strong>{a.title}</strong> — <span style={{color: 'var(--text-muted)'}}>{a.application.name}</span> <em>({a.class.name})</em>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {assignments.map(a => {
+              // Count students, not attempts: Play Again adds another result
+              const completedCount = new Set(a.results.filter(r => r.status === 'COMPLETED').map(r => r.userId)).size;
+              return (
+                <div key={a.id} style={{ border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', background: 'var(--surface)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                    <div>
+                      <strong style={{ fontSize: '1.1rem', color: 'var(--text-main)' }}>{a.title}</strong>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>{a.application.name}</span>
+                        <span className="badge badge-blue">🏫 {a.class.name}</span>
+                        <span className="badge badge-gray">{completedCount} submission{completedCount !== 1 ? 's' : ''}</span>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => deleteAssignment(a.id, a.title)} 
+                      className="btn-ghost-danger" 
+                      title="Delete Assignment"
+                    >
+                      🗑️ Delete
+                    </button>
                   </div>
-                  <button 
-                    onClick={() => deleteAssignment(a.id, a.title)} 
-                    className="btn btn-danger" 
-                    style={{ padding: '3px 8px', fontSize: '0.8rem' }}
-                    title="Delete Assignment"
-                  >
-                    🗑️ Delete Assignment
-                  </button>
+                  
+                  {a.results.length === 0 ? (
+                    <div style={{ fontSize: '0.88rem', color: 'var(--text-light)', background: 'var(--surface-subtle)', padding: '10px 14px', borderRadius: '8px' }}>
+                      ⏳ Awaiting student submissions for this class.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '10px', marginTop: '8px' }}>
+                      {a.results.map(r => (
+                        <div key={r.id} style={{ background: 'var(--surface-subtle)', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 12px', fontSize: '0.88rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <strong>{r.user.displayName || r.user.username}</strong>
+                            <span className="badge badge-green" style={{ fontSize: '0.75rem' }}>{r.status}</span>
+                          </div>
+                          <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '4px' }}>
+                            Score: <strong>{r.score}</strong>
+                            {r.details && r.details.storyTitle && <span> • "<em>{r.details.storyTitle}</em>"</span>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <ul style={{ paddingLeft: '20px', listStyleType: 'circle', color: 'var(--text-muted)' }}>
-                  {a.results.length === 0 ? <li>No results yet</li> : a.results.map(r => (
-                    <li key={r.id}>
-                      <strong>{r.user.displayName || r.user.username}</strong>: {r.status} (Score: {r.score})
-                      {r.details && r.details.storyTitle && <span> — Story: "<em>{r.details.storyTitle}</em>"</span>}
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ul>
+              );
+            })}
+          </div>
         )}
       </section>
     </div>
@@ -430,9 +508,9 @@ function TeacherRosterPanel({ classes, token }) {
 
   return (
     <section className="panel">
-      <h3 className="section-title">Class Roster & Student Assignment</h3>
+      <h3 className="section-title"><span>👥</span> Class Roster</h3>
       <select className="input-field" value={selectedClass} onChange={e => setSelectedClass(e.target.value)} style={{ marginBottom: '14px' }}>
-        <option value="">-- Select Class to Manage --</option>
+        <option value="">-- Select Class --</option>
         {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
       </select>
 
@@ -442,7 +520,7 @@ function TeacherRosterPanel({ classes, token }) {
             <div className="flex-row" style={{ gap: '8px' }}>
               <select className="input-field" value={studentToEnroll} onChange={e => setStudentToEnroll(e.target.value)}>
                 <option value="">
-                  {availableStudents.length === 0 ? '-- All School Students Are in This Class --' : `-- Select Student to Add (${availableStudents.length} available) --`}
+                  {availableStudents.length === 0 ? '-- All Students Enrolled --' : `-- Add Student (${availableStudents.length} available) --`}
                 </option>
                 {availableStudents.map(s => (
                   <option key={s.id} value={s.id}>
@@ -451,43 +529,40 @@ function TeacherRosterPanel({ classes, token }) {
                 ))}
               </select>
               <button onClick={enrollStudent} className="btn btn-success" disabled={!studentToEnroll}>
-                Add to Class ➕
+                Add ➕
               </button>
-            </div>
-            <div style={{ fontSize: '0.82rem', color: '#64748b', marginTop: '6px' }}>
-              💡 All students and parents are registered centrally by the Admin. Select registered students above to add to your class.
             </div>
           </div>
 
-          <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '12px 0 8px 0', color: '#334155' }}>
-            Enrolled Students in this Class ({roster.length}):
+          <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '14px 0 8px 0', color: 'var(--text-main)' }}>
+            Enrolled Students ({roster.length}):
           </h4>
 
           <ul className="list-group">
             {roster.length === 0 ? (
-              <p style={{color: 'var(--text-muted)'}}>No students enrolled in this class yet. Select a student above to add them.</p>
+              <p style={{color: 'var(--text-muted)'}}>No students enrolled in this class yet.</p>
             ) : roster.map(s => (
               <li key={s.id} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   {s.avatar ? (
-                    <img src={s.avatar} alt="avatar" style={{ width: '36px', height: '36px', borderRadius: '50%' }} />
+                    <img src={s.avatar} alt="avatar" style={{ width: '34px', height: '34px', borderRadius: '50%' }} />
                   ) : (
-                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#cbd5e1' }} />
+                    <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: '#cbd5e1' }} />
                   )}
                   <div>
                     <div><strong>{s.displayName || s.username}</strong> <span style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>({s.username})</span></div>
                     {s.parents && s.parents.length > 0 ? (
-                      <div style={{ fontSize: '0.82rem', color: '#4f46e5', marginTop: '2px' }}>
-                        👨‍👩‍👧 Parent: <strong>{s.parents[0].displayName || s.parents[0].username}</strong> <span style={{ opacity: 0.8 }}>({s.parents[0].username})</span>
+                      <div style={{ fontSize: '0.82rem', color: 'var(--color-purple)', marginTop: '2px' }}>
+                        👨‍👩‍👧 Parent: <strong>{s.parents[0].displayName || s.parents[0].username}</strong>
                       </div>
                     ) : (
-                      <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '2px' }}>
-                        ⚠️ No parent linked yet
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-light)', marginTop: '2px' }}>
+                        No parent linked
                       </div>
                     )}
                   </div>
                 </div>
-                <button onClick={() => removeStudent(s.id)} className="btn btn-danger" style={{ padding: '4px 8px', minHeight: '30px', fontSize: '0.85rem' }} title="Remove from class">
+                <button onClick={() => removeStudent(s.id)} className="btn-ghost-danger" title="Remove from class">
                   Remove
                 </button>
               </li>
@@ -498,7 +573,6 @@ function TeacherRosterPanel({ classes, token }) {
     </section>
   );
 }
-
 
 function AdminDashboard({ token }) {
   const [tab, setTab] = useState('BULK'); // 'BULK', 'STUDENTS', 'PARENTS', 'CLASSES'
@@ -618,105 +692,111 @@ function AdminDashboard({ token }) {
 
   return (
     <div>
-      <h2 className="page-title text-center">School Administration Console 👑</h2>
+      <h2 className="page-title text-center">Admin Console 👑</h2>
 
-      {/* Overview Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-        <div className="panel" style={{ textAlign: 'center', background: '#eef2ff', borderColor: '#c7d2fe' }}>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#4f46e5' }}>{stats.studentCount}</div>
-          <div style={{ fontWeight: 600, color: '#4338ca' }}>🎒 Total Students</div>
+      {/* Modern Overview Cards */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#eff6ff', color: '#2563eb' }}>🎒</div>
+          <div>
+            <div className="stat-value">{stats.studentCount}</div>
+            <div className="stat-label">Total Students</div>
+          </div>
         </div>
-        <div className="panel" style={{ textAlign: 'center', background: '#fdf4ff', borderColor: '#f5d0fe' }}>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#c026d3' }}>{stats.parentCount}</div>
-          <div style={{ fontWeight: 600, color: '#a21caf' }}>👨‍👩‍👧 Total Parents</div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#f5f3ff', color: '#7c3aed' }}>👨‍👩‍👧</div>
+          <div>
+            <div className="stat-value">{stats.parentCount}</div>
+            <div className="stat-label">Total Parents</div>
+          </div>
         </div>
-        <div className="panel" style={{ textAlign: 'center', background: '#f0fdf4', borderColor: '#bbf7d0' }}>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#16a34a' }}>{stats.classCount}</div>
-          <div style={{ fontWeight: 600, color: '#15803d' }}>🏫 Active Classes</div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#ecfdf5', color: '#059669' }}>🏫</div>
+          <div>
+            <div className="stat-value">{stats.classCount}</div>
+            <div className="stat-label">Active Classes</div>
+          </div>
         </div>
-        <div className="panel" style={{ textAlign: 'center', background: '#fffbeb', borderColor: '#fde68a' }}>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#d97706' }}>{stats.teacherCount}</div>
-          <div style={{ fontWeight: 600, color: '#b45309' }}>👩‍🏫 Teachers</div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#fffbeb', color: '#d97706' }}>👩‍🏫</div>
+          <div>
+            <div className="stat-value">{stats.teacherCount}</div>
+            <div className="stat-label">Teachers</div>
+          </div>
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px', flexWrap: 'wrap' }}>
+      {/* Segmented Tab Navigation */}
+      <div className="tabs-wrapper">
         <button 
           onClick={() => setTab('BULK')} 
-          className={`btn ${tab === 'BULK' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ fontWeight: 700 }}
+          className={`tab-button ${tab === 'BULK' ? 'active' : ''}`}
         >
-          🚀 Fast Bulk Onboarding
+          🚀 Bulk Onboard
         </button>
         <button 
           onClick={() => setTab('STUDENTS')} 
-          className={`btn ${tab === 'STUDENTS' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ fontWeight: 700 }}
+          className={`tab-button ${tab === 'STUDENTS' ? 'active' : ''}`}
         >
-          🎒 Students Directory ({students.length})
+          🎒 Students ({students.length})
         </button>
         <button 
           onClick={() => setTab('PARENTS')} 
-          className={`btn ${tab === 'PARENTS' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ fontWeight: 700 }}
+          className={`tab-button ${tab === 'PARENTS' ? 'active' : ''}`}
         >
-          👨‍👩‍👧 Parents Directory ({parents.length})
+          👨‍👩‍👧 Parents ({parents.length})
         </button>
         <button 
           onClick={() => setTab('CLASSES')} 
-          className={`btn ${tab === 'CLASSES' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ fontWeight: 700 }}
+          className={`tab-button ${tab === 'CLASSES' ? 'active' : ''}`}
         >
-          🏫 All Classes ({classes.length})
+          🏫 Classes ({classes.length})
         </button>
       </div>
 
       {/* TAB 1: BULK ONBOARDING */}
       {tab === 'BULK' && (
         <section className="panel">
-          <h3 className="section-title">🚀 Fast Zero-Burden Student & Parent Admission</h3>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '14px' }}>
-            Paste as many students and parents as you want below (one per line, format: <code>Student Name, Parent Name</code>). 
-            The system automatically creates student logins with avatars, creates parent accounts with <code>password123</code>, and links them instantly!
+          <h3 className="section-title"><span>🚀</span> Bulk Onboard</h3>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '14px', fontSize: '0.88rem' }}>
+            Enter pairs: <code>Student Name, Parent Name</code> (one per line)
           </p>
 
-          <div style={{ marginBottom: '14px' }}>
-            <label style={{ fontWeight: 700, display: 'block', marginBottom: '6px' }}>Student & Parent List (Paste below):</label>
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ fontWeight: 700, fontSize: '0.88rem', color: '#334155', display: 'block', marginBottom: '6px' }}>Student & Parent List:</label>
             <textarea
               className="input-field"
               rows={6}
               value={bulkText}
               onChange={e => setBulkText(e.target.value)}
               placeholder="Maya Sharma, Sunita Sharma&#10;Aarav Patel, Rajesh Patel&#10;Liam Davis, Robert Davis"
-              style={{ fontFamily: 'monospace', fontSize: '0.95rem', width: '100%', padding: '12px' }}
+              style={{ fontFamily: 'monospace', fontSize: '0.92rem', width: '100%', padding: '12px' }}
             />
           </div>
 
           <div className="flex-row" style={{ gap: '14px', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: '220px' }}>
-              <label style={{ fontWeight: 700, fontSize: '0.9rem', display: 'block', marginBottom: '4px' }}>Initial Class (Optional):</label>
+              <label style={{ fontWeight: 700, fontSize: '0.88rem', color: '#334155', display: 'block', marginBottom: '4px' }}>Initial Class (Optional):</label>
               <select className="input-field" value={bulkClassId} onChange={e => setBulkClassId(e.target.value)}>
-                <option value="">-- No Class (Teachers Will Add Later) --</option>
+                <option value="">-- No Class (Assign Later) --</option>
                 {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
-            <div style={{ paddingTop: '22px' }}>
+            <div style={{ paddingTop: '20px' }}>
               <button 
                 onClick={handleBulkEnroll} 
                 className="btn btn-success" 
-                style={{ fontSize: '1.05rem', padding: '10px 24px' }}
                 disabled={bulkSubmitting}
               >
-                {bulkSubmitting ? 'Enrolling...' : '✨ Run Bulk Admission'}
+                {bulkSubmitting ? 'Enrolling...' : 'Enroll Students ✨'}
               </button>
             </div>
           </div>
 
           {bulkResults && (
-            <div style={{ marginTop: '24px', background: '#f8fafc', border: '2px solid #10b981', borderRadius: '12px', padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <h4 style={{ margin: 0, color: '#065f46', fontSize: '1.1rem' }}>
+            <div style={{ marginTop: '24px', background: 'var(--surface-subtle)', border: '1px solid var(--color-success-border)', borderRadius: '14px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                <h4 style={{ margin: 0, color: '#047857', fontSize: '1.05rem', fontWeight: 700 }}>
                   🎉 Enrolled {bulkResults.length} Students & Generated Logins:
                 </h4>
                 <button 
@@ -725,32 +805,32 @@ function AdminDashboard({ token }) {
                     navigator.clipboard.writeText(text);
                     alert('Copied all credentials to clipboard!');
                   }}
-                  className="btn btn-secondary"
-                  style={{ fontSize: '0.85rem' }}
+                  className="btn btn-secondary btn-sm"
                 >
                   📋 Copy All Credentials
                 </button>
               </div>
 
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-                  <thead>
-                    <tr style={{ background: '#e2e8f0', borderBottom: '2px solid #cbd5e1' }}>
-                      <th style={{ padding: '8px 12px' }}>Student</th>
-                      <th style={{ padding: '8px 12px' }}>Student Username</th>
-                      <th style={{ padding: '8px 12px' }}>Parent</th>
-                      <th style={{ padding: '8px 12px' }}>Parent Username</th>
-                      <th style={{ padding: '8px 12px' }}>Default Password</th>
+              {/* Scrollable container for onboarding results */}
+              <div className="table-wrapper" style={{ maxHeight: '320px', overflowY: 'auto' }}>
+                <table className="data-table">
+                  <thead style={{ position: 'sticky', top: 0, zIndex: 2 }}>
+                    <tr>
+                      <th>Student</th>
+                      <th>Student Username</th>
+                      <th>Parent</th>
+                      <th>Parent Username</th>
+                      <th>Default Password</th>
                     </tr>
                   </thead>
                   <tbody>
                     {bulkResults.map((r, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', background: i % 2 === 0 ? 'white' : '#f8fafc' }}>
-                        <td style={{ padding: '8px 12px', fontWeight: 600 }}>{r.studentName}</td>
-                        <td style={{ padding: '8px 12px' }}><code>{r.studentUsername}</code></td>
-                        <td style={{ padding: '8px 12px' }}>{r.parentName}</td>
-                        <td style={{ padding: '8px 12px' }}><code>{r.parentUsername}</code></td>
-                        <td style={{ padding: '8px 12px' }}><code>{r.parentPassword}</code></td>
+                      <tr key={i}>
+                        <td style={{ fontWeight: 600 }}>{r.studentName}</td>
+                        <td><code>{r.studentUsername}</code></td>
+                        <td>{r.parentName}</td>
+                        <td><code>{r.parentUsername}</code></td>
+                        <td><code>{r.parentPassword}</code></td>
                       </tr>
                     ))}
                   </tbody>
@@ -765,69 +845,73 @@ function AdminDashboard({ token }) {
       {tab === 'STUDENTS' && (
         <section className="panel">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-            <h3 className="section-title" style={{ margin: 0 }}>🎒 School Students Directory</h3>
-            <input 
-              className="input-field" 
-              placeholder="🔍 Search students..." 
-              value={studentSearch} 
-              onChange={e => setStudentSearch(e.target.value)}
-              style={{ maxWidth: '280px' }}
-            />
+            <h3 className="section-title" style={{ margin: 0 }}><span>🎒</span> Students</h3>
+            <div className="search-input-wrapper">
+              <span className="search-icon">🔍</span>
+              <input 
+                className="input-field" 
+                placeholder="Search students..." 
+                value={studentSearch} 
+                onChange={e => setStudentSearch(e.target.value)}
+              />
+              {studentSearch && (
+                <button onClick={() => setStudentSearch('')} className="clear-btn" title="Clear search">✕</button>
+              )}
+            </div>
           </div>
 
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.92rem' }}>
+          <div className="table-wrapper">
+            <table className="data-table">
               <thead>
-                <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
-                  <th style={{ padding: '10px 12px' }}>Avatar</th>
-                  <th style={{ padding: '10px 12px' }}>Student Name</th>
-                  <th style={{ padding: '10px 12px' }}>Username</th>
-                  <th style={{ padding: '10px 12px' }}>Linked Parent(s)</th>
-                  <th style={{ padding: '10px 12px' }}>Enrolled Classes</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>Actions</th>
+                <tr>
+                  <th>Avatar</th>
+                  <th>Student Name</th>
+                  <th>Username</th>
+                  <th>Linked Parent(s)</th>
+                  <th>Enrolled Classes</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredStudents.length === 0 ? (
-                  <tr><td colSpan={6} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>No students found.</td></tr>
+                  <tr><td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>No students found.</td></tr>
                 ) : filteredStudents.map(s => (
-                  <tr key={s.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '10px 12px' }}>
+                  <tr key={s.id}>
+                    <td>
                       {s.avatar ? (
-                        <img src={s.avatar} alt="avatar" style={{ width: '36px', height: '36px', borderRadius: '50%' }} />
+                        <img src={s.avatar} alt="avatar" style={{ width: '34px', height: '34px', borderRadius: '50%' }} />
                       ) : (
-                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#cbd5e1' }} />
+                        <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: '#cbd5e1' }} />
                       )}
                     </td>
-                    <td style={{ padding: '10px 12px', fontWeight: 600 }}>{s.displayName || 'Unnamed'}</td>
-                    <td style={{ padding: '10px 12px' }}><code>{s.username}</code></td>
-                    <td style={{ padding: '10px 12px' }}>
+                    <td style={{ fontWeight: 600 }}>{s.displayName || 'Unnamed'}</td>
+                    <td><code>{s.username}</code></td>
+                    <td>
                       {s.parents && s.parents.length > 0 ? (
                         s.parents.map(p => (
-                          <div key={p.id} style={{ fontSize: '0.85rem', color: '#4f46e5' }}>
-                            👨‍👩‍👧 {p.displayName || p.username} (<code>{p.username}</code>)
+                          <div key={p.id} style={{ fontSize: '0.85rem', color: 'var(--color-purple)' }}>
+                            👨‍👩‍👧 {p.displayName || p.username} <span style={{ opacity: 0.8 }}>(<code>{p.username}</code>)</span>
                           </div>
                         ))
                       ) : (
-                        <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>No parent linked</span>
+                        <span style={{ color: 'var(--text-light)', fontSize: '0.85rem' }}>No parent linked</span>
                       )}
                     </td>
-                    <td style={{ padding: '10px 12px' }}>
+                    <td>
                       {s.classes && s.classes.length > 0 ? (
                         s.classes.map(c => (
-                          <span key={c.id} style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem', marginRight: '4px' }}>
+                          <span key={c.id} className="badge badge-blue" style={{ marginRight: '4px' }}>
                             {c.name}
                           </span>
                         ))
                       ) : (
-                        <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Not in any class</span>
+                        <span style={{ color: 'var(--text-light)', fontSize: '0.85rem' }}>Not in any class</span>
                       )}
                     </td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                    <td style={{ textAlign: 'right' }}>
                       <button 
                         onClick={() => deleteStudent(s.id, s.displayName || s.username)} 
-                        className="btn btn-danger" 
-                        style={{ padding: '4px 8px', fontSize: '0.82rem' }}
+                        className="btn-ghost-danger" 
                         title="Delete Student"
                       >
                         🗑️ Delete
@@ -845,41 +929,46 @@ function AdminDashboard({ token }) {
       {tab === 'PARENTS' && (
         <section className="panel">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-            <h3 className="section-title" style={{ margin: 0 }}>👨‍👩‍👧 Parents Directory</h3>
-            <input 
-              className="input-field" 
-              placeholder="🔍 Search parents..." 
-              value={parentSearch} 
-              onChange={e => setParentSearch(e.target.value)}
-              style={{ maxWidth: '280px' }}
-            />
+            <h3 className="section-title" style={{ margin: 0 }}><span>👨‍👩‍👧</span> Parents</h3>
+            <div className="search-input-wrapper">
+              <span className="search-icon">🔍</span>
+              <input 
+                className="input-field" 
+                placeholder="Search parents..." 
+                value={parentSearch} 
+                onChange={e => setParentSearch(e.target.value)}
+              />
+              {parentSearch && (
+                <button onClick={() => setParentSearch('')} className="clear-btn" title="Clear search">✕</button>
+              )}
+            </div>
           </div>
 
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.92rem' }}>
+          <div className="table-wrapper">
+            <table className="data-table">
               <thead>
-                <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
-                  <th style={{ padding: '10px 12px' }}>Parent Name</th>
-                  <th style={{ padding: '10px 12px' }}>Username</th>
-                  <th style={{ padding: '10px 12px' }}>Linked Children</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>Actions</th>
+                <tr>
+                  <th>Parent Name</th>
+                  <th>Username</th>
+                  <th>Linked Children</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredParents.length === 0 ? (
-                  <tr><td colSpan={4} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>No parents found.</td></tr>
+                  <tr><td colSpan={4} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>No parents found.</td></tr>
                 ) : filteredParents.map(p => (
-                  <tr key={p.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '10px 12px', fontWeight: 600 }}>{p.displayName || 'Unnamed'}</td>
-                    <td style={{ padding: '10px 12px' }}><code>{p.username}</code></td>
-                    <td style={{ padding: '10px 12px' }}>
+                  <tr key={p.id}>
+                    <td style={{ fontWeight: 600 }}>{p.displayName || 'Unnamed'}</td>
+                    <td><code>{p.username}</code></td>
+                    <td>
                       {p.children && p.children.length > 0 ? (
                         p.children.map(c => (
-                          <div key={c.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#fdf4ff', border: '1px solid #f0abfc', borderRadius: '14px', padding: '2px 8px', margin: '2px 4px', fontSize: '0.85rem' }}>
+                          <div key={c.id} className="badge badge-purple" style={{ marginRight: '6px' }}>
                             <span>🎒 {c.displayName || c.username}</span>
                             <button 
                               onClick={() => unlinkParent(p.id, c.id)} 
-                              style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 0, fontWeight: 700 }}
+                              style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0 0 0 4px', fontWeight: 700 }}
                               title="Unlink child"
                             >
                               ✕
@@ -887,14 +976,13 @@ function AdminDashboard({ token }) {
                           </div>
                         ))
                       ) : (
-                        <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>No children linked</span>
+                        <span style={{ color: 'var(--text-light)', fontSize: '0.85rem' }}>No children linked</span>
                       )}
                     </td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                    <td style={{ textAlign: 'right' }}>
                       <button 
                         onClick={() => deleteParent(p.id, p.displayName || p.username)} 
-                        className="btn btn-danger" 
-                        style={{ padding: '4px 8px', fontSize: '0.82rem' }}
+                        className="btn-ghost-danger" 
                         title="Delete Parent"
                       >
                         🗑️ Delete
@@ -911,36 +999,35 @@ function AdminDashboard({ token }) {
       {/* TAB 4: CLASSES DIRECTORY */}
       {tab === 'CLASSES' && (
         <section className="panel">
-          <h3 className="section-title">🏫 All School Classes</h3>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.92rem' }}>
+          <h3 className="section-title"><span>🏫</span> Classes</h3>
+          <div className="table-wrapper">
+            <table className="data-table">
               <thead>
-                <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
-                  <th style={{ padding: '10px 12px' }}>Class Name</th>
-                  <th style={{ padding: '10px 12px' }}>Assigned Teachers</th>
-                  <th style={{ padding: '10px 12px' }}>Enrolled Students</th>
-                  <th style={{ padding: '10px 12px' }}>Active Assignments</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>Actions</th>
+                <tr>
+                  <th>Class Name</th>
+                  <th>Assigned Teachers</th>
+                  <th>Enrolled Students</th>
+                  <th>Active Assignments</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {classes.length === 0 ? (
-                  <tr><td colSpan={5} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>No classes in the school yet.</td></tr>
+                  <tr><td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>No classes in the school yet.</td></tr>
                 ) : classes.map(c => (
-                  <tr key={c.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '10px 12px', fontWeight: 600 }}>{c.name}</td>
-                    <td style={{ padding: '10px 12px' }}>
+                  <tr key={c.id}>
+                    <td style={{ fontWeight: 600 }}>{c.name}</td>
+                    <td>
                       {c.teachers && c.teachers.length > 0 ? (
-                        c.teachers.map(t => <span key={t.id} style={{ marginRight: '6px' }}>👩‍🏫 {t.displayName || t.username}</span>)
-                      ) : <span style={{ color: '#94a3b8' }}>None</span>}
+                        c.teachers.map(t => <span key={t.id} className="badge badge-purple" style={{ marginRight: '4px' }}>👩‍🏫 {t.displayName || t.username}</span>)
+                      ) : <span style={{ color: 'var(--text-light)' }}>None</span>}
                     </td>
-                    <td style={{ padding: '10px 12px' }}>{c.studentCount} students</td>
-                    <td style={{ padding: '10px 12px' }}>{c.assignmentCount} assignments</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                    <td><span className="badge badge-blue">{c.studentCount} students</span></td>
+                    <td><span className="badge badge-gray">{c.assignmentCount} assignments</span></td>
+                    <td style={{ textAlign: 'right' }}>
                       <button 
                         onClick={() => deleteClass(c.id, c.name)} 
-                        className="btn btn-danger" 
-                        style={{ padding: '4px 8px', fontSize: '0.82rem' }}
+                        className="btn-ghost-danger" 
                         title="Delete Class"
                       >
                         🗑️ Delete Class
@@ -957,8 +1044,7 @@ function AdminDashboard({ token }) {
   );
 }
 
-
-function StudentDashboard({ token }) {
+function StudentDashboard({ token, user }) {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -996,36 +1082,59 @@ function StudentDashboard({ token }) {
 
   return (
     <div>
+      {/* Warm, Engaging Welcome Section */}
+      <div className="welcome-hero">
+        {user?.avatar ? (
+          <img src={user.avatar} alt="avatar" className="welcome-hero-avatar" />
+        ) : (
+          <div className="welcome-hero-avatar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>🤖</div>
+        )}
+        <div>
+          <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+            Welcome back, {user?.displayName || user?.username}! 🌟
+          </h2>
+        </div>
+      </div>
       
-
-      <h2 className="page-title text-center">Let's play and learn! 🚀</h2>
-      
-      <section className="panel" style={{ marginTop: '20px' }}>
-        <h3 className="section-title text-center" style={{ marginBottom: '24px' }}>Your Activities</h3>
+      <section className="panel">
+        <h3 className="section-title text-center" style={{ justifyContent: 'center', marginBottom: '20px' }}>
+          <span>📚</span> Assigned Activities
+        </h3>
         {assignments.length === 0 ? (
-          <p className="text-center" style={{color: 'var(--text-muted)', fontSize: '1.2em'}}>
-            No activities today! You are all caught up. 🎉
+          <p className="text-center" style={{color: 'var(--text-muted)', fontSize: '1rem', padding: '24px'}}>
+            No assigned activities today. You're all caught up! 🎉
           </p>
         ) : (
-          <div className="flex-row flex-wrap justify-center" style={{ gap: '24px' }}>
+          <div className="activity-grid">
             {assignments.map(a => {
               const isCompleted = a.results && a.results.some(r => r.status === 'COMPLETED');
               return (
                 <div key={a.id} className={`activity-card ${isCompleted ? 'completed' : ''}`}>
-                  <div className="activity-card-title">{a.title}</div>
-                  <div className="activity-card-subtitle">{a.application.name}</div>
+                  <div style={{ width: '100%', marginBottom: '14px' }}>
+                    <div className="activity-card-title">{a.title}</div>
+                    <div className="activity-card-subtitle">{a.application.name} · {a.class.name}</div>
+                  </div>
                   
-                  {isCompleted ? (
-                    <div style={{ fontSize: '2em', marginTop: '10px' }}>✅ Done!</div>
-                  ) : a.application.isReady === false ? (
-                    <button className="btn" style={{ background: '#94a3b8', color: 'white', width: '100%', cursor: 'not-allowed' }} disabled>
-                      Coming Soon 🚧
-                    </button>
-                  ) : (
-                    <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => launchApp(a.appId, a.id)}>
-                      Start ▶️
-                    </button>
-                  )}
+                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {isCompleted ? (
+                      <>
+                        <span className="badge badge-green" style={{ fontSize: '0.88rem', padding: '5px 12px', width: '100%', justifyContent: 'center' }}>
+                          ✅ Completed
+                        </span>
+                        <button className="btn btn-secondary btn-sm" style={{ width: '100%', marginTop: '2px' }} onClick={() => launchApp(a.appId, a.id)}>
+                          Play Again 🔄
+                        </button>
+                      </>
+                    ) : a.application.isReady === false ? (
+                      <button className="btn btn-secondary btn-sm" style={{ width: '100%', cursor: 'not-allowed' }} disabled>
+                        Coming Soon 🚧
+                      </button>
+                    ) : (
+                      <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => launchApp(a.appId, a.id)}>
+                        Start Activity ▶️
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -1083,20 +1192,21 @@ function ParentDashboard({ token }) {
 
   if (loading) return <div className="text-center page-title" style={{marginTop: '40px'}}>Loading your family...</div>;
 
+  const currentChild = children.find(c => c.id === selectedChildId);
+
   return (
     <div>
-      <h2 className="page-title text-center">Family Dashboard</h2>
+      <h2 className="page-title text-center">Family Dashboard 👨‍👩‍👧</h2>
 
-      <div style={{ marginBottom: '30px' }}>
+      <div style={{ marginBottom: '24px' }}>
         {children.length === 0 ? (
           <p className="text-center" style={{color: 'var(--text-muted)'}}>No linked children found.</p>
         ) : (
-          <div className="flex-row justify-center flex-wrap" style={{ gap: '20px' }}>
+          <div className="avatar-grid">
             {children.map(c => (
               <div 
                 key={c.id} 
                 className={`avatar-card ${selectedChildId === c.id ? 'selected' : ''}`}
-                style={{ borderColor: selectedChildId === c.id ? 'var(--color-primary)' : 'var(--border)' }}
                 onClick={() => handleSelectChild(c.id)}
               >
                 {c.avatar ? <img src={c.avatar} alt="avatar" className="avatar-img" /> : <div className="avatar-img"></div>}
@@ -1107,55 +1217,64 @@ function ParentDashboard({ token }) {
         )}
       </div>
 
-      
-
       {childData && (
-        <div className="grid-2">
-          <section className="panel">
-            <h3 className="section-title">Learning Activities</h3>
-            {childData.assignments.length === 0 ? <p style={{color: 'var(--text-muted)'}}>No activities assigned.</p> : (
-              <ul className="list-group">
-                {childData.assignments.map(a => {
-                  const result = a.results[0];
-                  const isCompleted = result && result.status === 'COMPLETED';
-                  return (
-                    <li key={a.id} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <strong>{a.title}</strong>
-                        <div style={{color: 'var(--text-muted)', fontSize: '0.9em'}}>{a.application.name}</div>
-                      </div>
-                      <span className="status-badge" style={{ 
-                          background: isCompleted ? 'var(--color-success-bg)' : 'var(--color-warning-bg)', 
-                          color: isCompleted ? 'var(--color-success)' : 'var(--color-warning)' 
-                      }}>
-                        {isCompleted ? 'Completed' : 'Pending'}
-                      </span>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </section>
+        <div>
+          {/* Child Context Banner: Integrating Enrolled Classes seamlessly */}
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '14px 20px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '1.3rem' }}>🎒</span>
+              <strong style={{ fontSize: '1.05rem', color: 'var(--text-main)' }}>
+                {currentChild?.displayName || currentChild?.username}'s Progress
+              </strong>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Enrolled Classes:</span>
+              {childData.classes && childData.classes.length > 0 ? (
+                childData.classes.map(c => (
+                  <span key={c.id} className="badge badge-blue">🏫 {c.name}</span>
+                ))
+              ) : (
+                <span className="badge badge-gray">None</span>
+              )}
+            </div>
+          </div>
 
-          <section className="panel">
-            <h3 className="section-title">Saved Stories</h3>
-            {childData.stories.length === 0 ? <p style={{color: 'var(--text-muted)'}}>No stories saved yet.</p> : (
-              <ul className="list-group">
-                {childData.stories.map(s => (
-                  <SavedStoryCard key={s.id} story={s} token={token} />
-                ))}
-              </ul>
-            )}
-          </section>
+          <div className="grid-2">
+            <section className="panel">
+              <h3 className="section-title"><span>📝</span> Activities</h3>
+              {childData.assignments.length === 0 ? <p style={{color: 'var(--text-muted)'}}>No activities assigned.</p> : (
+                <ul className="list-group">
+                  {childData.assignments.map(a => {
+                    const isCompleted = a.results.some(r => r.status === 'COMPLETED');
+                    return (
+                      <li key={a.id} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <strong>{a.title}</strong>
+                          <div style={{color: 'var(--text-muted)', fontSize: '0.88em'}}>{a.application.name} · {a.class.name}</div>
+                        </div>
+                        <span className={`badge ${isCompleted ? 'badge-green' : 'badge-amber'}`}>
+                          {isCompleted ? 'Completed' : 'Pending'}
+                        </span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </section>
 
-          <section className="panel" style={{ gridColumn: '1 / -1' }}>
-            <h3 className="section-title">Enrolled Classes</h3>
-            {childData.classes && childData.classes.length > 0 ? (
-              <ul className="list-group">
-                {childData.classes.map(c => <li key={c.id} className="list-item">{c.name}</li>)}
-              </ul>
-            ) : <p style={{color: 'var(--text-muted)'}}>Not enrolled in any classes.</p>}
-          </section>
+            <section className="panel">
+              <h3 className="section-title"><span>🎬</span> Saved Stories</h3>
+              {childData.stories.length === 0 ? (
+                <p style={{color: 'var(--text-muted)'}}>No stories saved yet.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {childData.stories.map(s => (
+                    <SavedStoryCard key={s.id} story={s} token={token} />
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
         </div>
       )}
     </div>
@@ -1163,6 +1282,7 @@ function ParentDashboard({ token }) {
 }
 
 function SavedStoryCard({ story, token }) {
+  const [isPlaying, setIsPlaying] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -1181,90 +1301,64 @@ function SavedStoryCard({ story, token }) {
   const isMissing = story.fileExists === false;
 
   return (
-    <li className="list-item" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+    <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '14px', background: 'var(--surface)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <strong style={{ fontSize: '1.05rem' }}>{story.title || "Untitled Story"}</strong>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.85em', marginTop: '2px' }}>
-            📅 {new Date(story.createdAt).toLocaleDateString()} at {new Date(story.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          <strong style={{ fontSize: '0.98rem', color: 'var(--text-main)' }}>{story.title || "Untitled Story"}</strong>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '2px' }}>
+            📅 {new Date(story.createdAt).toLocaleDateString()}
           </div>
         </div>
-        <span className="status-badge" style={{ 
-          background: isMissing ? '#fee2e2' : loadError ? '#fef3c7' : 'var(--color-success-bg)', 
-          color: isMissing ? '#ef4444' : loadError ? '#b45309' : 'var(--color-success)' 
-        }}>
-          {isMissing ? 'File Missing' : loadError ? 'Playback Error' : isLoaded ? 'Ready' : 'Saved'}
+        <span className={`badge ${isMissing ? 'badge-red' : loadError ? 'badge-amber' : isPlaying ? (isLoaded ? 'badge-green' : 'badge-amber') : 'badge-blue'}`}>
+          {isMissing ? 'Missing' : loadError ? 'Error' : isPlaying ? (isLoaded ? 'Playing' : 'Buffering...') : 'Ready'}
         </span>
       </div>
 
       {isMissing ? (
-        <div style={{
-          padding: '14px',
-          background: '#fef2f2',
-          border: '1px dashed #f87171',
-          borderRadius: '10px',
-          color: '#991b1b',
-          fontSize: '0.9em',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px'
-        }}>
-          <span style={{ fontSize: '1.3em' }}>⚠️</span>
-          <div>
-            <strong>Story video file is unavailable on server.</strong>
-            <div style={{ fontSize: '0.85em', opacity: 0.8, marginTop: '2px' }}>
-              The video generation record exists, but the file was not found in the output directory.
-            </div>
-          </div>
+        <div className="alert-banner alert-danger" style={{ margin: 0, padding: '10px 12px', fontSize: '0.82rem' }}>
+          ⚠️ Video file is unavailable on server.
         </div>
       ) : loadError ? (
-        <div style={{
-          padding: '14px',
-          background: '#fffbeb',
-          border: '1px dashed #f59e0b',
-          borderRadius: '10px',
-          color: '#92400e',
-          fontSize: '0.9em',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '1.3em' }}>⚠️</span>
-            <div>
-              <strong>Failed to stream video.</strong>
-              <div style={{ fontSize: '0.85em', opacity: 0.8, marginTop: '2px' }}>
-                The browser could not load this media stream.
-              </div>
-            </div>
-          </div>
-          <button 
-            onClick={() => setLoadError(false)} 
-            className="btn btn-secondary" 
-            style={{ padding: '4px 10px', fontSize: '0.85rem' }}
-          >
-            Retry
-          </button>
+        <div className="alert-banner alert-danger" style={{ margin: 0, padding: '10px 12px', fontSize: '0.82rem', justifyContent: 'space-between' }}>
+          <span>⚠️ Failed to stream video.</span>
+          <button onClick={() => setLoadError(false)} className="btn btn-secondary btn-sm">Retry</button>
         </div>
-      ) : story.videoUrl ? (
-        <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '2px solid var(--border)', background: '#000' }}>
+      ) : isPlaying ? (
+        <div style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border)', background: '#000' }}>
           <video 
             src={getVideoSrc(story.videoUrl)} 
             controls 
-            preload="metadata"
+            autoPlay
             playsInline
             onLoadedMetadata={() => setIsLoaded(true)}
             onError={(e) => {
               console.error("Video load error for story:", story.id, e);
               setLoadError(true);
             }}
-            style={{ width: '100%', maxHeight: '360px', display: 'block' }}
+            style={{ width: '100%', maxHeight: '300px', display: 'block' }}
           ></video>
+          <div style={{ padding: '6px', background: '#0f172a', textAlign: 'right' }}>
+            <button 
+              onClick={() => setIsPlaying(false)} 
+              className="btn btn-secondary btn-sm"
+              style={{ fontSize: '0.78rem', height: '28px', padding: '0 10px' }}
+            >
+              ✕ Close Player
+            </button>
+          </div>
         </div>
+      ) : story.videoUrl ? (
+        <button 
+          onClick={() => setIsPlaying(true)} 
+          className="btn btn-secondary btn-sm" 
+          style={{ width: '100%', justifyContent: 'center', gap: '6px' }}
+        >
+          <span>▶️</span> Watch Story Video
+        </button>
       ) : (
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9em' }}>No video URL recorded.</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No video URL recorded.</p>
       )}
-    </li>
+    </div>
   );
 }
 

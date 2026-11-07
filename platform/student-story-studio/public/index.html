@@ -3,51 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Story Studio</title>
+    <title>Story Studio - EduVision</title>
     <link rel="stylesheet" href="/css/style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="playground-bg">
-    <div class="container welcome-container">
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 20px;">
-            <a id="btn-return-portal" href="http://localhost:5173" class="btn btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 10px 18px; border-radius: 12px; background: white; color: var(--color-primary); box-shadow: 0 4px 6px rgba(0,0,0,0.06); border: 2px solid var(--border);">
-                <i class="fa-solid fa-arrow-left"></i> Back to EduVision
+<body>
+    <header class="portal-header">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <a href="http://localhost:5173" class="nav-brand">
+                <span>✨</span> EduVision
             </a>
-            <div id="portal-session-indicator" style="display: none; font-size: 0.9em; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 6px 14px; border-radius: 20px;">
-                🎒 Activity Active
-            </div>
+            <span class="badge badge-purple">Story Studio</span>
         </div>
-
-        <header class="home-header">
-            <h1 class="animate-bounce">Story Studio ✨</h1>
-            
-            <img src="/assets/welcome_storybook.jpg" alt="Magical Storybook" class="welcome-img">
-            
-        </header>
-
-        <div class="cards-grid">
-            <a href="/story.html" class="card story-card">
-                <i class="fa-solid fa-wand-magic-sparkles card-icon play-blue-text"></i>
-                <h2>Make a Story</h2>
-            </a>
-
-            <a href="/fixer.html" class="card fixer-card">
-                <i class="fa-solid fa-paintbrush card-icon purple-text"></i>
-                <h2>Fix Drawing</h2>
+        <div class="nav-controls">
+            <span id="portal-session-indicator" class="badge badge-blue" style="display: none;">🎒 Active Activity</span>
+            <a id="btn-return-portal" href="http://localhost:5173" class="btn btn-secondary btn-sm">
+                ← Back to Portal 🎒
             </a>
         </div>
+    </header>
 
-        <div id="integration-banner" class="integration-banner" style="display: none; justify-content: space-between; align-items: center;">
+    <main class="dashboard-container" style="max-width: 900px; margin: 24px auto; padding: 0 20px;">
+        <div id="integration-banner" class="alert-banner alert-info" style="display: none; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-link icon-gap"></i>
-                <span>Linked to EduVision</span>
-                <span id="assignment-context" class="assignment-context" style="display: none;"></span>
+                <i class="fa-solid fa-link"></i>
+                <span>Linked to EduVision Classroom</span>
+                <span id="assignment-context" style="display: none; font-size: 0.85em; opacity: 0.8;"></span>
             </div>
-            <a id="banner-return-link" href="http://localhost:5173" style="color: white; text-decoration: underline; font-weight: 700; margin-left: 16px;">
-                Return to Dashboard 🎒
+            <a id="banner-return-link" href="http://localhost:5173" class="btn btn-secondary btn-sm" style="background: white;">
+                Back to Portal 🎒
             </a>
         </div>
-    </div>
+
+        <section class="welcome-hero" style="margin-bottom: 24px;">
+            <div class="welcome-hero-avatar">📖</div>
+            <div>
+                <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin: 0;">Story Studio</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin: 4px 0 0 0;">Turn character drawings into animated story videos.</p>
+            </div>
+        </section>
+
+        <div class="cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+            <a href="/story.html" class="activity-card" style="text-align: center; padding: 32px 24px;">
+                <div style="font-size: 2.8rem; margin-bottom: 12px;">✨</div>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">Make a Story</h3>
+                <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 20px;">Cast characters & build an animated video</p>
+                <button class="btn btn-primary" style="width: 100%;">Create Story ▶️</button>
+            </a>
+
+            <a href="/fixer.html" class="activity-card" style="text-align: center; padding: 32px 24px;">
+                <div style="font-size: 2.8rem; margin-bottom: 12px;">🎨</div>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">Fix Drawing</h3>
+                <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 20px;">Adjust masks and test character movement</p>
+                <button class="btn btn-secondary" style="width: 100%;">Open Fixer 🔧</button>
+            </a>
+        </div>
+    </main>
 
     <script>
         // Phase 3 & 4 Integration Context Extraction
@@ -65,28 +76,25 @@
             if (assignmentId) {
                 localStorage.setItem('eduvision_assignment', assignmentId);
             }
-            
-            // Clean up the URL
             window.history.replaceState({}, document.title, "/");
         }
 
-        // Resolve return destination
         const savedReturnUrl = localStorage.getItem('eduvision_return_url') || 'http://localhost:5173';
         const returnBtn = document.getElementById('btn-return-portal');
         const bannerReturnLink = document.getElementById('banner-return-link');
         if (returnBtn) returnBtn.href = savedReturnUrl;
         if (bannerReturnLink) bannerReturnLink.href = savedReturnUrl;
 
-        // Show banner if integrated
         const savedToken = localStorage.getItem('eduvision_token');
         const savedAssignment = localStorage.getItem('eduvision_assignment');
 
         if (savedToken) {
             document.getElementById('integration-banner').style.display = 'flex';
-            document.getElementById('portal-session-indicator').style.display = 'block';
+            document.getElementById('portal-session-indicator').style.display = 'inline-flex';
             if (savedAssignment) {
                 const ctx = document.getElementById('assignment-context');
-                ctx.textContent = `(Assignment ID: ${savedAssignment})`;
+                ctx.style.display = 'inline';
+                ctx.textContent = `(Assignment #${savedAssignment.slice(0, 8)})`;
             }
         }
     </script>

@@ -37,6 +37,11 @@ describe('EduVision Integration Contract Tests', () => {
             update: {},
             create: { id: 'assign-1', title: 'Test Assignment', classId: 'class-1', appId: 'test-app' }
         });
+        await prisma.classMembership.upsert({
+            where: { userId_classId: { userId: 'user123', classId: 'class-1' } },
+            update: {},
+            create: { userId: 'user123', classId: 'class-1', role: 'STUDENT' }
+        });
 
         // Mock a user token for the launch request
         userToken = jwt.sign({ id: 'user123', role: 'STUDENT' }, process.env.JWT_SECRET || 'secret', { expiresIn: '1h' });
@@ -48,6 +53,7 @@ describe('EduVision Integration Contract Tests', () => {
     afterAll(async () => {
         // Clean up all seeded records
         await prisma.activityResult.deleteMany({ where: { assignmentId: 'assign-1' } });
+        await prisma.classMembership.deleteMany({ where: { userId: 'user123' } });
         await prisma.assignment.delete({ where: { id: 'assign-1' } }).catch(() => {});
         await prisma.class.delete({ where: { id: 'class-1' } }).catch(() => {});
         await prisma.application.delete({ where: { id: 'test-app' } }).catch(() => {});

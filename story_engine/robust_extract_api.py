@@ -2,14 +2,13 @@ import sys
 import json
 import yaml
 import os
-import subprocess
 import tempfile
 import shutil
 import time
+from ai_client import run_annotations
 
 def extract(img_path):
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    repo_root = os.path.join(base_dir, 'Actual repo (EDUVISION)', 'AnimatedDrawings')
     public_uploads = os.path.join(base_dir, 'eduvision_ui', 'public', 'uploads')
     os.makedirs(public_uploads, exist_ok=True)
     
@@ -19,15 +18,9 @@ def extract(img_path):
     temp_dir = tempfile.mkdtemp()
     
     try:
-        script_path = os.path.join(repo_root, 'examples', 'image_to_annotations.py')
-        result = subprocess.run(
-            [sys.executable, script_path, img_path, temp_dir],
-            cwd=repo_root,
-            capture_output=True,
-            text=True
-        )
+        succeeded, _ = run_annotations(img_path, temp_dir)
         
-        if result.returncode != 0:
+        if not succeeded:
             # If the engine failed, it likely found no keypoints (non-humanoid).
             # We fallback to sending the raw image back to the UI so the user can draw on it.
             import uuid
@@ -76,7 +69,7 @@ def extract(img_path):
             return
             
         # Move texture.png to public uploads so UI can access it
-        unique_name = f"robust_texture_{int(time.time())}.png"
+        unique_name = f"robust_texture_{time.time_ns()}.png"
         dest_path = os.path.join(public_uploads, unique_name)
         shutil.copy2(texture_path, dest_path)
         

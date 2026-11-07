@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { authenticate } = require('../middleware/auth');
 const prisma = require('../utils/prismaClient');
+const { studentAssignmentWhere, uniqueUsername } = require('../utils/assignmentAccess');
 
 // Only TEACHER or ADMIN can access these routes
 const isTeacher = (req, res, next) => {
@@ -13,6 +14,16 @@ const isTeacher = (req, res, next) => {
         return res.status(403).json({error: 'Forbidden'});
     }
     next();
+};
+
+const canManageClass = async (user, classId) => {
+    if (user.role === 'ADMIN') {
+        return Boolean(await prisma.class.findUnique({ where: { id: classId }, select: { id: true } }));
+    }
+    const membership = await prisma.classMembership.findUnique({
+        where: { userId_classId: { userId: user.id, classId } }
+    });
+    return Boolean(membership && membership.role === 'TEACHER');
 };
 
 // Teacher creates a class
@@ -73,8 +84,14 @@ router.post('/students', authenticate, isTeacher, async (req, res, next) => {
             parentId
         } = req.body;
 
+        if (!username || !username.trim()) {
+            return res.status(400).json({ error: 'Student username is required' });
+        }
+
         const studentHash = await bcrypt.hash(password || 'password123', 10);
-        
+        const rawParentPassword = parentPassword || 'password123';
+        const parentHash = await bcrypt.hash(rawParentPassword, 10);
+
         let parentUser = null;
         let createdParentCreds = null;
 
@@ -85,38 +102,25 @@ router.post('/students', authenticate, isTeacher, async (req, res, next) => {
             if (!parentUser || parentUser.role !== 'PARENT') {
                 return res.status(400).json({ error: 'Selected parent account not found' });
             }
-        } else {
-            // New parent admission
-            const pDisplayName = (parentName && parentName.trim()) 
-                ? parentName.trim() 
-                : (displayName ? `Parent of ${displayName}` : 'Parent');
+        } else if (parentUsername && parentUsername.trim()) {
+            // A typed username must never silently attach this child to someone else's account
+            const typedUsername = parentUsername.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+            if (await prisma.user.findUnique({ where: { username: typedUsername } })) {
+                return res.status(400).json({ error: 'That parent username is taken. Choose the existing parent instead.' });
+            }
+        }
 
-            let pUsername = (parentUsername && parentUsername.trim()) 
-                ? parentUsername.trim().toLowerCase().replace(/[^a-z0-9_]/g, '')
-                : `parent_${username.toLowerCase().replace(/[^a-z0-9_]/g, '')}`;
+        const student = await prisma.$transaction(async (tx) => {
+            if (!parentUser) {
+                // New parent admission
+                const pDisplayName = (parentName && parentName.trim())
+                    ? parentName.trim()
+                    : (displayName ? `Parent of ${displayName}` : 'Parent');
+                const pUsername = (parentUsername && parentUsername.trim())
+                    ? parentUsername.trim().toLowerCase().replace(/[^a-z0-9_]/g, '')
+                    : await uniqueUsername(tx, `parent_${username.toLowerCase().replace(/[^a-z0-9_]/g, '')}`);
 
-            const rawParentPassword = parentPassword || 'password123';
-            const parentHash = await bcrypt.hash(rawParentPassword, 10);
-
-            // Check if username already exists
-            const existingParent = await prisma.user.findUnique({ where: { username: pUsername } });
-            if (existingParent) {
-                if (existingParent.role === 'PARENT') {
-                    parentUser = existingParent;
-                } else {
-                    pUsername = `${pUsername}_${Math.floor(Math.random() * 899 + 100)}`;
-                    parentUser = await prisma.user.create({
-                        data: {
-                            username: pUsername,
-                            passwordHash: parentHash,
-                            displayName: pDisplayName,
-                            role: 'PARENT'
-                        }
-                    });
-                    createdParentCreds = { username: pUsername, password: rawParentPassword, displayName: pDisplayName };
-                }
-            } else {
-                parentUser = await prisma.user.create({
+                parentUser = await tx.user.create({
                     data: {
                         username: pUsername,
                         passwordHash: parentHash,
@@ -126,42 +130,29 @@ router.post('/students', authenticate, isTeacher, async (req, res, next) => {
                 });
                 createdParentCreds = { username: pUsername, password: rawParentPassword, displayName: pDisplayName };
             }
-        }
 
-        // Create student
-        const student = await prisma.user.create({
-            data: {
-                username,
-                passwordHash: studentHash,
-                displayName,
-                avatar,
-                role: 'STUDENT'
-            }
-        });
-
-        // Link student to class
-        if (classId) {
-            await prisma.classMembership.create({
-                data: { userId: student.id, classId: classId, role: 'STUDENT' }
-            });
-        }
-
-        // Link parent to student in ParentChild table
-        if (parentUser) {
-            await prisma.parentChild.upsert({
-                where: {
-                    parentId_childId: {
-                        parentId: parentUser.id,
-                        childId: student.id
-                    }
-                },
-                update: {},
-                create: {
-                    parentId: parentUser.id,
-                    childId: student.id
+            const created = await tx.user.create({
+                data: {
+                    username,
+                    passwordHash: studentHash,
+                    displayName,
+                    avatar,
+                    role: 'STUDENT'
                 }
             });
-        }
+
+            if (classId) {
+                await tx.classMembership.create({
+                    data: { userId: created.id, classId: classId, role: 'STUDENT' }
+                });
+            }
+
+            await tx.parentChild.create({
+                data: { parentId: parentUser.id, childId: created.id }
+            });
+
+            return created;
+        });
 
         res.json({
             id: student.id,
@@ -219,6 +210,11 @@ router.post('/classes/:id/members', authenticate, isTeacher, async (req, res, ne
         });
         if (!membership || membership.role !== 'TEACHER') {
             return res.status(403).json({ error: 'You do not manage this class' });
+        }
+
+        const student = await prisma.user.findUnique({ where: { id: studentId } });
+        if (!student || student.role !== 'STUDENT') {
+            return res.status(400).json({ error: 'Student not found' });
         }
 
         // Enforce: Student cannot be enrolled twice in the same class
@@ -329,8 +325,44 @@ router.get('/classes/:id/roster', authenticate, isTeacher, async (req, res, next
 router.post('/assignments', authenticate, isTeacher, async (req, res, next) => {
     try {
         const { title, classId, appId, assignedToId } = req.body;
-        const assign = await prisma.assignment.create({ data: { title, classId, appId, assignedToId: assignedToId || null }});
+        if (!title || !title.trim() || !classId || !appId) {
+            return res.status(400).json({ error: 'Title, class and activity are required' });
+        }
+        if (!(await canManageClass(req.user, classId))) {
+            return res.status(403).json({ error: 'You do not manage this class' });
+        }
+        const app = await prisma.application.findUnique({ where: { id: appId } });
+        if (!app) {
+            return res.status(400).json({ error: 'Activity not found' });
+        }
+        if (assignedToId) {
+            const member = await prisma.classMembership.findUnique({
+                where: { userId_classId: { userId: assignedToId, classId } }
+            });
+            if (!member || member.role !== 'STUDENT') {
+                return res.status(400).json({ error: 'That student is not in this class' });
+            }
+        }
+        const assign = await prisma.assignment.create({ data: { title: title.trim(), classId, appId, assignedToId: assignedToId || null }});
         res.json(assign);
+    } catch(err) { next(err); }
+});
+
+// Delete assignment and its results
+router.delete('/assignments/:id', authenticate, isTeacher, async (req, res, next) => {
+    try {
+        const assignment = await prisma.assignment.findUnique({ where: { id: req.params.id } });
+        if (!assignment) {
+            return res.status(404).json({ error: 'Assignment not found' });
+        }
+        if (!(await canManageClass(req.user, assignment.classId))) {
+            return res.status(403).json({ error: 'You do not manage this class' });
+        }
+        await prisma.$transaction([
+            prisma.activityResult.deleteMany({ where: { assignmentId: assignment.id } }),
+            prisma.assignment.delete({ where: { id: assignment.id } })
+        ]);
+        res.json({ success: true });
     } catch(err) { next(err); }
 });
 
@@ -339,13 +371,13 @@ router.get('/assignments', authenticate, async (req, res, next) => {
     try {
         res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
         const assignments = await prisma.assignment.findMany({
-            where: { 
-                OR: [ 
-                    { assignedToId: req.user.id }, 
-                    { class: { memberships: { some: { userId: req.user.id, role: 'STUDENT' } } }, assignedToId: null } 
-                ] 
-            },
-            include: { application: true, results: { where: { userId: req.user.id }, orderBy: { createdAt: 'desc' } } }
+            // A student who logged in through a class only sees that class's work
+            where: studentAssignmentWhere(req.user.id, req.user.classId),
+            include: {
+                application: true,
+                class: { select: { id: true, name: true } },
+                results: { where: { userId: req.user.id }, orderBy: { createdAt: 'desc' } }
+            }
         });
         res.json(assignments);
     } catch(err) { next(err); }
@@ -457,13 +489,8 @@ router.get('/parent/children/:childId/dashboard', authenticate, isParent, async 
         }
 
         const assignments = await prisma.assignment.findMany({
-            where: { 
-                OR: [ 
-                    { assignedToId: childId }, 
-                    { class: { memberships: { some: { userId: childId, role: 'STUDENT' } } }, assignedToId: null } 
-                ] 
-            },
-            include: { application: true, class: true, results: { where: { userId: childId } } }
+            where: studentAssignmentWhere(childId),
+            include: { application: true, class: true, results: { where: { userId: childId }, orderBy: { createdAt: 'desc' } } }
         });
 
         const stories = await prisma.studentStory.findMany({

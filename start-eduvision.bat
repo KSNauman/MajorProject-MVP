@@ -70,8 +70,8 @@ if %ERRORLEVEL% NEQ 0 (
 
 :: 3. Clear any stale orphaned processes on EduVision ports to guarantee clean startup & logs
 echo.
-echo [INFO] Ensuring ports (4000, 5173, 5000, 3000, 3001) are ready...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$ports = @(4000, 5173, 5000, 3000, 3001); foreach ($port in $ports) { try { $conns = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue; if ($conns) { foreach ($c in $conns) { $pidToKill = $c.OwningProcess; if ($pidToKill -gt 0) { Stop-Process -Id $pidToKill -Force -ErrorAction SilentlyContinue } } } } catch {} }" >nul 2>nul
+echo [INFO] Ensuring ports (4000, 5173, 5000, 5001, 3000, 3001) are ready...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ports = @(4000, 5173, 5000, 5001, 3000, 3001); foreach ($port in $ports) { try { $conns = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue; if ($conns) { foreach ($c in $conns) { $pidToKill = $c.OwningProcess; if ($pidToKill -gt 0) { Stop-Process -Id $pidToKill -Force -ErrorAction SilentlyContinue } } } } catch {} }" >nul 2>nul
 
 :: 4. Start Express API (Port 4000) - Live Route Logs Console
 echo.
@@ -104,7 +104,13 @@ cd platform\activity-center
 start "EduVision-Activities" cmd /k "title EduVision-Activities && node server.js"
 cd ..\..
 
-:: 9. Open Portal in default browser
+:: 9. Start AI Server (Port 5001) - loads the models once, takes about a minute
+echo [INFO] Launching AI Server (Port 5001)...
+cd story_engine
+start "EduVision-AIServer" cmd /k "title EduVision-AIServer && python ai_server.py"
+cd ..
+
+:: 10. Open Portal in default browser
 echo.
 echo [INFO] Waiting 5 seconds for services to initialize...
 timeout /t 5 /nobreak >nul
@@ -117,6 +123,7 @@ echo   EduVision is now active!
 echo   - Express API:           http://localhost:4000
 echo   - React Portal:          http://localhost:5173
 echo   - Activities Center:     http://localhost:5000
+echo   - AI Server:             http://localhost:5001
 echo   - Story Studio Engine:   http://localhost:3000
 echo   - Story Studio Replica:  http://localhost:3001
 echo.

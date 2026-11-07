@@ -72,8 +72,8 @@ def generate_solid_humanoid(color_name: str, bgr: tuple):
         'skeleton': [
             {'name': 'root', 'loc': [cx, 290], 'parent': None},
             {'name': 'hip', 'loc': [cx, 290], 'parent': 'root'},
-            {'name': 'torso', 'loc': [cx, 220], 'parent': 'hip'},
-            {'name': 'neck', 'loc': [cx, 145], 'parent': 'torso'},
+            {'name': 'torso', 'loc': [cx, 165], 'parent': 'hip'},
+            {'name': 'neck', 'loc': [cx, 90], 'parent': 'torso'},
             {'name': 'right_shoulder', 'loc': [120, 165], 'parent': 'torso'},
             {'name': 'right_elbow', 'loc': [95, 205], 'parent': 'right_shoulder'},
             {'name': 'right_hand', 'loc': [60, 245], 'parent': 'right_elbow'},
