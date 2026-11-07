@@ -2,7 +2,7 @@ import sys
 import os
 import json
 import time
-import subprocess
+from ai_client import run_annotations
 from progress_logger import ProgressLogger
 
 def main():
@@ -20,24 +20,17 @@ def main():
     logger.start_timer("preprocessing")
     
     upload_dir = os.path.dirname(img_path)
-    char_id = str(int(time.time()))
+    char_id = str(time.time_ns())
     char_dir = os.path.join(upload_dir, f'char_data_{char_id}')
     os.makedirs(char_dir, exist_ok=True)
     
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    repo_root = os.path.join(base_dir, 'Actual repo (EDUVISION)', 'AnimatedDrawings')
-    script_path = os.path.join(repo_root, 'examples', 'image_to_annotations.py')
-    
-    cmd = [sys.executable, script_path, img_path, char_dir]
-    if kps_arg != "none" and os.path.exists(kps_arg):
-        cmd.extend(['--keypoints', kps_arg])
-        
-    result = subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True)
-    
-    if result.returncode != 0:
-        logger.log_error("Preprocessing engine failed", result.stderr)
+    kps_path = kps_arg if kps_arg != "none" and os.path.exists(kps_arg) else None
+    succeeded, error_text = run_annotations(img_path, char_dir, kps_path)
+
+    if not succeeded:
+        logger.log_error("Preprocessing engine failed", error_text)
         sys.exit(1)
-        
+
     logger.end_timer("preprocessing")
     logger.log_stage("PREPROCESSING_COMPLETED", "Character bounding box, mask, and skeleton created")
 

@@ -51,7 +51,6 @@ sketch_yolo_dataset/
 *.mar
 *.onnx
 *.pb
-*.pt
 *.pth
 *.task
 *.tflite
@@ -142,3 +141,19 @@ scratch/
 eduvision_ui/public/uploads/
 platform/activity-center/public/uploads/custom_characters/*
 !platform/activity-center/public/uploads/custom_characters/.gitkeep
+# ------------------------------------------
+# 7. Local Backups & Generated Presentation Artifacts
+# ------------------------------------------
+db_backups/
+ppt_output/
+ppt_screenshots/
+ppt_diagrams/
+report_output/
+
+# Temporary Paper & PPT review notes (uncomment if you do not want them in Git):
+PAPER_VERIFICATION_REPORT*.md
+PPT_*.md
+PROJECT_AND_PPT_EXPLAINED.md
+REPORT_CHANGES.md
+platform/activity-center/public/uploads/
+test.html

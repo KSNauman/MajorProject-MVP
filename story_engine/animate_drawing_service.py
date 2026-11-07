@@ -91,14 +91,19 @@ def process_drawing_and_animate(image_path: str, output_dir: str, motion: str = 
 
     # 2. Build proportional humanoid skeleton matching AnimatedDrawings topology
     cx = w // 2
+    # Pin the neck joint inside the head, as the story pipeline does with the nose
+    # keypoint. A neck joint at the chin leaves the head unpinned and ARAP folds it down.
+    mask_rows = np.flatnonzero(mask.any(axis=1))
+    mask_top, mask_bottom = (int(mask_rows[0]), int(mask_rows[-1])) if mask_rows.size else (0, h - 1)
+    head_y = int(mask_top + (mask_bottom - mask_top) * 0.13)
     char_cfg = {
         'width': w,
         'height': h,
         'skeleton': [
             {'name': 'root', 'loc': [cx, int(h * 0.56)], 'parent': None},
             {'name': 'hip', 'loc': [cx, int(h * 0.56)], 'parent': 'root'},
-            {'name': 'torso', 'loc': [cx, int(h * 0.38)], 'parent': 'hip'},
-            {'name': 'neck', 'loc': [cx, int(h * 0.26)], 'parent': 'torso'},
+            {'name': 'torso', 'loc': [cx, int(h * 0.32)], 'parent': 'hip'},
+            {'name': 'neck', 'loc': [cx, head_y], 'parent': 'torso'},
             {'name': 'right_shoulder', 'loc': [int(cx - w * 0.16), int(h * 0.32)], 'parent': 'torso'},
             {'name': 'right_elbow', 'loc': [int(cx - w * 0.28), int(h * 0.42)], 'parent': 'right_shoulder'},
             {'name': 'right_hand', 'loc': [int(cx - w * 0.36), int(h * 0.52)], 'parent': 'right_elbow'},

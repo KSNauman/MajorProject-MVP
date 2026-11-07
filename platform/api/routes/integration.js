@@ -3,6 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const { authenticate } = require('../middleware/auth');
 const prisma = require('../utils/prismaClient');
+const { studentAssignmentWhere } = require('../utils/assignmentAccess');
 
 // Generate a short-lived launch token for an app
 router.post('/launch', authenticate, async (req, res, next) => {
@@ -12,6 +13,16 @@ router.post('/launch', authenticate, async (req, res, next) => {
     try {
         const appInfo = await prisma.application.findUnique({ where: { id: appId } });
         if (!appInfo) return res.status(404).json({ error: 'Application not found' });
+
+        if (assignmentId) {
+            const assignment = await prisma.assignment.findFirst({
+                where: { id: assignmentId, appId, ...studentAssignmentWhere(req.user.id, req.user.classId) },
+                select: { id: true }
+            });
+            if (!assignment) {
+                return res.status(403).json({ error: 'This assignment is not available to you' });
+            }
+        }
 
         let launchUrl = appInfo.launchUrl || 'http://localhost:5000/index.html';
 

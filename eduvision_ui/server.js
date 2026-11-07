@@ -15,18 +15,13 @@ const TORCHSERVE_DIR = path.join(REPO_ROOT, 'torchserve');
 
 const PYTHON_BIN = 'python';
 
-// Utility to dynamically toggle GPU visibility for Python processes based on UI request
+// Utility to dynamically toggle GPU visibility for Python processes based on UI request.
+// The GPU is used unless the request explicitly asks for the CPU.
 function getSpawnEnv(req) {
     const env = Object.assign({}, process.env);
-    if (req && req.body && (req.body.useGpu === false || req.body.useGpu === 'false' || req.body.useGpu === undefined)) {
-        // We assume CPU fallback if not explicitly true
-        // But let's check if the client sent 'useGpu' at all. If it sent 'true', enable GPU.
-        if (req.body.useGpu === true || req.body.useGpu === 'true') {
-            // Keep GPU
-        } else {
-            env['USE_GPU'] = 'false';
-            env['CUDA_VISIBLE_DEVICES'] = ''; // Ensure it isn't set to -1
-        }
+    if (req && req.body && (req.body.useGpu === false || req.body.useGpu === 'false')) {
+        env['USE_GPU'] = 'false';
+        env['CUDA_VISIBLE_DEVICES'] = ''; // Ensure it isn't set to -1
     }
     return env;
 }
@@ -99,7 +94,7 @@ const storage = multer.diskStorage({
         cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
-        cb(null, 'input_' + Date.now() + path.extname(file.originalname));
+        cb(null, 'input_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + path.extname(file.originalname));
     }
 });
 const upload = multer({ storage: storage });
@@ -155,7 +150,7 @@ function startTorchServe() {
 app.post('/api/story/prepare', upload.any(), (req, res) => {
     const files = req.files || [];
     const body = req.body || {};
-    const jobId = 'job_batch_' + Date.now();
+    const jobId = 'job_batch_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
     
     // Determine all slots (files + existing)
     const slots = {};
@@ -508,7 +503,8 @@ app.get('/api/engine/motions', (req, res) => {
     const motionDir = path.join(EXAMPLES_DIR, 'config', 'motion');
     if (!fs.existsSync(motionDir)) return res.json({ motions: [] });
 
-    const unsupported = ['angry'];
+    // The *_extra files in fair1 have no shoulder joints and do not render.
+    const unsupported = ['angry', 'dab_extra', 'jumping_jacks_extra', 'walk_extra', 'wave_extra', 'zombie_extra'];
     const motions = fs.readdirSync(motionDir)
         .filter(f => f.endsWith('.yaml'))
         .map(f => {
@@ -543,7 +539,10 @@ app.post('/api/engine/preview', (req, res) => {
     try {
         const motionConfig = yaml.load(fs.readFileSync(motionYamlPath, 'utf8'));
         const bvhPath = (motionConfig.filepath || "").toLowerCase();
-        if (bvhPath.includes('mixamo') || bvhPath.includes('rokoko')) {
+        if (bvhPath.includes('mixamo')) {
+            // Our Mixamo files have no finger joints, which mixamo_fff requires
+            retargetYaml = `examples/config/retarget/mixamo_custom.yaml`;
+        } else if (bvhPath.includes('rokoko')) {
             retargetYaml = `examples/config/retarget/mixamo_fff.yaml`;
         } else if (bvhPath.includes('cmu')) {
             retargetYaml = `examples/config/retarget/cmu1_pfp.yaml`;

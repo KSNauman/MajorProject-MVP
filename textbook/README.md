@@ -129,3 +129,4 @@ To simplify the entire environment startup, you can use the provided Windows bat
 *Last updated: October 10, 2026*
 - [Chapter 12: Engine Optimization and Sealing](chapter12_engine_optimization.md)
 - [Chapter 13: Phase 2 to 11 - Platform Foundation, DB Setup, Integrations, Student Portal Redesign, Logging & Playground UI](chapter13_platform_foundation.md)
+- [Chapter 14: The Speed Journey - From 12 Minutes to 50 Seconds](chapter14_speed_journey.md)

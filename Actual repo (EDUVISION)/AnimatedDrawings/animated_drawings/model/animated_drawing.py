@@ -15,6 +15,7 @@ import cv2
 import numpy as np
 import numpy.typing as npt
 from skimage import measure
+import shapely
 from shapely import geometry
 from OpenGL import GL
 
@@ -546,19 +547,14 @@ class AnimatedDrawing(Transform, TimeManager):
 
         outside_vertices: npt.NDArray[np.float64] = measure.approximate_polygon(contours[0], tolerance=0.25)
         character_outline = geometry.Polygon(contours[0])
+        shapely.prepare(character_outline)  # speeds up the point-in-outline checks below
 
         # add some internal vertices to ensure a good mesh is created
-        inside_vertices_xy: List[Tuple[np.float32, np.float32]] = []
         _x = np.linspace(0, self.img_dim, 40)
         _y = np.linspace(0, self.img_dim, 40)
         xv, yv = np.meshgrid(_x, _y)
-        for x, y in zip(xv.flatten(), yv.flatten()):
-            if character_outline.contains(geometry.Point(x, y)):
-                inside_vertices_xy.append((x, y))
-        if len(inside_vertices_xy) == 0:
-            inside_vertices: npt.NDArray[np.float64] = np.empty((0, 2), dtype=np.float64)
-        else:
-            inside_vertices: npt.NDArray[np.float64] = np.array(inside_vertices_xy)
+        grid_xy: npt.NDArray[np.float64] = np.stack([xv.flatten(), yv.flatten()], axis=1)
+        inside_vertices: npt.NDArray[np.float64] = grid_xy[shapely.contains_xy(character_outline, grid_xy)]
 
         vertices: npt.NDArray[np.float32] = np.concatenate([outside_vertices, inside_vertices]).astype(np.float32)
 
@@ -568,13 +564,9 @@ class AnimatedDrawing(Transform, TimeManager):
         falls outside the character's outline.
         """
         convex_hull_triangles = Delaunay(vertices)
-        triangles: List[npt.NDArray[np.int32]] = []
-        for _triangle in convex_hull_triangles.simplices:
-            tri_vertices = np.array(
-                [vertices[_triangle[0]], vertices[_triangle[1]], vertices[_triangle[2]]])
-            tri_centroid = geometry.Point(np.mean(tri_vertices, 0))
-            if character_outline.contains(tri_centroid):
-                triangles.append(_triangle)
+        tri_centroids = np.mean(vertices[convex_hull_triangles.simplices], axis=1)
+        triangles: List[npt.NDArray[np.int32]] = list(
+            convex_hull_triangles.simplices[shapely.contains_xy(character_outline, tri_centroids)])
 
         vertices /= self.img_dim  # scale vertices so they lie between 0-1
 

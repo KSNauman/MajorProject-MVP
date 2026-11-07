@@ -14,12 +14,13 @@ taskkill /FI "WINDOWTITLE eq EduVision-StoryStudio*" /T /F >nul 2>nul
 taskkill /FI "WINDOWTITLE eq EduVision-StoryEngine*" /T /F >nul 2>nul
 taskkill /FI "WINDOWTITLE eq EduVision-StoryReplica*" /T /F >nul 2>nul
 taskkill /FI "WINDOWTITLE eq EduVision-Activities*" /T /F >nul 2>nul
+taskkill /FI "WINDOWTITLE eq EduVision-AIServer*" /T /F >nul 2>nul
 
 :: 2. Terminate any background processes listening on EduVision ports
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$ports = @(4000, 5173, 5000, 3000, 3001); foreach ($port in $ports) { try { $conns = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue; if ($conns) { foreach ($c in $conns) { $pidToKill = $c.OwningProcess; if ($pidToKill -gt 0) { Stop-Process -Id $pidToKill -Force -ErrorAction SilentlyContinue } } } } catch {} }" >nul 2>nul
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ports = @(4000, 5173, 5000, 5001, 3000, 3001); foreach ($port in $ports) { try { $conns = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue; if ($conns) { foreach ($c in $conns) { $pidToKill = $c.OwningProcess; if ($pidToKill -gt 0) { Stop-Process -Id $pidToKill -Force -ErrorAction SilentlyContinue } } } } catch {} }" >nul 2>nul
 
 :: Fallback netstat check
-for %%P in (4000 5173 5000 3000 3001) do (
+for %%P in (4000 5173 5000 5001 3000 3001) do (
     for /f "tokens=5" %%a in ('netstat -a -n -o 2^>nul ^| findstr ":%%P" ^| findstr "LISTENING"') do (
         if not "%%a"=="" (
             taskkill /PID %%a /F /T >nul 2>nul
@@ -53,6 +54,14 @@ if !ERRORLEVEL! EQU 0 (
     set ALL_STOPPED=0
 ) else (
     echo   - Port 5000 [Activity Center]: Stopped [OK]
+)
+
+netstat -ano 2>nul | findstr ":5001" | findstr "LISTENING" >nul
+if !ERRORLEVEL! EQU 0 (
+    echo   - Port 5001 [AI Server]: Still Busy
+    set ALL_STOPPED=0
+) else (
+    echo   - Port 5001 [AI Server]: Stopped [OK]
 )
 
 netstat -ano 2>nul | findstr ":3000" | findstr "LISTENING" >nul

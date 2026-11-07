@@ -168,7 +168,7 @@ describe('Onboarding Simplification & Relationship Flow', () => {
         expect(rosterRes.status).toBe(200);
         expect(rosterRes.body.some(s => s.id === createdChildId)).toBe(true);
 
-        // Attempting to enroll student into a second class must be rejected (400)
+        // A student may belong to more than one class, but not twice to the same one
         const secondClass = await prisma.class.create({
             data: {
                 name: 'Second Class Test',
@@ -176,16 +176,23 @@ describe('Onboarding Simplification & Relationship Flow', () => {
             }
         });
 
-        const duplicateEnrollRes = await request(app)
-            .post(`/api/portal/classes/${secondClass.id}/members`)
-            .set('Authorization', `Bearer ${teacherToken}`)
-            .send({ studentId: createdChildId });
+        try {
+            const secondEnrollRes = await request(app)
+                .post(`/api/portal/classes/${secondClass.id}/members`)
+                .set('Authorization', `Bearer ${teacherToken}`)
+                .send({ studentId: createdChildId });
+            expect(secondEnrollRes.status).toBe(200);
 
-        expect(duplicateEnrollRes.status).toBe(400);
-        expect(duplicateEnrollRes.body.error).toContain('already enrolled');
-
-        await prisma.classMembership.deleteMany({ where: { classId: secondClass.id } });
-        await prisma.class.delete({ where: { id: secondClass.id } });
+            const duplicateEnrollRes = await request(app)
+                .post(`/api/portal/classes/${secondClass.id}/members`)
+                .set('Authorization', `Bearer ${teacherToken}`)
+                .send({ studentId: createdChildId });
+            expect(duplicateEnrollRes.status).toBe(400);
+            expect(duplicateEnrollRes.body.error).toContain('already enrolled');
+        } finally {
+            await prisma.classMembership.deleteMany({ where: { classId: secondClass.id } });
+            await prisma.class.delete({ where: { id: secondClass.id } });
+        }
     });
 
     test('6. Student logs in passwordlessly using class and avatar selection', async () => {

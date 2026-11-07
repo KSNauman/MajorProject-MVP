@@ -3,29 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Story - Rahim's Family</title>
+    <title>Rahim's Family - Story Studio</title>
     <link rel="stylesheet" href="/css/style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <style>
-        /* CSS migrated to style.css */
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 </head>
-<body class="playground-bg">
-    <div class="container">
-        <div class="nav-bar">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <a id="nav-return-portal" href="http://localhost:5173" class="btn btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; padding: 8px 14px; border-radius: 10px; background: white; color: var(--color-primary); border: 2px solid var(--border);">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Portal
-                </a>
-                <a href="/" class="nav-brand"><i class="fa-solid fa-house"></i> Home</a>
-            </div>
-            <h1 class="page-title">Rahim's Family</h1>
-            <div id="story-assignment-badge" style="display: none; font-size: 0.85em; font-weight: 700; color: #0284c7; background: #e0f2fe; padding: 6px 12px; border-radius: 16px;">
-                🎒 Assigned Activity
-            </div>
+<body>
+    <header class="portal-header">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <a href="http://localhost:5173" class="nav-brand">
+                <span>✨</span> EduVision
+            </a>
+            <span class="badge badge-purple">Story Studio</span>
+            <span style="font-weight: 700; color: var(--text-muted); font-size: 0.9rem;">Rahim's Family</span>
         </div>
+        <div class="nav-controls">
+            <span id="story-assignment-badge" class="badge badge-blue" style="display: none;">🎒 Assigned Activity</span>
+            <a id="nav-return-portal" href="http://localhost:5173" class="btn btn-secondary btn-sm">
+                ← Back to Portal 🎒
+            </a>
+            <a href="/" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-house"></i> Home
+            </a>
+        </div>
+    </header>
 
+    <main class="dashboard-container" style="max-width: 900px; margin: 24px auto; padding: 0 20px;">
         <form id="story-form" class="character-list">
             <!-- Rahim -->
             <div class="character-card">
@@ -169,9 +172,8 @@
         <div id="log-container" class="log-container" style="display: none;">
             <div id="log-console" class="animate-bounce"><i class="fa-solid fa-wand-magic-sparkles"></i> Getting ready...</div>
         </div>
-    </div>
+    </main>
 
-    
     <script>
         // Logging & Tracing
         function generateUUID() {

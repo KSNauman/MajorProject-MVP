@@ -12,12 +12,12 @@ skeleton:
   parent: root
 - loc:
   - 180
-  - 220
+  - 165
   name: torso
   parent: hip
 - loc:
   - 180
-  - 145
+  - 90
   name: neck
   parent: torso
 - loc:

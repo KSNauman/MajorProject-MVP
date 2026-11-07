@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const { authenticate } = require('../middleware/auth');
 const prisma = require('../utils/prismaClient');
+const { uniqueUsername } = require('../utils/assignmentAccess');
 
 // Ensure only ADMIN can access these routes
 const isAdmin = (req, res, next) => {
@@ -88,11 +89,10 @@ router.delete('/students/:id', async (req, res, next) => {
             await tx.classMembership.deleteMany({ where: { userId: studentId } });
             // Delete parent-child links
             await tx.parentChild.deleteMany({ where: { childId: studentId } });
-            // Remove assignment assignments if assigned directly
-            await tx.assignment.updateMany({
-                where: { assignedToId: studentId },
-                data: { assignedToId: null }
-            });
+            // Personal assignments end with the student; clearing assignedToId
+            // would turn them into whole-class work
+            await tx.activityResult.deleteMany({ where: { assignment: { assignedToId: studentId } } });
+            await tx.assignment.deleteMany({ where: { assignedToId: studentId } });
             // Delete the student user
             await tx.user.delete({ where: { id: studentId } });
         });
@@ -158,87 +158,81 @@ router.post('/bulk-enroll', async (req, res, next) => {
             return res.status(400).json({ error: 'Provide a list of student records to enroll' });
         }
 
+        const classIds = [...new Set(rows.map(r => r.classId).filter(Boolean))];
+        const knownClasses = await prisma.class.count({ where: { id: { in: classIds } } });
+        if (knownClasses !== classIds.length) {
+            return res.status(400).json({ error: 'Selected class was not found. Nobody was enrolled.' });
+        }
+
         const defaultPasswordHash = await bcrypt.hash('password123', 10);
-        const results = [];
 
-        for (const row of rows) {
-            const rawStudentName = (row.studentName || '').trim();
-            if (!rawStudentName) continue;
+        // All-or-nothing: one bad row must not leave half of a list enrolled
+        const results = await prisma.$transaction(async (tx) => {
+            const records = [];
+            // Same parent name in one list means siblings. Names from earlier lists are
+            // never matched, because two families can share a name.
+            const parentsInThisList = new Map();
 
-            const baseStudentUser = rawStudentName.toLowerCase().replace(/[^a-z0-9]/g, '');
-            const studentUsername = `${baseStudentUser}_${Math.floor(Math.random() * 899 + 100)}`;
-            const avatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(rawStudentName)}`;
+            for (const row of rows) {
+                const rawStudentName = (row.studentName || '').trim();
+                if (!rawStudentName) continue;
 
-            // Parent handling
-            const rawParentName = (row.parentName || '').trim() || `Parent of ${rawStudentName}`;
-            const baseParentUser = rawParentName.toLowerCase().replace(/[^a-z0-9]/g, '') || `parent_${baseStudentUser}`;
-            let parentUsername = baseParentUser.startsWith('parent_') ? baseParentUser : `parent_${baseParentUser}`;
-            
-            // Check if parent already exists or create new
-            let parentUser = await prisma.user.findUnique({ where: { username: parentUsername } });
-            let parentCreated = false;
+                const baseStudentUser = rawStudentName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'student';
+                const studentUsername = await uniqueUsername(tx, `${baseStudentUser}_${Math.floor(Math.random() * 899 + 100)}`);
+                const avatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(rawStudentName)}`;
 
-            if (!parentUser) {
-                parentUser = await prisma.user.create({
+                const rawParentName = (row.parentName || '').trim() || `Parent of ${rawStudentName}`;
+                const parentKey = rawParentName.toLowerCase();
+                let parentUser = parentsInThisList.get(parentKey);
+                const parentCreated = !parentUser;
+
+                if (!parentUser) {
+                    const baseParentUser = rawParentName.toLowerCase().replace(/[^a-z0-9]/g, '') || baseStudentUser;
+                    parentUser = await tx.user.create({
+                        data: {
+                            username: await uniqueUsername(tx, `parent_${baseParentUser}`),
+                            passwordHash: defaultPasswordHash,
+                            displayName: rawParentName,
+                            role: 'PARENT'
+                        }
+                    });
+                    parentsInThisList.set(parentKey, parentUser);
+                }
+
+                const student = await tx.user.create({
                     data: {
-                        username: parentUsername,
+                        username: studentUsername,
                         passwordHash: defaultPasswordHash,
-                        displayName: rawParentName,
-                        role: 'PARENT'
-                    }
-                });
-                parentCreated = true;
-            }
-
-            // Create student
-            const student = await prisma.user.create({
-                data: {
-                    username: studentUsername,
-                    passwordHash: defaultPasswordHash,
-                    displayName: rawStudentName,
-                    avatar,
-                    role: 'STUDENT'
-                }
-            });
-
-            // Link parent and child
-            await prisma.parentChild.upsert({
-                where: {
-                    parentId_childId: {
-                        parentId: parentUser.id,
-                        childId: student.id
-                    }
-                },
-                update: {},
-                create: {
-                    parentId: parentUser.id,
-                    childId: student.id
-                }
-            });
-
-            // Optional class assignment
-            if (row.classId) {
-                await prisma.classMembership.create({
-                    data: {
-                        userId: student.id,
-                        classId: row.classId,
+                        displayName: rawStudentName,
+                        avatar,
                         role: 'STUDENT'
                     }
-                }).catch(() => {}); // continue if fails
-            }
+                });
 
-            results.push({
-                studentId: student.id,
-                studentName: student.displayName,
-                studentUsername: student.username,
-                studentPassword: 'password123',
-                parentId: parentUser.id,
-                parentName: parentUser.displayName,
-                parentUsername: parentUser.username,
-                parentPassword: 'password123',
-                parentWasNew: parentCreated
-            });
-        }
+                await tx.parentChild.create({
+                    data: { parentId: parentUser.id, childId: student.id }
+                });
+
+                if (row.classId) {
+                    await tx.classMembership.create({
+                        data: { userId: student.id, classId: row.classId, role: 'STUDENT' }
+                    });
+                }
+
+                records.push({
+                    studentId: student.id,
+                    studentName: student.displayName,
+                    studentUsername: student.username,
+                    studentPassword: 'password123',
+                    parentId: parentUser.id,
+                    parentName: parentUser.displayName,
+                    parentUsername: parentUser.username,
+                    parentPassword: 'password123',
+                    parentWasNew: parentCreated
+                });
+            }
+            return records;
+        }, { timeout: 30000 });
 
         res.json({
             success: true,

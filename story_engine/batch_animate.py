@@ -27,11 +27,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = BASE_DIR / "Actual repo (EDUVISION)" / "AnimatedDrawings"
 sys.path.insert(0, str(REPO_ROOT))
 
-import animated_drawings.render
+from ai_client import post_to_ai_server
 
 # ── Story-specific BVH motions (from Rahim's Story assets) ──────────────
 ASSETS_DIR = REPO_ROOT / "assets" / "Rahim's Story"
 BVH_DIR = REPO_ROOT / "examples" / "bvh" / "fair1"
+
+# Characters are about 275 px tall in the GIF, so a larger drawing only slows the mesh setup.
+RENDER_MAX_SIDE = 320
 
 STORY_MOTIONS = {
     "idel":             str(ASSETS_DIR / "idel.bvh"),
@@ -85,6 +88,37 @@ def prepare_bvh(bvh_path: str, temp_dir: Path):
         )
 
 
+def make_render_copy(char_dir: Path, render_dir: Path) -> bool:
+    """
+    Writes a smaller copy of the character to render from, leaving the original
+    files for the Fixer. Returns False if the drawing is already small enough.
+    """
+    import cv2
+
+    texture = cv2.imread(str(char_dir / "texture.png"), cv2.IMREAD_UNCHANGED)
+    mask = cv2.imread(str(char_dir / "mask.png"), cv2.IMREAD_UNCHANGED)
+    if texture is None or mask is None or max(texture.shape[:2]) <= RENDER_MAX_SIDE:
+        return False
+
+    with open(char_dir / "char_cfg.yaml", 'r') as f:
+        cfg = yaml.safe_load(f)
+
+    scale = RENDER_MAX_SIDE / max(texture.shape[:2])
+    size = (round(texture.shape[1] * scale), round(texture.shape[0] * scale))
+    cfg["width"], cfg["height"] = size
+    for joint in cfg["skeleton"]:
+        joint["loc"] = [joint["loc"][0] * scale, joint["loc"][1] * scale]
+
+    render_dir.mkdir(parents=True, exist_ok=True)
+    cv2.imwrite(str(render_dir / "texture.png"), cv2.resize(texture, size, interpolation=cv2.INTER_AREA))
+    # Any pixel the shape touches stays in the mask, so thin stick-figure limbs stay joined
+    small_mask = cv2.resize(mask, size, interpolation=cv2.INTER_AREA)
+    cv2.imwrite(str(render_dir / "mask.png"), (small_mask > 0).astype('uint8') * 255)
+    with open(render_dir / "char_cfg.yaml", 'w') as f:
+        yaml.safe_dump(cfg, f)
+    return True
+
+
 def generate_animation(char_dir: str, motion_name: str, bvh_path: str) -> dict:
     """
     Generate a single transparent-background GIF for a character + motion.
@@ -106,6 +140,13 @@ def generate_animation(char_dir: str, motion_name: str, bvh_path: str) -> dict:
 
     if not os.path.exists(bvh_path):
         return {"status": "error", "error": f"BVH not found: {bvh_path}"}
+
+    # Imported here so scripts that only talk to the AI server start instantly
+    import animated_drawings.render
+
+    render_dir = anim_dir / f"_tmp_render_{motion_name}"
+    if make_render_copy(char_dir, render_dir):
+        char_cfg_path = render_dir / "char_cfg.yaml"
 
     # Auto-detect BVH format and strip prefixes if necessary
     prepared_bvh, gp_joint, fwd_joints, retarget_path, is_mixamo = prepare_bvh(bvh_path, anim_dir)
@@ -159,6 +200,7 @@ def generate_animation(char_dir: str, motion_name: str, bvh_path: str) -> dict:
         for tmp in [temp_motion_path, mvc_path, prepared_bvh]:
             if tmp != bvh_path and os.path.exists(tmp):
                 os.remove(tmp)
+        shutil.rmtree(render_dir, ignore_errors=True)
 
     if error_msg:
         return {"status": "error", "error": error_msg}
@@ -223,8 +265,17 @@ if __name__ == "__main__":
     motions = args.motions.split(",") if args.motions else None
 
     print(f"Batch animating: {args.char_dir}")
-    results = batch_generate(args.char_dir, motions)
-    write_manifest(args.char_dir, args.slot, results)
+    state, response = post_to_ai_server("/animate", {
+        "char_dir": os.path.abspath(args.char_dir), "motions": motions, "slot": args.slot
+    })
+    if state == "failed":
+        print(f"AI server could not animate this character: {response}", file=sys.stderr)
+        sys.exit(1)
+    if state == "ok":
+        results = response["results"]
+    else:
+        results = batch_generate(args.char_dir, motions)
+        write_manifest(args.char_dir, args.slot, results)
 
     # Summary
     ok = sum(1 for r in results.values() if r["status"] in ("ok", "cached"))

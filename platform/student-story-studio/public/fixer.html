@@ -154,13 +154,14 @@
                     
                     fabric.Image.fromURL(rTex + "?t=" + new Date().getTime(), (img) => {
                         canvas.clear();
-                        canvas.setBackgroundColor('#f3f4f6', canvas.renderAll.bind(canvas));
-                        img.set({ selectable: false, evented: false });
-                        canvas.add(img);
-                        mainImageObj = img;
-                        
-                        let kpsData = JSON.parse(rKps);
-                        drawSkeleton(kpsData);
+                        const { scale, offsetX, offsetY } = placeMainImage(img);
+                        const kpsData = JSON.parse(rKps);
+                        // Joints from a re-analyzed drawing are in texture pixels, others in canvas pixels
+                        if (sessionStorage.getItem('restore_keypoints_space') === 'texture') {
+                            drawKeypoints(kpsData, scale, offsetX, offsetY);
+                        } else {
+                            drawKeypoints(kpsData, 1, 0, 0);
+                        }
                     });
                 }
             }
@@ -256,6 +257,29 @@
         }
 
         // --- Core Workflow ---
+        function placeMainImage(img) {
+            const targetDim = 450;
+            const scale = Math.min(targetDim / img.width, targetDim / img.height);
+            img.scale(scale);
+
+            const offsetX = (512 - img.width * scale) / 2;
+            const offsetY = (512 - img.height * scale) / 2;
+            img.set({ left: offsetX, top: offsetY, selectable: false, evented: false });
+
+            mainImageObj = img;
+            canvas.add(img);
+            return { scale, offsetX, offsetY };
+        }
+
+        function showUploadFailed(message) {
+            document.getElementById('upload-placeholder').style.display = '';
+            document.getElementById('toolbar').style.display = 'none';
+            document.getElementById('btn-save').style.display = 'none';
+            document.getElementById('imageUpload').value = ''; // lets the same file be chosen again
+            hideLoading();
+            showToast(message, true);
+        }
+
         async function uploadToBackendFirst(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -266,6 +290,7 @@
             
             // Reset state
             isImageModified = false;
+            isKeypointMoved = false;
             document.getElementById('btn-save').innerHTML = '<i class="fa-solid fa-check"></i> Done';
             setMode('drag');
 
@@ -282,31 +307,18 @@
                   if(!result.error) currentTextureUrl = result.textureUrl;
                 
                 if (result.error) {
-                    showToast("Error: " + result.error, true);
-                    hideLoading();
+                    showUploadFailed("Error: " + result.error);
                     return;
                 }
 
-                fabric.Image.fromURL(result.textureUrl + "?t=" + new Date().getTime(), (img) => {
+                fabric.Image.fromURL(result.textureUrl + "?t=" + new Date().getTime(), (img, loadFailed) => {
+                    if (loadFailed) {
+                        showUploadFailed("Could not load the drawing. Please try again.");
+                        return;
+                    }
                     canvas.clear();
                     
-                    const targetDim = 450;
-                    const scale = Math.min(targetDim / img.width, targetDim / img.height);
-                    
-                    img.scale(scale);
-                    
-                    const offsetX = (512 - img.width * scale) / 2;
-                    const offsetY = (512 - img.height * scale) / 2;
-
-                    img.set({
-                        left: offsetX,
-                        top: offsetY,
-                        selectable: false,
-                        evented: false
-                    });
-
-                    mainImageObj = img;
-                    canvas.add(img);
+                    const { scale, offsetX, offsetY } = placeMainImage(img);
 
                     if(result.keypoints) {
                         drawKeypoints(result.keypoints, scale, offsetX, offsetY);
@@ -316,8 +328,7 @@
 
             } catch (err) {
                 console.error(err);
-                showToast("Failed to run inference.", true);
-                hideLoading();
+                showUploadFailed("Could not reach the server. Please check it is running and try again.");
             }
         }
 
@@ -405,9 +416,12 @@
 
         async function processAndGoToEngine() {
             try {
-                // If the user modified the image, we DO NOT send current keypoints. 
-                // We re-infer them first!
-                if (isImageModified) {
+                // The saved image must line up with the joints, whatever the zoom or pan
+                canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+
+                // If the user modified the image, we re-infer the keypoints first,
+                // unless they placed joints by hand, which must be kept.
+                if (isImageModified && !isKeypointMoved) {
                     showLoading("Re-inferring skeleton from your drawn edits...");
                     
                     // We must be sure skeleton is invisible before taking dataURL
@@ -457,7 +471,8 @@
                             await new Promise(r => setTimeout(r, 1000));
                         }
                         sessionStorage.setItem('restore_textureUrl', currentTextureUrl);
-                        sessionStorage.setItem('restore_keypoints', JSON.stringify(getCurrentKeypoints()));
+                        sessionStorage.setItem('restore_keypoints', JSON.stringify(extData.keypoints));
+                        sessionStorage.setItem('restore_keypoints_space', 'texture');
                         
                         const urlParams = new URLSearchParams(window.location.search);
                         const returnUrl = urlParams.get('returnUrl');
@@ -515,6 +530,7 @@
                         
                         sessionStorage.setItem('restore_textureUrl', currentTextureUrl);
                         sessionStorage.setItem('restore_keypoints', JSON.stringify(getCurrentKeypoints()));
+                        sessionStorage.setItem('restore_keypoints_space', 'canvas');
                         
                         const urlParams = new URLSearchParams(window.location.search);
                         const returnUrl = urlParams.get('returnUrl');

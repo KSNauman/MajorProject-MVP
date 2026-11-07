@@ -4,8 +4,8 @@ compose_story.py
 Lightweight story compositor.
 
 This does NOT call animated_drawings.render.start().
-It reads pre-cached transparent GIFs and composites them over backgrounds,
-then muxes audio and concatenates scenes.
+It reads pre-cached transparent GIFs, composites them over backgrounds and
+streams the frames with the narration into a single FFmpeg encode.
 """
 
 import os
@@ -134,102 +134,62 @@ def load_gif_frames(gif_path: Path) -> list:
         return [f.crop(union_bbox) for f in frames]
     return frames
 
-def compose_scene(scene: dict, characters: dict, logger=None) -> str:
+def load_sprites(slot: str, motion: str, scale: float, characters: dict, cache: dict) -> list:
+    """Load a character's GIF once and resize it once, reused by every scene that needs it."""
+    key = (slot, motion, scale)
+    if key not in cache:
+        char_id = characters.get(slot, "default")
+        gif_path = resolve_character_dir(slot, char_id) / "animations" / f"{motion}.gif"
+        frames = load_gif_frames(gif_path)
+        if not frames:
+            print(f"    WARNING: No cached GIF for {slot}/{motion} at {gif_path}")
+        char_h = int(CANVAS_H * scale)
+        sprites = []
+        for frame in frames:
+            char_w = int(char_h * frame.width / frame.height)
+            if char_w >= 1 and char_h >= 1:
+                sprites.append(frame.resize((char_w, char_h), Image.LANCZOS))
+        cache[key] = sprites
+        print(f"    Loaded {len(sprites)} frames for {slot}/{motion}")
+    return cache[key]
+
+def write_scene(scene: dict, characters: dict, sprite_cache: dict, video_pipe, logger=None) -> None:
+    """Composite one scene and stream its raw frames into the running FFmpeg encode."""
     sid = scene["id"]
-    duration = scene["end"] - scene["start"]
-    total_frames = max(1, int(duration * FPS))
-    print(f"  Composing Scene {sid}: {duration:.2f}s, {total_frames} frames")
+    # Frame numbers come from absolute times so the picture cannot drift from the narration.
+    total_frames = max(1, round(scene["end"] * FPS) - round(scene["start"] * FPS))
+    print(f"  Composing Scene {sid}: {scene['end'] - scene['start']:.2f}s, {total_frames} frames")
     if logger: logger.log_stage("SCENE_PREPARATION", f"Preparing scene {sid}", scene=sid)
     if logger: logger.start_timer(f"scene_{sid}")
 
     bg_path = ASSETS_DIR / scene["bg"]
     if bg_path.exists():
-        bg_img = Image.open(str(bg_path)).convert("RGBA").resize((CANVAS_W, CANVAS_H), Image.LANCZOS)
+        bg_img = Image.open(str(bg_path)).convert("RGB").resize((CANVAS_W, CANVAS_H), Image.LANCZOS)
     else:
-        bg_img = Image.new("RGBA", (CANVAS_W, CANVAS_H), (255, 255, 255, 255))
+        bg_img = Image.new("RGB", (CANVAS_W, CANVAS_H), (255, 255, 255))
 
-    char_data = []
+    layers = []
     for char_info in scene["chars"]:
-        slot = char_info["slot"]
-        motion = char_info["motion"]
-        char_id = characters.get(slot, "default")
-        char_dir = resolve_character_dir(slot, char_id)
-        gif_path = char_dir / "animations" / f"{motion}.gif"
-        frames = load_gif_frames(gif_path)
-        if not frames:
-            print(f"    WARNING: No cached GIF for {slot}/{motion} at {gif_path}")
-            continue
-        char_data.append({
-            "frames": frames,
-            "x": char_info.get("x", 0.5),
-            "y": char_info.get("y", 0.86),
-            "scale": char_info.get("scale", 0.4),
-            "anchor": char_info.get("anchor", "floor"),
-            "slot": slot,
-            "motion": motion
-        })
-        print(f"    Loaded {len(frames)} frames for {slot}/{motion}")
-
-    scene_dir = OUTPUT_DIR / f"scene_{sid}"
-    scene_dir.mkdir(parents=True, exist_ok=True)
-    frames_dir = scene_dir / "frames"
-    frames_dir.mkdir(exist_ok=True)
+        sprites = load_sprites(char_info["slot"], char_info["motion"], char_info.get("scale", 0.4), characters, sprite_cache)
+        if sprites:
+            layers.append((char_info, sprites))
 
     for fi in range(total_frames):
         canvas = bg_img.copy()
-        for cd in char_data:
-            if not cd["frames"]:
-                continue
-            gif_frame = cd["frames"][fi % len(cd["frames"])]
-            char_h = int(CANVAS_H * cd["scale"])
-            aspect = gif_frame.width / gif_frame.height
-            char_w = int(char_h * aspect)
-            if char_w < 1 or char_h < 1:
-                continue
-            scaled = gif_frame.resize((char_w, char_h), Image.LANCZOS)
-            px = int(cd["x"] * CANVAS_W - char_w / 2)
-            
+        for char_info, sprites in layers:
+            sprite = sprites[fi % len(sprites)]
+            px = int(char_info.get("x", 0.5) * CANVAS_W - sprite.width / 2)
+            base_y = char_info.get("y", 0.86) * CANVAS_H
+
             # Position based on semantic anchor
-            if cd.get("anchor") in ["floor", "bottom"]:
-                py = int(cd["y"] * CANVAS_H - char_h)
+            if char_info.get("anchor", "floor") in ["floor", "bottom"]:
+                py = int(base_y - sprite.height)
             else:
-                py = int(cd["y"] * CANVAS_H - char_h / 2)
-                
-            canvas.paste(scaled, (px, py), scaled)
-        frame_path = frames_dir / f"frame_{fi:04d}.png"
-        canvas.convert("RGB").save(str(frame_path))
+                py = int(base_y - sprite.height / 2)
 
-    scene_video = scene_dir / "scene_video.mp4"
-    subprocess.run([
-        FFMPEG_BIN, "-y",
-        "-framerate", str(FPS),
-        "-i", str(frames_dir / "frame_%04d.png"),
-        "-c:v", "libx264", "-pix_fmt", "yuv420p",
-        "-vf", f"scale={CANVAS_W}:{CANVAS_H}",
-        scene_video
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-    audio_clip = scene_dir / "audio.mp3"
-    full_audio = ASSETS_DIR / "rahim_story_audio.mp3"
-    subprocess.run([
-        FFMPEG_BIN, "-y",
-        "-i", str(full_audio),
-        "-ss", str(scene["start"]),
-        "-t", str(duration),
-        str(audio_clip)
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-    muxed = scene_dir / "scene_muxed.mp4"
-    subprocess.run([
-        FFMPEG_BIN, "-y",
-        "-i", str(scene_video),
-        "-i", str(audio_clip),
-        "-c:v", "libx264", "-c:a", "aac",
-        "-pix_fmt", "yuv420p", "-shortest",
-        str(muxed)
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            canvas.paste(sprite, (px, py), sprite)
+        video_pipe.write(canvas.tobytes())
     if logger: logger.end_timer(f"scene_{sid}")
-    return str(muxed)
 
 def main():
     if len(sys.argv) < 2:
@@ -248,37 +208,47 @@ def main():
     print(f"Characters: {json.dumps(characters, indent=2)}")
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     start_time = time.time()
-    scene_videos = []
-    for scene in SCENES:
-        print(f"\n--- Scene {scene['id']} ---")
-        muxed_path = compose_scene(scene, characters, logger)
-        if os.path.exists(muxed_path):
-            scene_videos.append(muxed_path)
-        else:
-            print(f"  ERROR: Scene {scene['id']} failed to produce video")
-    print(f"\n--- Concatenating {len(scene_videos)} scenes ---")
-    logger.log_stage("COMPOSITING", "Concatenating rendered scenes into final video")
-    concat_list = OUTPUT_DIR / "concat_list.txt"
-    with open(str(concat_list), 'w') as f:
-        for vid in scene_videos:
-            f.write(f"file '{vid.replace(chr(92), '/')}'\n")
-    final_output = OUTPUT_DIR / f"rahims_story_{int(time.time())}.mp4"
-    subprocess.run([
-        FFMPEG_BIN, "-y",
-        "-f", "concat", "-safe", "0",
-        "-i", str(concat_list),
-        "-c", "copy",
-        str(final_output)
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    # Written under a temporary name so the gallery never lists a half-finished video.
+    final_output = OUTPUT_DIR / f"rahims_story_{int(time.time() * 1000)}.mp4"
+    partial_output = final_output.with_suffix(".part")
+    story_start, story_end = SCENES[0]["start"], SCENES[-1]["end"]
+    ffmpeg = subprocess.Popen([
+        FFMPEG_BIN, "-y", "-loglevel", "error",
+        "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{CANVAS_W}x{CANVAS_H}", "-r", str(FPS), "-i", "-",
+        "-ss", str(story_start), "-t", str(story_end - story_start), "-i", str(ASSETS_DIR / "rahim_story_audio.mp3"),
+        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest",
+        "-movflags", "+faststart", "-f", "mp4", str(partial_output)
+    ], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+
+    sprite_cache = {}
+    try:
+        for scene in SCENES:
+            print(f"\n--- Scene {scene['id']} ---")
+            write_scene(scene, characters, sprite_cache, ffmpeg.stdin, logger)
+        logger.log_stage("COMPOSITING", "Finishing final video")
+        ffmpeg.stdin.close()
+    except OSError:
+        pass  # FFmpeg stopped early; its exit code and message are reported below
+    except Exception:
+        ffmpeg.kill()
+        ffmpeg.wait()
+        partial_output.unlink(missing_ok=True)
+        raise
+    ffmpeg_errors = ffmpeg.stderr.read().decode(errors="replace")
+    ffmpeg.wait()
+
+    if ffmpeg.returncode != 0 or not partial_output.exists():
+        partial_output.unlink(missing_ok=True)
+        logger.log_error("Final video was not created", ffmpeg_errors)
+        sys.exit(1)
+
+    os.replace(partial_output, final_output)
     elapsed = time.time() - start_time
     print(f"\nStory generated in {elapsed:.1f}s: {final_output}")
-    if final_output.exists():
-        logger.end_timer("total_story")
-        logger.log_stage("COMPLETED", "Final video created")
-        print(json.dumps({"finalVideoUrl": "/api/files?path=" + str(final_output).replace(chr(92), '/')}))
-    else:
-        logger.log_error("Final video was not created")
-        sys.exit(1)
+    logger.end_timer("total_story")
+    logger.log_stage("COMPLETED", "Final video created")
+    print(json.dumps({"finalVideoUrl": "/api/files?path=" + str(final_output).replace(chr(92), '/')}))
 
 if __name__ == "__main__":
     main()
