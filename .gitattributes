@@ -1,0 +1,2 @@
+# Trained model weights are binary: never diff or merge them as text
+*.pt binary
