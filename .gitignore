@@ -45,6 +45,9 @@ sketch_yolo_corrected/
 sketch_yolo_dataset/
 
 # ML Model weights (PyTorch, ONNX, TFLite, etc)
+# Our own trained model (*.pt, e.g. best.pt) is NOT ignored: it must be committed so it
+# is never only on one laptop. Third-party caches (*.onnx from rembg) stay ignored.
+!*.pt
 *.ckpt
 *.h5
 *.hdf5

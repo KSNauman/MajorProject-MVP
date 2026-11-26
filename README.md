@@ -253,6 +253,9 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 pip install opencv-python mediapipe ultralytics pyyaml
 ```
 
+> [!IMPORTANT]
+> **Model file:** the custom YOLOv8-Pose model `Actual repo (EDUVISION)/AnimatedDrawings/best.pt` (about 20 MB) is committed to the repository. Character detection fails without it. If you retrain the model, commit the new `best.pt` too: `.gitignore` deliberately does not ignore `*.pt` files, so a model never exists only on one laptop.
+
 ---
 
 ## 🎮 6. Running EduVision
