@@ -479,7 +479,7 @@ body.menu-open .logo svg{filter:invert(1)}
   var $=function(s,r){return (r||document).querySelector(s)}, $$=function(s,r){return [].slice.call((r||document).querySelectorAll(s))};
 
   /* ---------- content ---------- */
-  function shot(file,label){return '<figure class="shot"><img src="assets/screenshots/'+file+'.png" alt="'+label+' screenshot" loading="lazy"><figcaption class="ph">'+label+'<code>assets/screenshots/'+file+'.png</code></figcaption></figure>'}
+  function shot(file,label){return '<figure class="shot"><img src="assets/screenshots/'+file+'.webp" alt="'+label+' screenshot" loading="lazy"><figcaption class="ph">'+label+'<code>assets/screenshots/'+file+'.webp</code></figcaption></figure>'}
   function facts(f){return f?'<div class="facts">'+f.map(function(x){return '<span>'+x+'</span>'}).join('')+'</div>':''}
   function qa(o){
     var inner=o.shot?'<div class="qa-b with-shot">'+shot(o.shot,o.q)+'<div>'+o.a+facts(o.f)+'</div></div>':'<div class="qa-b">'+o.a+facts(o.f)+'</div>';
