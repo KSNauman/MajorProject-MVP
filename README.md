@@ -10,6 +10,11 @@
 [![Python](https://img.shields.io/badge/Python-3.10+-3776ab?style=flat-square&logo=python)](https://python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-CUDA_12.1-ee4c2c?style=flat-square&logo=pytorch)](https://pytorch.org/)
 
+<p align="center">
+  <a href="https://ksnauman.github.io/MajorProject-MVP/"><img src="docs/assets/img/rahim-wave.webp" alt="An animated child's drawing" height="160"></a>
+</p>
+<p align="center"><b><a href="https://ksnauman.github.io/MajorProject-MVP/">🌐 Visit the project home page</a></b> · <a href="docs/project/00_INDEX.md">📚 Documentation</a></p>
+
 ---
 
 ## 🌟 1. Core Idea & Vision
