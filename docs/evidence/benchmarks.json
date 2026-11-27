@@ -1,0 +1,406 @@
+{
+  "env": {
+    "os": "Windows-10-10.0.26300-SP0",
+    "python": "3.9.13",
+    "cpu_threads": 12,
+    "ram_gb": 12.6,
+    "gpu": "NVIDIA GeForce RTX 2050",
+    "torch": "2.5.1+cu121",
+    "ultralytics": "8.4.180",
+    "opencv": "5.0.0",
+    "scikit_learn": "1.6.1"
+  },
+  "env_section_seconds": 7.0,
+  "model": {
+    "file_mb": 20.09,
+    "parameters": 3295470,
+    "load_seconds": 3.674,
+    "inference_ms_cuda": {
+      "n": 30,
+      "mean": 13.7334,
+      "sd": 6.9769,
+      "median": 12.0859,
+      "min": 10.0793,
+      "max": 48.767
+    },
+    "inference_ms_cpu": {
+      "n": 30,
+      "mean": 67.2648,
+      "sd": 5.3173,
+      "median": 66.6003,
+      "min": 61.432,
+      "max": 88.5659
+    }
+  },
+  "model_section_seconds": 16.4,
+  "unlabeled": {
+    "drawings": 178,
+    "unreadable": 0,
+    "detected_at_least_one": 156,
+    "detection_rate": 0.8764,
+    "boxes_per_image": {
+      "0": 22,
+      "1": 152,
+      "2": 4
+    },
+    "best_box_confidence": {
+      "n": 156,
+      "mean": 0.8643,
+      "sd": 0.0913,
+      "median": 0.8963,
+      "min": 0.3645,
+      "max": 0.9441
+    },
+    "mean_keypoint_confidence": {
+      "n": 156,
+      "mean": 0.9943,
+      "sd": 0.0134,
+      "median": 0.9972,
+      "min": 0.8748,
+      "max": 0.9993
+    },
+    "keypoints_above_0.5_of_17": {
+      "n": 156,
+      "mean": 16.9744,
+      "sd": 0.2257,
+      "median": 17.0,
+      "min": 15,
+      "max": 17
+    },
+    "mask_area_fraction_of_crop": {
+      "n": 156,
+      "mean": 0.4197,
+      "sd": 0.1273,
+      "median": 0.4263,
+      "min": 0.0002,
+      "max": 0.6566
+    }
+  },
+  "unlabeled_section_seconds": 199.6,
+  "extract": {
+    "cold_process_seconds": {
+      "n": 3,
+      "mean": 28.1418,
+      "sd": 2.9626,
+      "median": 26.7635,
+      "min": 26.1194,
+      "max": 31.5424
+    },
+    "warm_in_process_seconds": {
+      "n": 5,
+      "mean": 1.3154,
+      "sd": 0.0468,
+      "median": 1.3194,
+      "min": 1.2446,
+      "max": 1.3737
+    }
+  },
+  "extract_section_seconds": 115.7,
+  "animate": {
+    "per_motion_90_frames_warm": {
+      "idel": {
+        "seconds": {
+          "n": 3,
+          "mean": 2.4725,
+          "sd": 0.146,
+          "median": 2.4318,
+          "min": 2.3512,
+          "max": 2.6345
+        },
+        "frames": 90,
+        "gif_kb": 1518
+      },
+      "wave": {
+        "seconds": {
+          "n": 3,
+          "mean": 2.342,
+          "sd": 0.1199,
+          "median": 2.278,
+          "min": 2.2675,
+          "max": 2.4803
+        },
+        "frames": 90,
+        "gif_kb": 1506
+      },
+      "jump": {
+        "seconds": {
+          "n": 3,
+          "mean": 2.3793,
+          "sd": 0.0452,
+          "median": 2.3863,
+          "min": 2.3311,
+          "max": 2.4207
+        },
+        "frames": 79,
+        "gif_kb": 1313
+      },
+      "sleep": {
+        "seconds": {
+          "n": 3,
+          "mean": 2.3408,
+          "sd": 0.0345,
+          "median": 2.3209,
+          "min": 2.3208,
+          "max": 2.3806
+        },
+        "frames": 41,
+        "gif_kb": 602
+      },
+      "opening": {
+        "seconds": {
+          "n": 3,
+          "mean": 2.3744,
+          "sd": 0.0503,
+          "median": 2.3863,
+          "min": 2.3193,
+          "max": 2.4177
+        },
+        "frames": 90,
+        "gif_kb": 1421
+      },
+      "walk_in_circle": {
+        "seconds": {
+          "n": 3,
+          "mean": 2.4775,
+          "sd": 0.1501,
+          "median": 2.4014,
+          "min": 2.3808,
+          "max": 2.6504
+        },
+        "frames": 90,
+        "gif_kb": 1468
+      }
+    },
+    "frame_cap_ablation": {
+      "wave_90": {
+        "seconds": {
+          "n": 2,
+          "mean": 2.3125,
+          "sd": 0.0181,
+          "median": 2.3125,
+          "min": 2.2997,
+          "max": 2.3253
+        },
+        "frames": 90,
+        "gif_kb": 1506
+      },
+      "wave_839": {
+        "seconds": {
+          "n": 2,
+          "mean": 9.2302,
+          "sd": 0.0128,
+          "median": 9.2302,
+          "min": 9.2212,
+          "max": 9.2392
+        },
+        "frames": 839,
+        "gif_kb": 13777
+      },
+      "jump_90": {
+        "seconds": {
+          "n": 2,
+          "mean": 2.3879,
+          "sd": 0.0087,
+          "median": 2.3879,
+          "min": 2.3817,
+          "max": 2.394
+        },
+        "frames": 79,
+        "gif_kb": 1313
+      },
+      "jump_250": {
+        "seconds": {
+          "n": 2,
+          "mean": 3.8319,
+          "sd": 0.107,
+          "median": 3.8319,
+          "min": 3.7562,
+          "max": 3.9075
+        },
+        "frames": 79,
+        "gif_kb": 1313
+      }
+    }
+  },
+  "animate_section_seconds": 87.0,
+  "compose": {
+    "story_video_seconds": {
+      "n": 3,
+      "mean": 14.4682,
+      "sd": 1.8768,
+      "median": 14.6941,
+      "min": 12.4886,
+      "max": 16.2218
+    },
+    "video": "1280x720, 24 fps, 9 scenes"
+  },
+  "compose_section_seconds": 43.6,
+  "knn": {
+    "samples": 1797,
+    "features": 64,
+    "per_class": {
+      "0": 178,
+      "1": 182,
+      "2": 177,
+      "3": 183,
+      "4": 181,
+      "5": 182,
+      "6": 181,
+      "7": 179,
+      "8": 174,
+      "9": 180
+    },
+    "k1_10fold": {
+      "accuracy": 0.9894,
+      "macro_f1": 0.9894
+    },
+    "k3_10fold": {
+      "accuracy": 0.9894,
+      "macro_f1": 0.9894
+    },
+    "k3_confusion_matrix": [
+      [
+        178,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        182,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        176,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        181,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        181,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        178,
+        1,
+        0,
+        0,
+        3
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        181,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        178,
+        0,
+        1
+      ],
+      [
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        171,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        3,
+        1,
+        1,
+        0,
+        0,
+        2,
+        172
+      ]
+    ],
+    "k3_per_digit_recall": {
+      "0": 1.0,
+      "1": 1.0,
+      "2": 0.9944,
+      "3": 0.9891,
+      "4": 1.0,
+      "5": 0.978,
+      "6": 1.0,
+      "7": 0.9944,
+      "8": 0.9828,
+      "9": 0.9556
+    },
+    "k5_10fold": {
+      "accuracy": 0.9861,
+      "macro_f1": 0.986
+    },
+    "k7_10fold": {
+      "accuracy": 0.9861,
+      "macro_f1": 0.986
+    }
+  },
+  "knn_section_seconds": 6.6,
+  "measured_on": "2026-11-27 10:22"
+}

@@ -1,5 +1,7 @@
 # Chapter 10: GPU Acceleration & Performance Architecture
 
+> **Update (November 2026):** The persistent AI server described here was later **dropped by accident** from the launcher, and then restored on port 5001 (chapter 14). Re-measured on 27 November 2026: cold detection with segmentation 28.1 ± 3.0 s vs warm 1.32 ± 0.05 s; the model alone takes 13.7 ms on the GPU ([docs/project/03_MODEL_METRICS.md](../docs/project/03_MODEL_METRICS.md) §3.3).
+
 ## 1. Overview
 As EduVision evolved from a proof-of-concept into a robust MVP, performance became a critical bottleneck. The original architecture relied on Meta's AnimatedDrawings default TorchServe implementation. While excellent for enterprise-scale deployments, running a Java-based TorchServe instance locally on a consumer GPU (RTX 2050 4GB) introduced severe overhead.
 

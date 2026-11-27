@@ -1,5 +1,7 @@
 # Chapter 3: Deep Learning Training & Performance Mechanics
 
+> **Update (November 2026):** The 1,200-image split below describes the **first** dataset. Chapter 6 enlarged it with padding augmentation, and chapter 7 records a padded set of 11,500 drawings. The final model, `best.pt`, was trained on `eduvision_pose_v2_dataset`, whose exact size is not recorded in the repository. Its real training settings and scores (pose mAP50 0.946, mAP50-95 0.747 on the validation split) are in [docs/project/03_MODEL_METRICS.md](../docs/project/03_MODEL_METRICS.md).
+
 In this chapter, we explore how neural networks optimize their weights during training. We will cover transfer learning, cloud GPU performance, dataset partitioning, and how to read evaluation graphs and loss metrics.
 
 ---

@@ -1,5 +1,7 @@
 # Chapter 9: Multi-Scene Story Engine & Adding Custom BVH Animations
 
+> **Update (November 2026):** This chapter describes the **first** story engine. `tell_story_video.py`, MoviePy and Google's online gTTS speech service have since been **replaced and removed** (chapter 15). The current `compose_story.py` streams frames into a single FFmpeg pass and uses a **recorded** narration file, so no text is sent to any online service and the video is not captioned. The "54 seconds" figure below is explained in chapter 14 (it did not measure the same thing as later numbers). The section on adding BVH motions is still correct.
+
 ## Today's Achievement: The Automated Storytelling Pipeline
 We successfully bridged the gap between individual character rendering and full-blown storytelling! The new `story_engine/tell_story_video.py` orchestrates the complete animation pipeline:
 

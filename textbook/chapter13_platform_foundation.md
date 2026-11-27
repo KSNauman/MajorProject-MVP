@@ -1,5 +1,7 @@
 # Chapter 13: Phase 2 - Shared Platform Foundation
 
+> **Update (November 2026):** The "Math Blaster" sample app mentioned in this chapter was a test app used while building the integration contract; it is no longer registered. The registered apps are now Story Studio and the six Activity Center games. Assignment launch now also checks the student's class (see [docs/project/08_SECURITY_PRIVACY_AND_LICENSING.md](../docs/project/08_SECURITY_PRIVACY_AND_LICENSING.md)).
+
 ## Summary of Work Completed
 **Date and Time:** 2026-10-10T18:04:48+05:30
 

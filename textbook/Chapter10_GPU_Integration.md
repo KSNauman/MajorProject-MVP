@@ -1,5 +1,7 @@
 # Chapter 10: Hardware Acceleration and the "Cold Start" Problem
 
+> **Update (November 2026):** The "27.84 s → 0.37 s" result below was measured on the first persistent server. That server was later dropped from the launcher, and has been part of the deployed system again since November 2026 (`ai_server.py`, port 5001). Current numbers, with the cold/warm definitions, are in [docs/project/03_MODEL_METRICS.md](../docs/project/03_MODEL_METRICS.md) §3.3.
+
 In the journey of developing modern AI applications, getting a model to output the correct result is often only half the battle. The other half is getting it to do so at scale, with acceptable latency, while fully utilizing the underlying hardware. 
 
 This chapter details a real-world architectural challenge encountered during the development of our animation engine: migrating from a CPU-bound execution model to a fully hardware-accelerated GPU pipeline. We will explore the initial implementation, the silent failures of execution providers, and the architectural bottlenecks of process spawning that ultimately led to a 75x performance improvement.
