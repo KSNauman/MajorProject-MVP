@@ -1,5 +1,7 @@
 # EduVision Repository Audit Report
 
+> **Update (November 2026):** This audit is a snapshot from before the platform was built. Most of its gaps have since been closed; see [docs/project/07_CRITIQUE_RESPONSE.md](../docs/project/07_CRITIQUE_RESPONSE.md) and [docs/project/06_ADVANTAGES_LIMITATIONS_FUTURE.md](../docs/project/06_ADVANTAGES_LIMITATIONS_FUTURE.md) for the current state.
+
 ## 1. Executive Summary
 This audit compares the current `Major Project - MVP2` repository against the proposed EduVision High-Level System Architecture. The existing repository contains a functional, highly specialized pipeline for "Story Studio" (character extraction, motion generation, and story rendering). However, it currently operates as a standalone prototype rather than a modular platform. The required shared services for a multi-application EduVision platform—such as authentication, database-backed state, user roles, and a generalized integration contract—do not yet exist. 
 

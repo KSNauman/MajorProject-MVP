@@ -1,5 +1,7 @@
 # Chapter 7: Deep Learning Failure & Architecture Pivot
 
+> **Update (November 2026):** This pivot was **temporary**. The model was retrained, and the working `best.pt` was integrated on 16 September 2026 ("17/17 joints"). TorchServe and Docker are no longer used anywhere in the running system. See [docs/project/01_SYSTEM_OVERVIEW_AND_METHODS.md](../docs/project/01_SYSTEM_OVERVIEW_AND_METHODS.md) §1.3.
+
 In this chapter, we log a critical architectural failure regarding the custom-trained YOLOv8-pose model and document the strategic pivot back to the Meta AnimatedDrawings baseline models.
 
 ---

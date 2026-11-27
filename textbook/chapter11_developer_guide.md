@@ -86,7 +86,7 @@ This directory contains the core machine learning inference and rendering engine
 - **Ultralytics (YOLOv8)**: AI-driven human pose estimation for skeletal mapping.
 - **PyTorch**: Deep learning backend for YOLO and Meta's rendering functions.
 - **Pillow (PIL)**: Frame-by-frame alpha compositing for final scene stitching.
-- **MoviePy / FFMPEG**: Video encoding, concatenation, and audio muxing.
+- **FFmpeg (via imageio-ffmpeg)**: Single-pass video encoding and narration muxing in `compose_story.py`. (MoviePy was used by the first story engine and has been removed.)
 - **Subprocess**: Used extensively for inter-process communication (IPC) between Node.js and Python.
 
 ---
