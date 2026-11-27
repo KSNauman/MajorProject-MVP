@@ -7,11 +7,11 @@ Every removed file was checked first: nothing in the running system (the API, po
 **To restore any file**, check out the commit just before the one that removed it. For example:
 
 ```bash
-git checkout cd45b37 -- story_engine/tell_story_video.py
-git checkout cd45b37~1 -- platform/activities_python
+git checkout ec7c138 -- story_engine/tell_story_video.py
+git checkout ec7c138~1 -- platform/activities_python
 ```
 
-Section 1 was removed in commit `cd45b37`, `platform/api/new_migration.sql` in `3011c72`, and everything else on the `chore/repo-cleanup` branch.
+Section 1 was removed in commit `ec7c138`, `platform/api/new_migration.sql` in `3011c72`, and everything else on the `chore/repo-cleanup` branch.
 
 ---
 
