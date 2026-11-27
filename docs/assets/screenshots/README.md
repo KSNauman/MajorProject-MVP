@@ -4,7 +4,6 @@ Put a PNG here with **exactly** one of these names, and it replaces the dashed p
 
 | File name | Where it appears |
 |---|---|
-| `demo-video.png` | Demo section (a still from the story video) |
 | `story-studio.png` | Apps: Story Studio card |
 | `activity-center.png` | Apps: Activity Center card |
 | `portal.png` | Apps: Classroom Portal card |
