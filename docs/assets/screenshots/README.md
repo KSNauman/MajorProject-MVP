@@ -1,17 +1,17 @@
 # Screenshots for the project home page
 
-Put a PNG here with **exactly** one of these names, and it replaces the dashed placeholder box on `docs/index.html`. You don't need to change any code. Images in a 16:10 or 16:9 shape look best (for example 1600 × 1000 or 1600 × 900).
+These images appear inside the dropdowns on `docs/index.html`. To replace one, save a new image with **exactly** the same name here. They are WebP files at 1600 × 1000 (16:10).
 
-| File name | Where it appears |
-|---|---|
-| `story-studio.png` | Apps: Story Studio card |
-| `activity-center.png` | Apps: Activity Center card |
-| `portal.png` | Apps: Classroom Portal card |
-| `game-color-animate.png` | Games: Color & Animate Studio |
-| `game-color-matcher.png` | Games: Color Matcher |
-| `game-spotter.png` | Games: Spotter Detective |
-| `game-count-play.png` | Games: Count & Play |
-| `game-jigsaw.png` | Games: Jigsaw Puzzle |
-| `game-train.png` | Games: Train Builder |
+| File name | Where it appears | Source screenshot |
+|---|---|---|
+| `story-studio.webp` | Apps: Story Studio | `ppt_screenshots/12_story_generation.png` |
+| `activity-center.webp` | Apps: Activity Center | `ppt_screenshots/09_activity_center.png` |
+| `portal.webp` | Apps: Classroom Portal | `ppt_screenshots/06_teacher_dashboard.png` |
+| `game-color-animate.webp` | Games: Color & Animate Studio | `ppt_screenshots/10a_game_color-filling.png` |
+| `game-color-matcher.webp` | Games: Color Matcher | `ppt_screenshots/10b_game_color-matcher.png` |
+| `game-spotter.webp` | Games: Spotter Detective | `ppt_screenshots/10c_game_shape-spotter.png` |
+| `game-count-play.webp` | Games: Count & Play | `ppt_screenshots/10d_game_objects-counting.png` |
+| `game-jigsaw.webp` | Games: Jigsaw Puzzle | `ppt_screenshots/10e_game_puzzle-builder.png` |
+| `game-train.webp` | Games: Train Builder | `ppt_screenshots/10f_game_number-sequencing.png` |
 
-To use a different file type (for example `.jpg`), also change the file name in `docs/index.html`.
+If an image is missing, the page shows a dashed placeholder with the file name instead.
