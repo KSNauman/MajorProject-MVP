@@ -1,0 +1,41 @@
+# Publishes only the docs/ folder (the project home page) to GitHub Pages.
+# The whole repository is about 228 MB; docs/ is about 5 MB, so deploys are fast.
+# Settings -> Pages -> Source must be set to "GitHub Actions".
+name: Deploy home page
+
+on:
+  push:
+    branches: [main]
+    paths: ["docs/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out docs/ only
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: docs
+          fetch-depth: 1
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
